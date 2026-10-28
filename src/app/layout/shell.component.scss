@@ -1,0 +1,48 @@
+@use '../../styles/breakpoints' as bp;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+mat-toolbar {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+mat-sidenav-container {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.content {
+  padding: 16px;
+  min-width: 0;
+}
+
+@media (min-width: bp.$wide) {
+  .content {
+    padding: 24px;
+  }
+}
+
+// Item com fundo na largura toda, sem a pílula do M3 (requisitos, "Item ativo").
+mat-nav-list {
+  --mat-list-active-indicator-shape: 0;
+}
+
+// Destaque do item ativo (RF-06). Não usar `[activated]`, que desenha a pílula do M3.
+.nav-active {
+  --mat-list-list-item-container-color: var(--app-nav-active-background);
+  --mat-list-list-item-label-text-color: var(--app-nav-active-text);
+  --mat-list-list-item-hover-label-text-color: var(--app-nav-active-text);
+  --mat-list-list-item-focus-label-text-color: var(--app-nav-active-text);
+  --mat-list-list-item-leading-icon-color: var(--mat-sys-primary);
+  --mat-list-list-item-hover-leading-icon-color: var(--mat-sys-primary);
+  --mat-list-list-item-label-text-weight: 500;
+}

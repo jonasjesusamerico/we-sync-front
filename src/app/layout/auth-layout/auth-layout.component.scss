@@ -1,0 +1,49 @@
+@use '../../../styles/breakpoints' as bp;
+
+:host {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.form-side {
+  background: var(--app-surface);
+  padding: 24px 16px;
+}
+
+.form-column {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.brand-small {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.auth-panel {
+  display: none;
+}
+
+@media (min-width: bp.$wide) {
+  :host {
+    grid-template-columns: minmax(360px, 37%) 1fr;
+  }
+
+  .form-side {
+    padding: 60px 24px 24px;
+  }
+
+  .brand-small {
+    display: none;
+  }
+
+  .auth-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mat-sys-primary);
+  }
+}
