@@ -7,3 +7,4 @@ export const LABEL_LOGOUT = 'Sair';
 export const LABEL_MAIN_NAV = 'Navegação principal';
 export const LABEL_AUTH_TABS = 'Acesso';
 export const LABEL_HOME = 'Início';
+export const LABEL_PURCHASES = 'Lançamentos';

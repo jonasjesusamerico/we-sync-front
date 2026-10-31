@@ -10,7 +10,7 @@ import {
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
@@ -23,7 +23,8 @@ registerLocaleData(localePt);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    // ADR-08 (003): um voltar cancelado pelo guard de alterações não salvas não estraga o histórico.
+    provideRouter(routes, withRouterConfig({ canceledNavigationResolution: 'computed' })),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     { provide: API_BASE_URL, useValue: environment.apiBaseUrl },
     { provide: LOCALE_ID, useValue: 'pt-BR' },

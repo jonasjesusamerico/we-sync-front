@@ -1,6 +1,6 @@
 import { computed, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { AbstractControl } from '@angular/forms';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 import { startWith } from 'rxjs';
 
 import { fieldErrorMessage, FieldKind } from './validation-messages';
@@ -13,6 +13,14 @@ export function controlErrorMessage(
   control: AbstractControl,
   kind: FieldKind,
 ): Signal<string | null> {
+  return controlErrorFrom(control, (errors) => fieldErrorMessage(kind, errors));
+}
+
+/** Igual a `controlErrorMessage`, com a tradução dos erros escolhida por quem chama (feature 003). */
+export function controlErrorFrom(
+  control: AbstractControl,
+  messageOf: (errors: ValidationErrors | null) => string | null,
+): Signal<string | null> {
   const events = toSignal(control.events.pipe(startWith(null)), {
     initialValue: null,
     equal: () => false,
@@ -20,7 +28,7 @@ export function controlErrorMessage(
   return computed(
     () => {
       events();
-      return fieldErrorMessage(kind, control.errors);
+      return messageOf(control.errors);
     },
     { equal: () => false },
   );

@@ -11,7 +11,13 @@ import { provideRouter, Router } from '@angular/router';
 import { FakeBreakpointObserver } from '../../testing/fake-breakpoint-observer';
 import { SESSION_KEY } from '../core/auth/session.store';
 import { API_BASE_URL } from '../core/http/api-base-url';
-import { LABEL_ACCOUNT, LABEL_HOME, LABEL_LOGOUT, LABEL_OPEN_MENU } from './layout.messages';
+import {
+  LABEL_ACCOUNT,
+  LABEL_HOME,
+  LABEL_LOGOUT,
+  LABEL_OPEN_MENU,
+  LABEL_PURCHASES,
+} from './layout.messages';
 import { ShellComponent } from './shell.component';
 
 const LOGOUT = '/api/v1/auth/logout';
@@ -29,7 +35,12 @@ describe('ShellComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([{ path: '', component: StubPage }]),
+        provideRouter([
+          { path: '', component: StubPage },
+          { path: 'lancamentos', component: StubPage },
+          { path: 'lancamentos/novo', component: StubPage },
+          { path: 'lancamentos/:id', component: StubPage },
+        ]),
         { provide: API_BASE_URL, useValue: '/api/v1' },
         { provide: BreakpointObserver, useClass: FakeBreakpointObserver },
         { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
@@ -234,25 +245,50 @@ describe('ShellComponent', () => {
     expect(await (await sidenav()).isOpen()).toBe(true);
   });
 
-  it('menu com um item', async () => {
+  it('menu com dois itens', async () => {
     const { el, navLinks } = await render();
     const links = navLinks();
-    expect(links).toHaveLength(1);
-    expect(links[0].querySelector('[matListItemTitle]')?.textContent).toBe(LABEL_HOME);
+    expect(links).toHaveLength(2);
+    expect(links.map((l) => l.querySelector('[matListItemTitle]')?.textContent)).toEqual([
+      LABEL_HOME,
+      LABEL_PURCHASES,
+    ]);
     expect(links[0].querySelector('[matListItemIcon]')?.textContent).toBe('home');
     expect(links[0].getAttribute('href')).toBe('/');
+    expect(links[1].querySelector('[matListItemIcon]')?.textContent).toBe('receipt_long');
+    expect(links[1].getAttribute('href')).toBe('/lancamentos');
     expect(el.querySelector('nav[aria-label="Navegação principal"] a[mat-list-item]')).toBe(
       links[0],
     );
   });
 
-  it('item ativo', async () => {
+  it('Lançamentos ativo nas três rotas', async () => {
+    const { fixture, navLinks } = await render();
+    for (const url of ['/lancamentos?ano=2026&mes=10', '/lancamentos/novo', '/lancamentos/42']) {
+      await TestBed.inject(Router).navigateByUrl(url);
+      await fixture.whenStable();
+      const [home, purchases] = navLinks();
+      expect(purchases.classList).toContain('nav-active');
+      expect(purchases.getAttribute('aria-current')).toBe('page');
+      expect(home.classList).not.toContain('nav-active');
+      expect(home.getAttribute('aria-current')).toBeNull();
+    }
+  });
+
+  it('Início continua exato', async () => {
     const { fixture, navLinks } = await render();
     await TestBed.inject(Router).navigateByUrl('/');
     await fixture.whenStable();
-    const link = navLinks()[0];
-    expect(link.classList).toContain('nav-active');
-    expect(link.getAttribute('aria-current')).toBe('page');
+    let [home, purchases] = navLinks();
+    expect(home.classList).toContain('nav-active');
+    expect(home.getAttribute('aria-current')).toBe('page');
+    expect(purchases.classList).not.toContain('nav-active');
+
+    await TestBed.inject(Router).navigateByUrl('/lancamentos');
+    await fixture.whenStable();
+    [home, purchases] = navLinks();
+    expect(home.classList).not.toContain('nav-active');
+    expect(purchases.classList).toContain('nav-active');
   });
 
   it('menu de conta', async () => {

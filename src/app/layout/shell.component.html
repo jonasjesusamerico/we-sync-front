@@ -43,7 +43,7 @@
             mat-list-item
             [routerLink]="item.path"
             routerLinkActive="nav-active"
-            [routerLinkActiveOptions]="{ exact: true }"
+            [routerLinkActiveOptions]="item.match"
             ariaCurrentWhenActive="page"
             (click)="onNavigate()"
           >

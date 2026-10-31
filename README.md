@@ -18,6 +18,16 @@ npm start
 
 Abra `http://localhost:4200`.
 
+## Rotas
+
+| Caminho               | Tela                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `/login`, `/cadastro` | acesso (visitante)                                                                   |
+| `/`                   | Início                                                                               |
+| `/lancamentos`        | lista do mês (`?ano=&mes=&status=&categoria=&forma=&pagina=`; sem mês, abre o atual) |
+| `/lancamentos/novo`   | novo lançamento                                                                      |
+| `/lancamentos/:id`    | edição de um lançamento                                                              |
+
 ## Tema
 
 Tema Material 3 próprio (feature 002). As paletas vêm do schematic do Material, a partir das cores do ADR-02:
@@ -55,7 +65,8 @@ npx playwright install chromium
 ```
 
 Depois, `npm run e2e`. A API **não** precisa estar de pé: tudo em `/api/v1/**` é respondido por `page.route`
-(`e2e/support/api-mock.ts`, com os exemplos do contrato). Se já houver um `npm start` rodando em `:4200`, ele é
+(`e2e/support/api-mock.ts` para `/auth/*` e `e2e/support/purchases-mock.ts`, um servidor falso com estado por token,
+para `/purchases`, `/categories` e `/payment-methods`, com os exemplos dos contratos). Se já houver um `npm start` rodando em `:4200`, ele é
 reaproveitado. Relatório em `playwright-report/` (`npx playwright show-report`).
 
 ### Fumaça contra a stack real

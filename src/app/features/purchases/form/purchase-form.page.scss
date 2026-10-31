@@ -1,0 +1,55 @@
+@use '../../../../styles/breakpoints' as bp;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+mat-card {
+  min-width: 0;
+}
+
+form,
+.load-error {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.field {
+  width: 100%;
+}
+
+app-form-alert {
+  margin-bottom: 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.actions button {
+  flex: 1 1 100%;
+}
+
+@media (min-width: bp.$wide) {
+  .actions button {
+    flex: 0 0 auto;
+  }
+}
+
+.actions mat-progress-spinner {
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.spinner {
+  margin: 32px auto;
+}

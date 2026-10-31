@@ -47,6 +47,21 @@ npm run e2e        # Playwright, API simulada (uma vez: npx playwright install c
   Shell: um pai `''` com filhas casa `/` mesmo sem filha).
 - Textos do layout em `layout/layout.messages.ts`, sem import do Angular (o `e2e/support/texts.ts` reexporta).
 
+## Dados da API (feature 003)
+
+- **Datas sem hora** (`"YYYY-MM-DD"` da API, `dd/mm/aaaa` na tela) só por `features/purchases/plain-date.ts`. Nunca
+  `new Date(string)`, `toISOString()` nem `DatePipe` sobre elas. O `mat-datepicker` usa o `BrDateAdapter`.
+- **Dinheiro** em centavos inteiros por `features/purchases/money.ts` (`parseBrl`, `formatBrl`, `centsToApi`,
+  `apiToCents`). Nada de `parseFloat` nem conta com `float`; a resposta vem sem zeros à direita (`"10"`, `"89.9"`).
+- **Estado de lista no endereço** (mês, filtros, página) com um normalizador puro (`list-query.ts`): todo valor do
+  endereço passa por ele antes de chegar à API, e toda ação da tela só navega.
+- **Sem cache** de dados fora das páginas: os serviços de API não guardam estado, e cada página carrega o que usa
+  (`switchMap` + `takeUntilDestroyed`).
+- `DateAdapter`, `MAT_DATE_FORMATS`, `MatPaginatorIntl` e `MatDatepickerIntl` em pt-BR ficam nos `providers` da rota
+  da feature (`purchases.routes.ts`), não no `app.config.ts`.
+- Formulário que avisa antes de sair: `canDeactivate: [unsavedChangesGuard]` na rota e `hasUnsavedChanges()` na
+  página (fotografia do valor, `beforeunload` no `host`). Sem sessão, o guard libera.
+
 ## Design system
 
 `docs/design-system.md`: inventário dos componentes e padrões de UI reutilizáveis e aprendizados sobre as libs
@@ -80,12 +95,15 @@ src/
       form-alert/      # aviso fixo no formulário
       brand/           # marca (ícone sync + we-sync)
       page-header/     # cabeçalho de tela interna (título + data)
+      confirm-dialog/  # confirmação genérica (openConfirm), com ação, carregando e erro dentro do diálogo
     layout/      # ShellComponent (topo, menu de conta, menu lateral), auth-layout/ (Login e Cadastro com abas),
                  # breakpoints.ts, nav-items.ts, layout.messages.ts
     features/
       auth/login/, auth/register/
       home/
+      purchases/       # lançamentos (003): rotas com providers próprios (purchases.routes.ts), list/, form/,
+                       # purchase.messages.ts, list-query.ts, plain-date.ts, money.ts, APIs sem estado
   testing/       # utilitários só de teste (FakeLockManager, FakeBreakpointObserver)
-e2e/             # Playwright (support/: api-mock, session, texts, layout, contrast, focus)
+e2e/             # Playwright (support/: api-mock, purchases-mock, session, texts, layout, contrast, focus)
 proxy.conf.json  # /api → http://localhost:8080
 ```

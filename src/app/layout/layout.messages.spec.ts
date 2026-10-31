@@ -6,6 +6,7 @@ import {
   LABEL_LOGOUT,
   LABEL_MAIN_NAV,
   LABEL_OPEN_MENU,
+  LABEL_PURCHASES,
 } from './layout.messages';
 
 describe('layout.messages', () => {
@@ -17,5 +18,6 @@ describe('layout.messages', () => {
     expect(LABEL_MAIN_NAV).toBe('Navegação principal');
     expect(LABEL_AUTH_TABS).toBe('Acesso');
     expect(LABEL_HOME).toBe('Início');
+    expect(LABEL_PURCHASES).toBe('Lançamentos');
   });
 });

@@ -9,6 +9,7 @@ import {
   LABEL_HOME,
   LABEL_MAIN_NAV,
   LABEL_OPEN_MENU,
+  LABEL_PURCHASES,
 } from './support/texts';
 
 test.use({ timezoneId: 'America/Sao_Paulo', locale: 'pt-BR' });
@@ -44,9 +45,12 @@ test.describe('layout', () => {
     await expect(page.getByRole('heading', { name: HOME_TITLE })).toBeVisible();
   });
 
-  test('um item no menu', async ({ page }) => {
+  test('dois itens no menu', async ({ page }) => {
     await openHome(page, 1280, 800);
-    await expect(nav(page).getByRole('link')).toHaveCount(1);
+    const links = nav(page).getByRole('link');
+    await expect(links).toHaveCount(2);
+    await expect(links.nth(0)).toHaveAccessibleName(LABEL_HOME);
+    await expect(links.nth(1)).toHaveAccessibleName(LABEL_PURCHASES);
   });
 
   test('CA-03 ☰ abre e o item fecha', async ({ page }) => {

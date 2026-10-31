@@ -15,6 +15,11 @@ export const routes: Routes = [
         title: 'Início · we-sync',
         loadComponent: () => import('./features/home/home.page').then((m) => m.HomePage),
       },
+      {
+        path: 'lancamentos',
+        loadChildren: () =>
+          import('./features/purchases/purchases.routes').then((m) => m.PURCHASE_ROUTES),
+      },
     ],
   },
   // Telas de visitante sob o layout dividido (ADR-04 da 002). Fica DEPOIS do Shell: um pai `''` com filhas casa `/`

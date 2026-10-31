@@ -1,0 +1,55 @@
+@use '../../../../styles/breakpoints' as bp;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+mat-card {
+  min-width: 0;
+}
+
+.toolbar {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.month {
+  justify-self: start;
+}
+
+@media (min-width: bp.$wide) {
+  .toolbar {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+
+  .new {
+    grid-column: 3;
+  }
+
+  .filters {
+    grid-column: 1 / -1;
+  }
+}
+
+.spinner {
+  margin: 32px auto;
+}
+
+.error,
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.empty p {
+  margin: 0;
+  font: var(--mat-sys-body-large);
+  color: var(--mat-sys-on-surface-variant);
+}
