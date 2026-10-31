@@ -1,5 +1,4 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { Location, registerLocaleData } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -10,15 +9,13 @@ import {
 import localePt from '@angular/common/locales/pt';
 import { ApplicationRef, ChangeDetectionStrategy, Component, LOCALE_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
-import { MatSelectHarness } from '@angular/material/select/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { throwError } from 'rxjs';
 
 import { FakeBreakpointObserver } from '../../../../testing/fake-breakpoint-observer';
+import { nativeSelect } from '../../../../testing/native-select';
 import {
   GLOBAL_CATEGORIES,
   GLOBAL_PAYMENT_METHODS,
@@ -28,6 +25,7 @@ import {
 import { RefreshError } from '../../../core/auth/refresh-error';
 import { API_BASE_URL } from '../../../core/http/api-base-url';
 import { MSG_CONNECTION, MSG_SERVER } from '../../../core/http/error-messages';
+import { Notifier } from '../../../shared/notifier/notifier';
 import {
   LABEL_CLEAR_FILTERS,
   LABEL_NEW_PURCHASE,
@@ -64,7 +62,6 @@ describe('PurchaseListPage', () => {
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: BASE },
         { provide: BreakpointObserver, useClass: FakeBreakpointObserver },
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
         { provide: LOCALE_ID, useValue: 'pt-BR' },
       ],
     });
@@ -75,7 +72,7 @@ describe('PurchaseListPage', () => {
 
   afterEach(() => {
     http.verify();
-    TestBed.inject(MatSnackBar).dismiss();
+    TestBed.inject(Notifier).dismiss();
     document.querySelectorAll('.cdk-overlay-container').forEach((el) => el.remove());
     vi.restoreAllMocks();
     vi.useRealTimers();
@@ -126,14 +123,14 @@ describe('PurchaseListPage', () => {
     return page(items, patch);
   };
 
-  const dataRows = () => root().querySelectorAll('tr.mat-mdc-row');
-  const spinner = () => root().querySelector('mat-progress-spinner');
+  const dataRows = () => root().querySelectorAll('tbody tr');
+  const spinner = () => root().querySelector('.spinner-border');
   const text = () => root().textContent ?? '';
   const button = (label: string) =>
     Array.from(root().querySelectorAll<HTMLElement>('button, a')).find(
       (b) => b.textContent?.trim() === label || b.getAttribute('aria-label') === label,
     );
-  const dialog = () => document.querySelector('mat-dialog-container') as HTMLElement | null;
+  const dialog = () => document.querySelector('cdk-dialog-container') as HTMLElement | null;
   const dialogButton = (label: string) =>
     Array.from(dialog()?.querySelectorAll<HTMLButtonElement>('button') ?? []).find(
       (b) => b.textContent?.trim() === label,
@@ -181,7 +178,7 @@ describe('PurchaseListPage', () => {
     await openWith('/lancamentos?ano=2026&mes=10', two());
     expect(root().querySelector('table')).not.toBeNull();
     expect(dataRows()).toHaveLength(2);
-    expect(root().querySelector('mat-paginator')).toBeNull();
+    expect(root().querySelector('app-paginator')).toBeNull();
   });
 
   it('celular', async () => {
@@ -193,9 +190,7 @@ describe('PurchaseListPage', () => {
 
   it('paginador', async () => {
     await openWith('/lancamentos?ano=2026&mes=10', many(20, { total: 47, total_pages: 3 }));
-    expect(root().querySelector('.mat-mdc-paginator-range-label')?.textContent?.trim()).toBe(
-      '1–20 de 47',
-    );
+    expect(root().querySelector('.range-label')?.textContent?.trim()).toBe('1–20 de 47');
     button('Próxima página')!.click();
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=10&pagina=2');
@@ -205,7 +200,7 @@ describe('PurchaseListPage', () => {
 
   it('uma página só', async () => {
     await openWith('/lancamentos?ano=2026&mes=10', many(15));
-    expect(root().querySelector('mat-paginator')).toBeNull();
+    expect(root().querySelector('app-paginator')).toBeNull();
   });
 
   it('vazio sem filtro', async () => {
@@ -241,10 +236,7 @@ describe('PurchaseListPage', () => {
 
   it('filtro volta à página 1', async () => {
     await openWith('/lancamentos?ano=2026&mes=10&pagina=2', many(20, { total: 47, page: 2 }));
-    const loader = TestbedHarnessEnvironment.loader(harness.fixture);
-    const [status] = await loader.getAllHarnesses(MatSelectHarness);
-    await status.open();
-    await status.clickOptions({ text: 'Pendente' });
+    nativeSelect(root().querySelector('app-purchase-filters select')!).select('Pendente');
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=10&status=PENDING');
     listRequest().flush(page([]));
@@ -375,12 +367,12 @@ describe('PurchaseListPage', () => {
   }
 
   it('excluir', async () => {
-    const open = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const open = vi.spyOn(TestBed.inject(Notifier), 'show');
     await openWith('/lancamentos?ano=2026&mes=10', two());
     const del = await deleteFirst();
     del.flush(null, { status: 204, statusText: 'No Content' });
     await settle();
-    expect(open).toHaveBeenCalledWith(MSG_DELETED, undefined, expect.anything());
+    expect(open).toHaveBeenCalledWith(MSG_DELETED);
     const req = listRequest();
     expect(params(req)).toEqual({ year: '2026', month: '10', page: '1', page_size: '20' });
     req.flush(page([purchase({ id: 41, description: 'Padaria' })]));
@@ -399,7 +391,7 @@ describe('PurchaseListPage', () => {
   });
 
   it('excluir 404', async () => {
-    const open = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    const open = vi.spyOn(TestBed.inject(Notifier), 'show');
     await openWith('/lancamentos?ano=2026&mes=10', two());
     const del = await deleteFirst();
     del.flush(
@@ -407,7 +399,7 @@ describe('PurchaseListPage', () => {
       { status: 404, statusText: 'NF' },
     );
     await settle();
-    expect(open).toHaveBeenCalledWith(MSG_DELETED, undefined, expect.anything());
+    expect(open).toHaveBeenCalledWith(MSG_DELETED);
     listRequest().flush(page([]));
     await settle();
   });

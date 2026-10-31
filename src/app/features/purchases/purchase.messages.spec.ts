@@ -74,18 +74,12 @@ describe('purchase.messages', () => {
     expect(m.savedInMonthMessage('setembro de 2026')).toBe('Lançamento salvo em setembro de 2026.');
     expect(m.MSG_DELETED).toBe('Lançamento excluído.');
     expect(m.MSG_NOT_FOUND).toBe('Lançamento não encontrado.');
-    expect(m.DATEPICKER_LABELS).toEqual({
-      openCalendarLabel: 'Abrir calendário',
-      closeCalendarLabel: 'Fechar calendário',
-      calendarLabel: 'Calendário',
-      prevMonthLabel: 'Mês anterior',
-      nextMonthLabel: 'Próximo mês',
-      prevYearLabel: 'Ano anterior',
-      nextYearLabel: 'Próximo ano',
-      prevMultiYearLabel: '24 anos anteriores',
-      nextMultiYearLabel: 'Próximos 24 anos',
-      switchToMonthViewLabel: 'Escolher data',
-      switchToMultiYearViewLabel: 'Escolher mês e ano',
+    expect(m.CALENDAR_LABELS).toEqual({
+      open: 'Abrir calendário',
+      calendar: 'Calendário',
+      previous: { days: 'Mês anterior', months: 'Ano anterior', years: '24 anos anteriores' },
+      next: { days: 'Próximo mês', months: 'Próximo ano', years: 'Próximos 24 anos' },
     });
+    expect(m.yearRangeLabel('2016', '2039')).toBe('2016 a 2039');
   });
 });

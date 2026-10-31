@@ -2,8 +2,7 @@ import { InteractivityChecker } from '@angular/cdk/a11y';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
-import { MatDialog } from '@angular/material/dialog';
+import { Dialog } from '@angular/cdk/dialog';
 import { Observable, Subject } from 'rxjs';
 
 import { RefreshError } from '../../core/auth/refresh-error';
@@ -20,15 +19,12 @@ const BASE: ConfirmDialogData = {
 };
 
 describe('ConfirmDialogComponent', () => {
-  let dialog: MatDialog;
+  let dialog: Dialog;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      providers: [{ provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } }],
-    });
     // O jsdom não tem layout: sem isto, nenhum botão é "visível" e o foco inicial fica no contêiner.
     vi.spyOn(TestBed.inject(InteractivityChecker), 'isVisible').mockReturnValue(true);
-    dialog = TestBed.inject(MatDialog);
+    dialog = TestBed.inject(Dialog);
   });
 
   afterEach(() => {
@@ -37,9 +33,9 @@ describe('ConfirmDialogComponent', () => {
   });
 
   const settle = () => TestBed.inject(ApplicationRef).whenStable();
-  const container = () => document.querySelector('mat-dialog-container') as HTMLElement | null;
+  const container = () => document.querySelector('cdk-dialog-container') as HTMLElement | null;
   const buttons = () =>
-    Array.from(container()?.querySelectorAll<HTMLButtonElement>('mat-dialog-actions button') ?? []);
+    Array.from(container()?.querySelectorAll<HTMLButtonElement>('.modal-footer button') ?? []);
   const cancelButton = () => buttons()[0];
   const confirmButton = () => buttons()[1];
 
@@ -114,7 +110,7 @@ describe('ConfirmDialogComponent', () => {
     await settle();
     expect(cancelButton().disabled).toBe(true);
     expect(confirmButton().disabled).toBe(true);
-    expect(container()!.querySelector('mat-progress-spinner')).not.toBeNull();
+    expect(container()!.querySelector('.spinner-border')).not.toBeNull();
     escape();
     await settle();
     expect(container()).not.toBeNull();

@@ -36,7 +36,7 @@ async function render() {
     host: fixture.componentInstance,
     input: () => el.querySelector('input') as HTMLInputElement,
     button: () => el.querySelector('button') as HTMLButtonElement,
-    error: () => el.querySelector('mat-error')?.textContent?.trim() ?? null,
+    error: () => el.querySelector('.invalid-feedback')?.textContent?.trim() ?? null,
   };
 }
 

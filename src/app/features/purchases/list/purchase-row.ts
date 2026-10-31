@@ -38,3 +38,10 @@ export function toPurchaseRow(p: Purchase): PurchaseRow {
     source: p,
   };
 }
+
+/** Cor do selo de status, como os `badge` da tabela do ArchitectUI. */
+export const STATUS_BADGE_CLASS: Readonly<Record<PurchaseStatus, string>> = {
+  PAID: 'bg-success',
+  PENDING: 'bg-warning',
+  CANCELED: 'bg-secondary',
+};

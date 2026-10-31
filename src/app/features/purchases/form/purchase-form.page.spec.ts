@@ -1,14 +1,10 @@
 import { InteractivityChecker } from '@angular/cdk/a11y';
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { registerLocaleData } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import localePt from '@angular/common/locales/pt';
 import { ApplicationRef, ChangeDetectionStrategy, Component, LOCALE_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
-import { MatSelectHarness } from '@angular/material/select/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -21,9 +17,11 @@ import {
   http404,
   PERSONAL_CATEGORIES,
 } from '../../../../testing/purchases-contract';
+import { nativeSelect, NativeSelect } from '../../../../testing/native-select';
 import { SESSION_KEY } from '../../../core/auth/session.store';
 import { API_BASE_URL } from '../../../core/http/api-base-url';
 import { MSG_CONNECTION, MSG_INVALID_DATA, MSG_SERVER } from '../../../core/http/error-messages';
+import { Notifier } from '../../../shared/notifier/notifier';
 import { ListQuery } from '../list-query';
 import {
   DISCARD_DIALOG_TITLE,
@@ -85,7 +83,6 @@ describe('PurchaseFormPage', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: BASE },
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
         { provide: LOCALE_ID, useValue: 'pt-BR' },
       ],
     });
@@ -93,12 +90,12 @@ describe('PurchaseFormPage', () => {
     harness = await RouterTestingHarness.create();
     http = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
-    snack = vi.spyOn(TestBed.inject(MatSnackBar), 'open');
+    snack = vi.spyOn(TestBed.inject(Notifier), 'show');
   });
 
   afterEach(() => {
     http.verify();
-    TestBed.inject(MatSnackBar).dismiss();
+    TestBed.inject(Notifier).dismiss();
     document.querySelectorAll('.cdk-overlay-container').forEach((el) => el.remove());
     localStorage.clear();
     vi.restoreAllMocks();
@@ -110,7 +107,6 @@ describe('PurchaseFormPage', () => {
     await TestBed.inject(ApplicationRef).whenStable();
   };
   const root = () => harness.fixture.nativeElement as HTMLElement;
-  const loader = () => TestbedHarnessEnvironment.loader(harness.fixture);
   const page = () =>
     harness.fixture.debugElement.query((d) => d.componentInstance instanceof PurchaseFormPage)
       ?.componentInstance as PurchaseFormPage | undefined;
@@ -148,12 +144,12 @@ describe('PurchaseFormPage', () => {
     );
   const fieldError = (index: number) =>
     root()
-      .querySelectorAll('mat-form-field')
+      .querySelectorAll('.field')
       .item(index)
-      .querySelector('mat-error')
+      .querySelector('.invalid-feedback')
       ?.textContent?.trim() ?? null;
   const alert = () => root().querySelector('form app-form-alert')?.textContent?.trim() ?? null;
-  const dialog = () => document.querySelector('mat-dialog-container') as HTMLElement | null;
+  const dialog = () => document.querySelector('cdk-dialog-container') as HTMLElement | null;
   const dialogButton = (label: string) =>
     Array.from(dialog()?.querySelectorAll<HTMLButtonElement>('button') ?? []).find(
       (b) => b.textContent?.trim() === label,
@@ -167,13 +163,14 @@ describe('PurchaseFormPage', () => {
   }
 
   async function selects() {
-    const [category, paymentMethod, status] = await loader().getAllHarnesses(MatSelectHarness);
+    const [category, paymentMethod, status] = Array.from(
+      root().querySelectorAll<HTMLSelectElement>('form select'),
+    ).map(nativeSelect);
     return { category, paymentMethod, status };
   }
 
-  async function choose(select: MatSelectHarness, text: string) {
-    await select.open();
-    await select.clickOptions({ text });
+  async function choose(select: NativeSelect, text: string) {
+    select.select(text);
     await settle();
   }
 
@@ -196,7 +193,7 @@ describe('PurchaseFormPage', () => {
 
   it('novo carrega as opções', async () => {
     await open('/lancamentos/novo');
-    expect(root().querySelector('mat-progress-spinner')).not.toBeNull();
+    expect(root().querySelector('.spinner-border')).not.toBeNull();
     expect(root().querySelector('form')).toBeNull();
     expect(http.match((r) => r.url.startsWith(`${BASE}/purchases`))).toHaveLength(0);
     flushOptions();
@@ -245,7 +242,7 @@ describe('PurchaseFormPage', () => {
       await open(`/lancamentos/${id}`);
       expect(http.match((r) => r.url.startsWith(`${BASE}/purchases`))).toHaveLength(0);
       expect(router.url).toBe('/lancamentos?ano=2026&mes=10');
-      expect(snack).toHaveBeenCalledWith(MSG_NOT_FOUND, undefined, expect.anything());
+      expect(snack).toHaveBeenCalledWith(MSG_NOT_FOUND);
       // As opções não são pedidas: a página sai antes.
       expect(http.match(() => true)).toHaveLength(0);
     }
@@ -262,7 +259,7 @@ describe('PurchaseFormPage', () => {
     http.expectOne(`${BASE}/payment-methods`).flush(GLOBAL_PAYMENT_METHODS);
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=10');
-    expect(snack).toHaveBeenCalledWith(MSG_NOT_FOUND, undefined, expect.anything());
+    expect(snack).toHaveBeenCalledWith(MSG_NOT_FOUND);
   });
 
   it('400 no GET', async () => {
@@ -274,7 +271,7 @@ describe('PurchaseFormPage', () => {
     flushOptions();
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=10');
-    expect(snack).toHaveBeenCalledWith(MSG_NOT_FOUND, undefined, expect.anything());
+    expect(snack).toHaveBeenCalledWith(MSG_NOT_FOUND);
   });
 
   it('opções não carregam', async () => {
@@ -318,7 +315,7 @@ describe('PurchaseFormPage', () => {
       queryParams: { ano: '2026', mes: '10', status: 'PENDING', pagina: '2' },
       replaceUrl: true,
     });
-    expect(snack).toHaveBeenCalledWith(MSG_SAVED, undefined, expect.anything());
+    expect(snack).toHaveBeenCalledWith(MSG_SAVED);
   });
 
   it('salvo em outro mês', async () => {
@@ -332,11 +329,7 @@ describe('PurchaseFormPage', () => {
     req.flush(created({ purchase_date: '2026-09-10' }), { status: 201, statusText: 'Created' });
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=10');
-    expect(snack).toHaveBeenCalledWith(
-      'Lançamento salvo em setembro de 2026.',
-      undefined,
-      expect.anything(),
-    );
+    expect(snack).toHaveBeenCalledWith('Lançamento salvo em setembro de 2026.');
   });
 
   it('envio único', async () => {
@@ -349,7 +342,7 @@ describe('PurchaseFormPage', () => {
     await settle();
     expect(button(LABEL_SAVE)!.disabled).toBe(true);
     expect(button(LABEL_SAVE_AND_NEW)!.disabled).toBe(true);
-    expect(button(LABEL_SAVE)!.querySelector('mat-progress-spinner')).not.toBeNull();
+    expect(button(LABEL_SAVE)!.querySelector('.spinner-border')).not.toBeNull();
     const req = saveRequest('POST');
     req.flush(created(), { status: 201, statusText: 'Created' });
     await settle();
@@ -360,7 +353,7 @@ describe('PurchaseFormPage', () => {
     await fill();
     button(LABEL_SAVE_AND_NEW)!.click();
     await settle();
-    expect(button(LABEL_SAVE_AND_NEW)!.querySelector('mat-progress-spinner')).not.toBeNull();
+    expect(button(LABEL_SAVE_AND_NEW)!.querySelector('.spinner-border')).not.toBeNull();
     saveRequest('POST').flush(created({ purchase_date: '2026-09-01' }), {
       status: 201,
       statusText: 'Created',
@@ -375,7 +368,7 @@ describe('PurchaseFormPage', () => {
     expect(await s.paymentMethod.getValueText()).toBe('Pix');
     expect(await s.status.getValueText()).toBe('Pago');
     expect(document.activeElement).toBe(descriptionInput());
-    expect(snack).toHaveBeenCalledWith(MSG_SAVED, undefined, expect.anything());
+    expect(snack).toHaveBeenCalledWith(MSG_SAVED);
     expect(button(LABEL_SAVE)!.disabled).toBe(false);
     expect(button(LABEL_SAVE_AND_NEW)!.disabled).toBe(false);
     expect(fieldError(1)).toBeNull();
@@ -392,7 +385,7 @@ describe('PurchaseFormPage', () => {
     req.flush({ ...CONTRACT_PURCHASE, status: 'PENDING' });
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=10');
-    expect(snack).toHaveBeenCalledWith(MSG_SAVED, undefined, expect.anything());
+    expect(snack).toHaveBeenCalledWith(MSG_SAVED);
   });
 
   it('categoria sumiu', async () => {
@@ -414,10 +407,8 @@ describe('PurchaseFormPage', () => {
     expect(await s.category.getValueText()).toBe('');
     flushOptions(all.filter((o) => o.id !== 31));
     await settle();
-    await s.category.open();
     const names = await Promise.all((await s.category.getOptions()).map((o) => o.getText()));
     expect(names).not.toContain('Academia');
-    await s.category.close();
   });
 
   it('forma sumiu', async () => {
@@ -459,7 +450,7 @@ describe('PurchaseFormPage', () => {
     saveRequest('PUT').flush(http404('NOT_FOUND').body, http404('NOT_FOUND').opts);
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=9');
-    expect(snack).toHaveBeenCalledWith(MSG_PURCHASE_GONE, undefined, expect.anything());
+    expect(snack).toHaveBeenCalledWith(MSG_PURCHASE_GONE);
   });
 
   it('404 de instância antiga', async () => {
@@ -527,7 +518,7 @@ describe('PurchaseFormPage', () => {
     }
     await settle();
     expect(router.url).toBe('/lancamentos?ano=2026&mes=9');
-    expect(snack).toHaveBeenCalledWith(MSG_DELETED, undefined, expect.anything());
+    expect(snack).toHaveBeenCalledWith(MSG_DELETED);
   }
 
   it('excluir pela edição', async () => {
@@ -554,7 +545,6 @@ describe('PurchaseFormPage', () => {
     const shuffled = [PERSONAL_CATEGORIES[1], ...GLOBAL_CATEGORIES, PERSONAL_CATEGORIES[0]];
     await openNew(undefined, shuffled);
     const { category } = await selects();
-    await category.open();
     const names = await Promise.all((await category.getOptions()).map((o) => o.getText()));
     expect(names).toEqual([
       'Academia',
@@ -566,7 +556,6 @@ describe('PurchaseFormPage', () => {
       'Saúde',
       'Transporte',
     ]);
-    await category.close();
   });
 
   it('o 404 do lançamento editado devolve ao mês da origem', async () => {

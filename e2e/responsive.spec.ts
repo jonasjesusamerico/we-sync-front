@@ -40,10 +40,9 @@ test.describe('responsive', () => {
 
   test('CA-07 login no celular', async ({ page }) => {
     await page.goto('/login');
-    const brand = page.locator('.brand-small');
+    const brand = page.locator('app-auth-layout app-brand');
     const tablist = page.getByRole('tablist');
 
-    await expect(page.locator('aside')).toBeHidden();
     await expect(brand).toBeVisible();
     await expect(brand.locator('.name')).toHaveText(APP_NAME);
     const brandBox = await brand.boundingBox();

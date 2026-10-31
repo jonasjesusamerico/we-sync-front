@@ -1,8 +1,7 @@
 import { InteractivityChecker } from '@angular/cdk/a11y';
+import { Dialog } from '@angular/cdk/dialog';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { isObservable, Observable } from 'rxjs';
 
@@ -13,23 +12,20 @@ import { unsavedChangesGuard, UnsavedChangesAware } from './unsaved-changes.guar
 describe('unsavedChangesGuard', () => {
   beforeEach(() => {
     localStorage.setItem(SESSION_KEY, JSON.stringify({ access_token: 'A1', refresh_token: 'R1' }));
-    TestBed.configureTestingModule({
-      providers: [{ provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } }],
-    });
     vi.spyOn(TestBed.inject(InteractivityChecker), 'isVisible').mockReturnValue(true);
   });
 
   afterEach(() => {
-    TestBed.inject(MatDialog).closeAll();
+    TestBed.inject(Dialog).closeAll();
     document.querySelectorAll('.cdk-overlay-container').forEach((el) => el.remove());
     localStorage.clear();
     vi.restoreAllMocks();
   });
 
   const settle = () => TestBed.inject(ApplicationRef).whenStable();
-  const dialog = () => document.querySelector('mat-dialog-container') as HTMLElement | null;
+  const dialog = () => document.querySelector('cdk-dialog-container') as HTMLElement | null;
   const buttons = () =>
-    Array.from(dialog()?.querySelectorAll<HTMLButtonElement>('mat-dialog-actions button') ?? []);
+    Array.from(dialog()?.querySelectorAll<HTMLButtonElement>('.modal-footer button') ?? []);
 
   function run(dirty: boolean) {
     const component: UnsavedChangesAware = { hasUnsavedChanges: () => dirty };
@@ -96,8 +92,7 @@ describe('unsavedChangesGuard', () => {
   });
 
   it('rota usa o guard', () => {
-    const children = PURCHASE_ROUTES[0].children!;
-    const byPath = (path: string) => children.find((r) => r.path === path)!;
+    const byPath = (path: string) => PURCHASE_ROUTES.find((r) => r.path === path)!;
     expect(byPath('novo').canDeactivate).toEqual([unsavedChangesGuard]);
     expect(byPath(':id').canDeactivate).toEqual([unsavedChangesGuard]);
     expect(byPath('').canDeactivate).toBeUndefined();

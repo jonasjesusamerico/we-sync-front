@@ -155,10 +155,8 @@ async function login(page: Page) {
 async function fillForm(page: Page) {
   await field(page, LABEL_DESCRIPTION).fill('Mercado');
   await field(page, LABEL_AMOUNT).fill('10,00');
-  await page.getByRole('combobox', { name: LABEL_CATEGORY }).click();
-  await page.getByRole('option', { name: 'Alimentação' }).click();
-  await page.getByRole('combobox', { name: LABEL_PAYMENT_METHOD }).click();
-  await page.getByRole('option', { name: 'Pix' }).click();
+  await page.getByRole('combobox', { name: LABEL_CATEGORY }).selectOption({ label: 'Alimentação' });
+  await page.getByRole('combobox', { name: LABEL_PAYMENT_METHOD }).selectOption({ label: 'Pix' });
 }
 
 test.describe('session com lançamentos', () => {

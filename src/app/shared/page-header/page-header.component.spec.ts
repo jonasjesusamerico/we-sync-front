@@ -29,7 +29,7 @@ describe('PageHeaderComponent', () => {
 
   it('título do cabeçalho', async () => {
     const { el } = await render();
-    expect(el.querySelector('mat-card h1')?.textContent).toBe('Início');
+    expect(el.querySelector('.app-page-title h1')?.textContent).toBe('Início');
   });
 
   it('data de hoje', async () => {
@@ -40,8 +40,8 @@ describe('PageHeaderComponent', () => {
     const time = el.querySelector('time');
     expect(time?.textContent).toBe('21/10/2026, quarta-feira');
     expect(time?.getAttribute('datetime')).toBe('2026-10-21');
-    const icon = el.querySelector('.date mat-icon');
-    expect(icon?.textContent?.trim()).toBe('calendar_today');
+    const icon = el.querySelector('.page-title-icon i');
+    expect(icon?.classList).toContain('pe-7s-home');
     expect(icon?.getAttribute('aria-hidden')).toBe('true');
   });
 

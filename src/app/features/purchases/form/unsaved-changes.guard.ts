@@ -1,5 +1,5 @@
+import { Dialog } from '@angular/cdk/dialog';
 import { inject } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { CanDeactivateFn } from '@angular/router';
 
 import { SessionStore } from '../../../core/auth/session.store';
@@ -30,5 +30,5 @@ export const unsavedChangesGuard: CanDeactivateFn<UnsavedChangesAware> = (compon
     return true;
   }
   // "Descartar" = true; "Continuar editando", Esc ou fundo = false.
-  return openConfirm(inject(MatDialog), DISCARD_DIALOG);
+  return openConfirm(inject(Dialog), DISCARD_DIALOG);
 };

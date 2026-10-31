@@ -4,7 +4,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import localePt from '@angular/common/locales/pt';
 import { TestBed } from '@angular/core/testing';
-import { DateAdapter, MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
@@ -12,7 +11,6 @@ import { FakeBreakpointObserver } from '../../../testing/fake-breakpoint-observe
 import { routes } from '../../app.routes';
 import { SESSION_KEY } from '../../core/auth/session.store';
 import { API_BASE_URL } from '../../core/http/api-base-url';
-import { BrDateAdapter } from './br-date-adapter';
 import { PurchaseFormPage } from './form/purchase-form.page';
 import { PurchaseListPage } from './list/purchase-list.page';
 
@@ -30,7 +28,6 @@ describe('PURCHASE_ROUTES', () => {
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: '/api/v1' },
         { provide: BreakpointObserver, useClass: FakeBreakpointObserver },
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
       ],
     });
     harness = await RouterTestingHarness.create();
@@ -61,10 +58,5 @@ describe('PURCHASE_ROUTES', () => {
       expect(document.title).toBe(title);
       expect((page.nativeElement as HTMLElement).querySelector('h1')?.textContent).toBe(heading);
     }
-  });
-
-  it('adapter da feature', async () => {
-    const page = await open('/lancamentos/novo');
-    expect(page.injector.get(DateAdapter)).toBeInstanceOf(BrDateAdapter);
   });
 });

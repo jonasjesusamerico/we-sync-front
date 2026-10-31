@@ -1,15 +1,15 @@
-<app-page-header [title]="text.title" />
-<mat-card>
-  <mat-card-content>
+<app-page-header [title]="text.title" icon="pe-7s-note2" />
+<div class="main-card mb-3 card">
+  <div class="card-body">
     @switch (status()) {
       @case ('loading') {
-        <mat-progress-spinner
-          class="spinner"
-          mode="indeterminate"
-          diameter="40"
-          role="progressbar"
-          [attr.aria-label]="text.loading"
-        />
+        <div class="loading">
+          <div
+            class="spinner-border text-primary"
+            role="progressbar"
+            [attr.aria-label]="text.loading"
+          ></div>
+        </div>
       }
       @case ('error') {
         <div class="load-error">
@@ -18,9 +18,11 @@
           }
           <div class="actions">
             @if (loadError()) {
-              <button mat-stroked-button type="button" (click)="load()">{{ text.retry }}</button>
+              <button type="button" class="btn btn-outline-primary" (click)="load()">
+                {{ text.retry }}
+              </button>
             }
-            <button mat-button type="button" (click)="cancel()">{{ text.cancel }}</button>
+            <button type="button" class="btn btn-link" (click)="cancel()">{{ text.cancel }}</button>
           </div>
         </div>
       }
@@ -30,90 +32,177 @@
             <app-form-alert>{{ msg }}</app-form-alert>
           }
 
-          <mat-form-field class="field">
-            <mat-label>{{ text.date }}</mat-label>
-            <input matInput [matDatepicker]="picker" formControlName="date" autocomplete="off" />
-            <mat-hint>{{ text.dateHint }}</mat-hint>
-            <mat-datepicker-toggle matIconSuffix [for]="picker" />
-            <mat-datepicker #picker />
-            <mat-error>{{ dateError() }}</mat-error>
-          </mat-form-field>
+          <div class="mb-3 field">
+            <label class="form-label" for="purchase-date">{{ text.date }}</label>
+            <div class="input-group has-validation" cdkOverlayOrigin #dateOrigin="cdkOverlayOrigin">
+              <input
+                id="purchase-date"
+                class="form-control"
+                appBrDateInput
+                formControlName="date"
+                [class.is-invalid]="dateError() !== null"
+                [attr.aria-invalid]="dateError() !== null"
+                [attr.aria-describedby]="
+                  dateError() !== null
+                    ? 'purchase-date-hint purchase-date-error'
+                    : 'purchase-date-hint'
+                "
+              />
+              <button
+                type="button"
+                class="btn btn-outline-secondary calendar-toggle"
+                [attr.aria-label]="text.openCalendar"
+                aria-haspopup="dialog"
+                [attr.aria-expanded]="calendarOpen()"
+                (click)="openCalendar()"
+              >
+                <i class="pe-7s-date" aria-hidden="true"></i>
+              </button>
+              @if (dateError(); as message) {
+                <div class="invalid-feedback" id="purchase-date-error">{{ message }}</div>
+              }
+            </div>
+            <div class="form-text" id="purchase-date-hint">{{ text.dateHint }}</div>
+            <ng-template
+              cdkConnectedOverlay
+              [cdkConnectedOverlayOrigin]="dateOrigin"
+              [cdkConnectedOverlayOpen]="calendarOpen()"
+              (overlayOutsideClick)="calendarOpen.set(false)"
+              (overlayKeydown)="onCalendarKeydown($event)"
+              (detach)="calendarOpen.set(false)"
+            >
+              <app-calendar-panel
+                mode="day"
+                [selected]="calendarSelection()"
+                [startAt]="today"
+                [today]="today"
+                (daySelected)="pickDate($event)"
+              />
+            </ng-template>
+          </div>
 
-          <mat-form-field class="field">
-            <mat-label>{{ text.description }}</mat-label>
-            <input matInput #description formControlName="description" autocomplete="off" />
-            <mat-error>{{ descriptionError() }}</mat-error>
-          </mat-form-field>
+          <div class="mb-3 field">
+            <label class="form-label" for="purchase-description">{{ text.description }}</label>
+            <input
+              #description
+              id="purchase-description"
+              class="form-control"
+              formControlName="description"
+              autocomplete="off"
+              [class.is-invalid]="descriptionError() !== null"
+              [attr.aria-invalid]="descriptionError() !== null"
+              [attr.aria-describedby]="
+                descriptionError() !== null ? 'purchase-description-error' : null
+              "
+            />
+            @if (descriptionError(); as message) {
+              <div class="invalid-feedback" id="purchase-description-error">{{ message }}</div>
+            }
+          </div>
 
-          <mat-form-field class="field">
-            <mat-label>{{ text.amount }}</mat-label>
-            <span matTextPrefix>R$&nbsp;</span>
-            <input matInput appMoneyInput formControlName="amount" />
-            <mat-error>{{ amountError() }}</mat-error>
-          </mat-form-field>
+          <div class="mb-3 field">
+            <label class="form-label" for="purchase-amount">{{ text.amount }}</label>
+            <div class="input-group has-validation">
+              <span class="input-group-text" aria-hidden="true">R$</span>
+              <input
+                id="purchase-amount"
+                class="form-control"
+                appMoneyInput
+                formControlName="amount"
+                [class.is-invalid]="amountError() !== null"
+                [attr.aria-invalid]="amountError() !== null"
+                [attr.aria-describedby]="amountError() !== null ? 'purchase-amount-error' : null"
+              />
+              @if (amountError(); as message) {
+                <div class="invalid-feedback" id="purchase-amount-error">{{ message }}</div>
+              }
+            </div>
+          </div>
 
-          <mat-form-field class="field">
-            <mat-label>{{ text.category }}</mat-label>
-            <mat-select formControlName="categoryId">
+          <div class="mb-3 field">
+            <label class="form-label" for="purchase-category">{{ text.category }}</label>
+            <select
+              id="purchase-category"
+              class="form-select"
+              formControlName="categoryId"
+              [class.is-invalid]="categoryError() !== null"
+              [attr.aria-invalid]="categoryError() !== null"
+              [attr.aria-describedby]="categoryError() !== null ? 'purchase-category-error' : null"
+            >
+              <option [ngValue]="null" hidden></option>
               @for (o of categories(); track o.id) {
-                <mat-option [value]="o.id">{{ o.name }}</mat-option>
+                <option [ngValue]="o.id">{{ o.name }}</option>
               }
-            </mat-select>
-            <mat-error>{{ categoryError() }}</mat-error>
-          </mat-form-field>
+            </select>
+            @if (categoryError(); as message) {
+              <div class="invalid-feedback" id="purchase-category-error">{{ message }}</div>
+            }
+          </div>
 
-          <mat-form-field class="field">
-            <mat-label>{{ text.paymentMethod }}</mat-label>
-            <mat-select formControlName="paymentMethodId">
+          <div class="mb-3 field">
+            <label class="form-label" for="purchase-payment-method">{{ text.paymentMethod }}</label>
+            <select
+              id="purchase-payment-method"
+              class="form-select"
+              formControlName="paymentMethodId"
+              [class.is-invalid]="paymentMethodError() !== null"
+              [attr.aria-invalid]="paymentMethodError() !== null"
+              [attr.aria-describedby]="
+                paymentMethodError() !== null ? 'purchase-payment-method-error' : null
+              "
+            >
+              <option [ngValue]="null" hidden></option>
               @for (o of paymentMethods(); track o.id) {
-                <mat-option [value]="o.id">{{ o.name }}</mat-option>
+                <option [ngValue]="o.id">{{ o.name }}</option>
               }
-            </mat-select>
-            <mat-error>{{ paymentMethodError() }}</mat-error>
-          </mat-form-field>
+            </select>
+            @if (paymentMethodError(); as message) {
+              <div class="invalid-feedback" id="purchase-payment-method-error">{{ message }}</div>
+            }
+          </div>
 
-          <mat-form-field class="field">
-            <mat-label>{{ text.status }}</mat-label>
-            <mat-select formControlName="status">
+          <div class="mb-3 field">
+            <label class="form-label" for="purchase-status">{{ text.status }}</label>
+            <select id="purchase-status" class="form-select" formControlName="status">
               @for (s of statuses; track s) {
-                <mat-option [value]="s">{{ statusLabels[s] }}</mat-option>
+                <option [ngValue]="s">{{ statusLabels[s] }}</option>
               }
-            </mat-select>
-          </mat-form-field>
+            </select>
+          </div>
 
           <div class="actions">
-            <button mat-flat-button type="submit" [disabled]="submitting() !== null">
+            <button type="submit" class="btn btn-primary" [disabled]="submitting() !== null">
               @if (submitting() === 'save') {
-                <mat-progress-spinner diameter="20" mode="indeterminate" />
+                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
               }
               {{ text.save }}
             </button>
             @if (mode === 'create') {
               <button
-                mat-stroked-button
                 type="button"
+                class="btn btn-outline-primary"
                 [disabled]="submitting() !== null"
                 (click)="submit('save-new')"
               >
                 @if (submitting() === 'save-new') {
-                  <mat-progress-spinner diameter="20" mode="indeterminate" />
+                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
                 }
                 {{ text.saveAndNew }}
               </button>
             } @else {
               <button
-                mat-stroked-button
                 type="button"
+                class="btn btn-outline-danger"
                 [disabled]="submitting() !== null"
                 (click)="confirmDelete()"
               >
                 {{ text.delete }}
               </button>
             }
-            <button mat-button type="button" (click)="cancel()">{{ text.cancel }}</button>
+            <button type="button" class="btn btn-link" (click)="cancel()">{{ text.cancel }}</button>
           </div>
         </form>
       }
     }
-  </mat-card-content>
-</mat-card>
+  </div>
+</div>

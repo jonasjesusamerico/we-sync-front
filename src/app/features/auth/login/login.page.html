@@ -5,24 +5,39 @@
       <app-form-alert [kind]="current.kind">{{ current.message }}</app-form-alert>
     }
 
-    <mat-form-field class="field">
-      <mat-label>{{ text.email }}</mat-label>
-      <input matInput type="email" autocomplete="email" inputmode="email" formControlName="email" />
-      <mat-error>{{ emailError() }}</mat-error>
-    </mat-form-field>
+    <div class="mb-3 field">
+      <label class="form-label" for="login-email">{{ text.email }}</label>
+      <input
+        id="login-email"
+        class="form-control form-control-lg"
+        type="email"
+        autocomplete="email"
+        inputmode="email"
+        formControlName="email"
+        [class.is-invalid]="emailError() !== null"
+        [attr.aria-invalid]="emailError() !== null"
+        [attr.aria-describedby]="emailError() !== null ? 'login-email-error' : null"
+      />
+      @if (emailError(); as message) {
+        <div class="invalid-feedback" id="login-email-error">{{ message }}</div>
+      }
+    </div>
 
     <app-password-field
+      class="mb-3 field"
       [control]="form.controls.password"
       [label]="text.password"
       kind="password"
       autocomplete="current-password"
     />
 
-    <button mat-flat-button class="submit" type="submit" [disabled]="submitting()">
-      @if (submitting()) {
-        <mat-progress-spinner diameter="20" mode="indeterminate" />
-      }
-      {{ text.login }}
-    </button>
+    <div class="actions">
+      <button class="btn btn-primary btn-lg px-4 submit" type="submit" [disabled]="submitting()">
+        @if (submitting()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        {{ text.login }}
+      </button>
+    </div>
   </form>
 </div>

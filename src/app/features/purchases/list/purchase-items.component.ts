@@ -1,52 +1,49 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 import { ListQuery } from '../list-query';
 import { deleteLabel } from '../purchase.messages';
-import { PurchaseRow } from './purchase-row';
+import { PurchaseRow, STATUS_BADGE_CLASS } from './purchase-row';
 
-/** RF-08: lista em itens compactos (modo estreito). O botão de excluir fica fora do link (ADR-09). */
+/** RF-08: lista em itens compactos (`list-group`, modo estreito). O botão de excluir fica fora do link (ADR-09). */
 @Component({
   selector: 'app-purchase-items',
-  imports: [RouterLink, MatIconButton, MatIcon],
+  imports: [RouterLink],
   template: `
-    <ul class="items">
+    <ul class="items list-group list-group-flush">
       @for (row of rows(); track row.id) {
-        <li [class.canceled]="row.canceled">
+        <li class="list-group-item" [class.canceled]="row.canceled">
           <a class="item" [routerLink]="['/lancamentos', row.id]" [state]="{ origin: origin() }">
             <span class="line">
               <span class="description">{{ row.description }}</span>
               <span class="amount">{{ row.amount }}</span>
             </span>
             <span class="meta">{{ row.date }} · {{ row.category }} · {{ row.paymentMethod }}</span>
-            <span class="status">{{ row.statusLabel }}</span>
+            <span class="status"
+              ><span class="badge" [class]="badgeClass[row.status]">{{
+                row.statusLabel
+              }}</span></span
+            >
           </a>
           <button
-            mat-icon-button
             type="button"
+            class="btn btn-sm btn-outline-danger delete"
             [attr.aria-label]="deleteLabel(row.description)"
             (click)="remove.emit(row)"
           >
-            <mat-icon aria-hidden="true">delete</mat-icon>
+            <i class="pe-7s-trash" aria-hidden="true"></i>
           </button>
         </li>
       }
     </ul>
   `,
   styles: `
-    .items {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-
     li {
       display: flex;
       align-items: center;
       gap: 8px;
-      border-bottom: 1px solid var(--mat-sys-outline-variant);
+      padding-left: 0;
+      padding-right: 0;
     }
 
     .item {
@@ -54,7 +51,6 @@ import { PurchaseRow } from './purchase-row';
       min-width: 0;
       display: grid;
       gap: 2px;
-      padding: 12px 0;
       color: inherit;
       text-decoration: none;
     }
@@ -63,7 +59,7 @@ import { PurchaseRow } from './purchase-row';
       display: flex;
       justify-content: space-between;
       gap: 8px;
-      font: var(--mat-sys-title-small);
+      font-weight: 600;
     }
 
     .description {
@@ -76,14 +72,18 @@ import { PurchaseRow } from './purchase-row';
       font-variant-numeric: tabular-nums;
     }
 
-    .meta,
-    .status {
-      font: var(--mat-sys-body-small);
-      color: var(--mat-sys-on-surface-variant);
+    .meta {
+      font-size: 0.8rem;
+      color: var(--app-muted);
+    }
+
+    .delete {
+      font-size: 1.3rem;
+      line-height: 1;
     }
 
     .canceled .item {
-      color: var(--mat-sys-on-surface-variant);
+      color: var(--app-muted);
     }
 
     .canceled .amount {
@@ -98,4 +98,5 @@ export class PurchaseItemsComponent {
   readonly remove = output<PurchaseRow>();
 
   protected readonly deleteLabel = deleteLabel;
+  protected readonly badgeClass = STATUS_BADGE_CLASS;
 }

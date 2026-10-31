@@ -1,39 +1,31 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { MatCard, MatCardContent } from '@angular/material/card';
 
 import { LABEL_HOME } from '../../layout/layout.messages';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 
 export const HOME_TITLE = 'Bem-vindo ao we-sync';
 
-/** RF-09, RF-10, RF-11: Início com o cabeçalho de página e um cartão de boas-vindas. */
+/** RF-09, RF-10, RF-11: Início com o cabeçalho de página e um cartão de boas-vindas (`main-card` do template). */
 @Component({
   selector: 'app-home-page',
-  imports: [PageHeaderComponent, MatCard, MatCardContent],
+  imports: [PageHeaderComponent],
   template: `
-    <app-page-header [title]="pageTitle" />
-    <mat-card>
-      <mat-card-content>
-        <h2>{{ title }}</h2>
-      </mat-card-content>
-    </mat-card>
+    <app-page-header [title]="pageTitle" icon="pe-7s-home" />
+    <div class="main-card mb-3 card">
+      <div class="card-body">
+        <h2 class="card-title">{{ title }}</h2>
+      </div>
+    </div>
   `,
   styles: `
     :host {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+      display: block;
       min-width: 0;
     }
 
-    mat-card {
-      min-width: 0;
-    }
-
-    h2 {
+    .card-title {
       margin: 0;
-      font: var(--mat-sys-title-large);
-      color: var(--mat-sys-on-surface);
+      font-size: 1.1rem;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

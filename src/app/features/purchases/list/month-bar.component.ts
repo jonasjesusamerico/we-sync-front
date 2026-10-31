@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { MatButton, MatIconButton } from '@angular/material/button';
-import { MatDatepicker, MatDatepickerInput } from '@angular/material/datepicker';
-import { MatIcon } from '@angular/material/icon';
+import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
+import { CalendarPanelComponent, YearMonth } from '../calendar/calendar-panel.component';
 import { canShiftMonth, shiftMonth } from '../list-query';
-import { formatMonthLabel, fromLocalDate, toLocalDate } from '../plain-date';
+import { formatMonthLabel, todayPlain } from '../plain-date';
 import {
   LABEL_CURRENT_MONTH,
   LABEL_NEXT_MONTH,
@@ -12,86 +11,93 @@ import {
   pickMonthLabel,
 } from '../purchase.messages';
 
-export interface YearMonth {
-  year: number;
-  month: number;
-}
+export type { YearMonth };
 
 /**
- * RF-05: mês da lista com ‹ e ›, seletor de mês e ano (calendário em `multi-year`) e "Mês atual". Só emite; quem
- * navega é a página. O calendário se ancora num input invisível, fora da ordem de foco, embaixo do botão do mês.
+ * RF-05: mês da lista com ‹ e ›, seletor de mês e ano (grade de anos, depois meses) e "Mês atual". Só emite; quem
+ * navega é a página.
  */
 @Component({
   selector: 'app-month-bar',
-  imports: [MatIconButton, MatButton, MatIcon, MatDatepicker, MatDatepickerInput],
+  imports: [CdkOverlayOrigin, CdkConnectedOverlay, CalendarPanelComponent],
   template: `
-    <button
-      mat-icon-button
-      type="button"
-      [attr.aria-label]="text.previous"
-      [disabled]="!canPrev()"
-      (click)="shift(-1)"
-    >
-      <mat-icon aria-hidden="true">chevron_left</mat-icon>
-    </button>
-    <span class="picker">
+    <div class="btn-group" role="group">
       <button
-        mat-button
         type="button"
-        class="label"
+        class="btn btn-outline-primary"
+        [attr.aria-label]="text.previous"
+        [disabled]="!canPrev()"
+        (click)="shift(-1)"
+      >
+        <i class="pe-7s-angle-left" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-primary label"
+        cdkOverlayOrigin
+        #origin="cdkOverlayOrigin"
         [attr.aria-label]="pickLabel()"
         aria-haspopup="dialog"
-        (click)="picker.open()"
+        [attr.aria-expanded]="pickerOpen()"
+        (click)="pickerOpen.set(true)"
       >
         {{ label() }}
       </button>
-      <input class="picker-anchor" [matDatepicker]="picker" tabindex="-1" aria-hidden="true" />
-      <mat-datepicker
-        #picker
-        startView="multi-year"
-        [startAt]="monthDate()"
-        (monthSelected)="pick($event, picker)"
-      />
-    </span>
-    <button
-      mat-icon-button
-      type="button"
-      [attr.aria-label]="text.next"
-      [disabled]="!canNext()"
-      (click)="shift(1)"
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        [attr.aria-label]="text.next"
+        [disabled]="!canNext()"
+        (click)="shift(1)"
+      >
+        <i class="pe-7s-angle-right" aria-hidden="true"></i>
+      </button>
+    </div>
+    <ng-template
+      cdkConnectedOverlay
+      [cdkConnectedOverlayOrigin]="origin"
+      [cdkConnectedOverlayOpen]="pickerOpen()"
+      (overlayOutsideClick)="pickerOpen.set(false)"
+      (overlayKeydown)="onPickerKeydown($event)"
+      (detach)="pickerOpen.set(false)"
     >
-      <mat-icon aria-hidden="true">chevron_right</mat-icon>
-    </button>
+      <app-calendar-panel
+        mode="month"
+        [selected]="selected()"
+        [startAt]="selected()"
+        [today]="today"
+        (monthSelected)="pick($event)"
+      />
+    </ng-template>
     @if (!isCurrent()) {
-      <button mat-stroked-button type="button" (click)="goToCurrent()">{{ text.current }}</button>
+      <button type="button" class="btn btn-light" (click)="goToCurrent()">
+        {{ text.current }}
+      </button>
     }
   `,
   styles: `
+    @use '../../../../styles/breakpoints' as bp;
+
     :host {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 4px;
+      gap: 8px;
     }
 
-    .picker {
-      position: relative;
-    }
-
-    .picker-anchor {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      height: 0;
-      padding: 0;
-      border: 0;
-      opacity: 0;
-      pointer-events: none;
+    .btn-group .btn:not(.label) {
+      font-size: 1.3rem;
+      line-height: 1;
     }
 
     .label {
-      min-width: 11rem;
+      min-width: 9rem;
+    }
+
+    @media (min-width: bp.$wide) {
+      .label {
+        min-width: 11rem;
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -105,11 +111,11 @@ export class MonthBarComponent {
   private readonly current = computed(() => ({ year: this.year(), month: this.month() }));
   protected readonly label = computed(() => formatMonthLabel(this.year(), this.month()));
   protected readonly pickLabel = computed(() => pickMonthLabel(this.label()));
-  protected readonly monthDate = computed(() =>
-    toLocalDate({ year: this.year(), month: this.month(), day: 1 }),
-  );
+  protected readonly selected = computed(() => ({ ...this.current(), day: 1 }));
   protected readonly canPrev = computed(() => canShiftMonth(this.current(), -1));
   protected readonly canNext = computed(() => canShiftMonth(this.current(), 1));
+  protected readonly pickerOpen = signal(false);
+  protected readonly today = todayPlain(new Date());
   protected readonly text = {
     previous: LABEL_PREVIOUS_MONTH,
     next: LABEL_NEXT_MONTH,
@@ -124,10 +130,16 @@ export class MonthBarComponent {
     this.monthChange.emit({ year, month });
   }
 
-  protected pick(date: Date, picker: MatDatepicker<Date>): void {
-    const { year, month } = fromLocalDate(date);
-    this.monthChange.emit({ year, month });
-    picker.close();
+  protected pick(value: YearMonth): void {
+    this.pickerOpen.set(false);
+    this.monthChange.emit(value);
+  }
+
+  protected onPickerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.pickerOpen.set(false);
+    }
   }
 
   protected goToCurrent(): void {

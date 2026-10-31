@@ -1,17 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
-import { MatButton } from '@angular/material/button';
-import {
-  MatCell,
-  MatCellDef,
-  MatColumnDef,
-  MatHeaderCell,
-  MatHeaderCellDef,
-  MatHeaderRow,
-  MatHeaderRowDef,
-  MatRow,
-  MatRowDef,
-  MatTable,
-} from '@angular/material/table';
 import { Router, RouterLink } from '@angular/router';
 
 import { ListQuery } from '../list-query';
@@ -26,90 +13,71 @@ import {
   LABEL_STATUS,
   deleteLabel,
 } from '../purchase.messages';
-import { PurchaseRow } from './purchase-row';
+import { PurchaseRow, STATUS_BADGE_CLASS } from './purchase-row';
 
 /** RF-07: lista em tabela (modo largo). A linha e a descrição abrem a edição; "Excluir" só emite. */
 @Component({
   selector: 'app-purchase-table',
-  imports: [
-    MatTable,
-    MatColumnDef,
-    MatHeaderCell,
-    MatHeaderCellDef,
-    MatCell,
-    MatCellDef,
-    MatHeaderRow,
-    MatHeaderRowDef,
-    MatRow,
-    MatRowDef,
-    MatButton,
-    RouterLink,
-  ],
+  imports: [RouterLink],
   template: `
-    <table mat-table [dataSource]="rows()" [trackBy]="trackById">
-      <ng-container matColumnDef="date">
-        <th mat-header-cell *matHeaderCellDef>{{ text.date }}</th>
-        <td mat-cell *matCellDef="let row" class="date">{{ row.date }}</td>
-      </ng-container>
-      <ng-container matColumnDef="description">
-        <th mat-header-cell *matHeaderCellDef>{{ text.description }}</th>
-        <td mat-cell *matCellDef="let row" class="description">
-          <a
-            class="description-link"
-            [routerLink]="['/lancamentos', row.id]"
-            [state]="{ origin: origin() }"
-            (click)="$event.stopPropagation()"
-            >{{ row.description }}</a
-          >
-        </td>
-      </ng-container>
-      <ng-container matColumnDef="category">
-        <th mat-header-cell *matHeaderCellDef>{{ text.category }}</th>
-        <td mat-cell *matCellDef="let row" class="category">{{ row.category }}</td>
-      </ng-container>
-      <ng-container matColumnDef="paymentMethod">
-        <th mat-header-cell *matHeaderCellDef>{{ text.paymentMethod }}</th>
-        <td mat-cell *matCellDef="let row" class="payment-method">{{ row.paymentMethod }}</td>
-      </ng-container>
-      <ng-container matColumnDef="amount">
-        <th mat-header-cell *matHeaderCellDef class="amount">{{ text.amount }}</th>
-        <td mat-cell *matCellDef="let row" class="amount">{{ row.amount }}</td>
-      </ng-container>
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>{{ text.status }}</th>
-        <td mat-cell *matCellDef="let row" class="status">{{ row.statusLabel }}</td>
-      </ng-container>
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>
-          <span class="cdk-visually-hidden">{{ text.actions }}</span>
-        </th>
-        <td mat-cell *matCellDef="let row" class="actions">
-          <button
-            mat-button
-            type="button"
-            [attr.aria-label]="deleteLabel(row.description)"
-            (click)="$event.stopPropagation(); remove.emit(row)"
-          >
-            {{ text.delete }}
-          </button>
-        </td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr
-        mat-row
-        *matRowDef="let row; columns: columns"
-        [class.canceled]="row.canceled"
-        (click)="open(row)"
-      ></tr>
-    </table>
+    <div class="table-responsive">
+      <table class="mb-0 table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">{{ text.date }}</th>
+            <th scope="col">{{ text.description }}</th>
+            <th scope="col">{{ text.category }}</th>
+            <th scope="col">{{ text.paymentMethod }}</th>
+            <th scope="col" class="amount">{{ text.amount }}</th>
+            <th scope="col">{{ text.status }}</th>
+            <th scope="col">
+              <span class="visually-hidden">{{ text.actions }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.id) {
+            <tr [class.canceled]="row.canceled" (click)="open(row)">
+              <td class="date">{{ row.date }}</td>
+              <td class="description">
+                <a
+                  class="description-link"
+                  [routerLink]="['/lancamentos', row.id]"
+                  [state]="{ origin: origin() }"
+                  (click)="$event.stopPropagation()"
+                  >{{ row.description }}</a
+                >
+              </td>
+              <td class="category">{{ row.category }}</td>
+              <td class="payment-method">{{ row.paymentMethod }}</td>
+              <td class="amount">{{ row.amount }}</td>
+              <td class="status">
+                <span class="badge" [class]="badgeClass[row.status]">{{ row.statusLabel }}</span>
+              </td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  [attr.aria-label]="deleteLabel(row.description)"
+                  (click)="$event.stopPropagation(); remove.emit(row)"
+                >
+                  {{ text.delete }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   `,
   styles: `
-    table {
-      width: 100%;
+    tbody tr {
+      cursor: pointer;
     }
 
-    tr.mat-mdc-row {
-      cursor: pointer;
+    td,
+    th {
+      vertical-align: middle;
     }
 
     .amount {
@@ -128,6 +96,11 @@ import { PurchaseRow } from './purchase-row';
 
     .description-link {
       color: inherit;
+      text-decoration: none;
+    }
+
+    .description-link:hover {
+      text-decoration: underline;
     }
 
     .actions {
@@ -135,7 +108,7 @@ import { PurchaseRow } from './purchase-row';
     }
 
     .canceled td {
-      color: var(--mat-sys-on-surface-variant);
+      color: var(--app-muted);
     }
 
     .canceled .amount {
@@ -151,15 +124,7 @@ export class PurchaseTableComponent {
   readonly origin = input.required<ListQuery>();
   readonly remove = output<PurchaseRow>();
 
-  protected readonly columns = [
-    'date',
-    'description',
-    'category',
-    'paymentMethod',
-    'amount',
-    'status',
-    'actions',
-  ];
+  protected readonly badgeClass = STATUS_BADGE_CLASS;
   protected readonly deleteLabel = deleteLabel;
   protected readonly text = {
     date: LABEL_DATE,
@@ -171,8 +136,6 @@ export class PurchaseTableComponent {
     actions: LABEL_ACTIONS,
     delete: LABEL_DELETE,
   };
-
-  protected readonly trackById = (_: number, row: PurchaseRow) => row.id;
 
   /** RF-09: clicar em qualquer ponto da linha abre a edição. */
   protected open(row: PurchaseRow): void {

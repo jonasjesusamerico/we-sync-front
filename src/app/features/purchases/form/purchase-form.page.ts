@@ -1,3 +1,5 @@
+import { Dialog } from '@angular/cdk/dialog';
+import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -15,27 +17,6 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent } from '@angular/material/card';
-import { ErrorStateMatcher, MatOption } from '@angular/material/core';
-import {
-  MatDatepicker,
-  MatDatepickerInput,
-  MatDatepickerToggle,
-} from '@angular/material/datepicker';
-import { MatDialog } from '@angular/material/dialog';
-import {
-  MatError,
-  MatFormField,
-  MatHint,
-  MatLabel,
-  MatPrefix,
-  MatSuffix,
-} from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { MatSelect } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, forkJoin, map, Observable, of } from 'rxjs';
 
@@ -43,15 +24,17 @@ import { genericErrorMessage, MSG_SERVER } from '../../../core/http/error-messag
 import { openConfirm } from '../../../shared/confirm-dialog/confirm-dialog';
 import { FormAlertComponent } from '../../../shared/form-alert/form-alert.component';
 import { PageHeaderComponent } from '../../../shared/page-header/page-header.component';
-import { controlErrorFrom } from '../../../shared/validators/control-error-message';
+import { Notifier } from '../../../shared/notifier/notifier';
+import { touchedErrorFrom } from '../../../shared/validators/control-error-message';
+import { CalendarPanelComponent, plainOf } from '../calendar/calendar-panel.component';
 import { classifySaveError, isPurchaseNotFound } from '../api-errors';
 import { currentMonthQuery, ListQuery, readOrigin, toRouteParams } from '../list-query';
 import { formatBrlCurrency } from '../list/purchase-row';
 import { apiToCents } from '../money';
-import { notify } from '../notify';
 import { OptionsApi } from '../options.api';
-import { displayApiDate } from '../plain-date';
+import { displayApiDate, PlainDate, todayPlain } from '../plain-date';
 import {
+  CALENDAR_LABELS,
   DATE_HINT,
   DELETE_DIALOG_TITLE,
   DELETE_DIALOG_WARNING,
@@ -83,6 +66,7 @@ import {
 } from '../purchase.models';
 import { PurchasesApi } from '../purchases.api';
 import type { PurchaseFormMode } from '../purchases.routes';
+import { BrDateInputDirective } from './br-date-input.directive';
 import { MoneyInputDirective } from './money-input.directive';
 import {
   emptyFormValue,
@@ -99,16 +83,6 @@ import {
   purchaseFieldError,
 } from './purchase-form.validators';
 
-/**
- * Erro visível só com o campo tocado, como no login (001): depois de "Salvar e criar outro", a Descrição e o Valor
- * vazios não aparecem em vermelho. Um envio inválido continua mostrando tudo, porque o `submit` chama
- * `markAllAsTouched()`.
- */
-const touchedErrorStateMatcher: ErrorStateMatcher = {
-  isErrorState: (control: AbstractControl | null) =>
-    !!control && control.invalid && control.touched,
-};
-
 type Result<T> = { ok: true; value: T } | { ok: false; error: unknown };
 
 function settle<T>(source: Observable<T>): Observable<Result<T>> {
@@ -123,29 +97,16 @@ function settle<T>(source: Observable<T>): Observable<Result<T>> {
   selector: 'app-purchase-form-page',
   imports: [
     ReactiveFormsModule,
-    MatCard,
-    MatCardContent,
-    MatFormField,
-    MatLabel,
-    MatHint,
-    MatError,
-    MatPrefix,
-    MatSuffix,
-    MatInput,
-    MatSelect,
-    MatOption,
-    MatDatepicker,
-    MatDatepickerInput,
-    MatDatepickerToggle,
-    MatButton,
-    MatProgressSpinner,
+    CdkOverlayOrigin,
+    CdkConnectedOverlay,
     PageHeaderComponent,
     FormAlertComponent,
+    CalendarPanelComponent,
+    BrDateInputDirective,
     MoneyInputDirective,
   ],
   templateUrl: './purchase-form.page.html',
   styleUrl: './purchase-form.page.scss',
-  providers: [{ provide: ErrorStateMatcher, useValue: touchedErrorStateMatcher }],
   host: { '(window:beforeunload)': 'onBeforeUnload($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -154,8 +115,8 @@ export class PurchaseFormPage {
   private readonly router = inject(Router);
   private readonly api = inject(PurchasesApi);
   private readonly optionsApi = inject(OptionsApi);
-  private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(Dialog);
+  private readonly notifier = inject(Notifier);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly mode: PurchaseFormMode = this.route.snapshot.data['mode'];
@@ -170,6 +131,9 @@ export class PurchaseFormPage {
   protected readonly paymentMethods = signal<Option[]>([]);
   protected readonly submitting = signal<'save' | 'save-new' | null>(null);
   protected readonly formAlert = signal<string | null>(null);
+  protected readonly calendarOpen = signal(false);
+  protected readonly calendarSelection = signal<PlainDate | null>(null);
+  protected readonly today = todayPlain(new Date());
   private readonly loaded = signal<Purchase | null>(null);
   /** RN-11: salvou, excluiu ou saiu por RN-16/RN-17; o guard não pergunta. */
   private leaving = false;
@@ -198,6 +162,7 @@ export class PurchaseFormPage {
     title: this.mode === 'create' ? LABEL_NEW_PURCHASE : TITLE_EDIT_PURCHASE,
     date: LABEL_DATE,
     dateHint: DATE_HINT,
+    openCalendar: CALENDAR_LABELS.open,
     description: LABEL_DESCRIPTION,
     amount: LABEL_AMOUNT,
     category: LABEL_CATEGORY,
@@ -215,8 +180,12 @@ export class PurchaseFormPage {
     this.load();
   }
 
+  /**
+   * Erro visível só com o campo tocado, como no login (001): depois de "Salvar e criar outro", a Descrição e o Valor
+   * vazios não aparecem em vermelho. Um envio inválido mostra tudo, porque o `submit` chama `markAllAsTouched()`.
+   */
   private errorOf(field: PurchaseField) {
-    return controlErrorFrom(this.form.controls[field], (errors) =>
+    return touchedErrorFrom(this.form.controls[field], (errors) =>
       purchaseFieldError(field, errors),
     );
   }
@@ -297,7 +266,7 @@ export class PurchaseFormPage {
     const message = savedMessage(saved.purchase_date, this.backTarget);
     if (kind === 'save-new' && this.mode === 'create') {
       // RN-07: fica no formulário, com data, opções e status; a origem continua a mesma.
-      notify(this.snackBar, message);
+      this.notifier.show(message);
       this.form.reset({ ...this.form.getRawValue(), description: '', amount: '' });
       this.snapshot = snapshotOf(this.form.getRawValue());
       this.submitting.set(null);
@@ -306,7 +275,7 @@ export class PurchaseFormPage {
     }
     // `submitting` fica preenchido até a página sumir (DAS).
     this.leaving = true;
-    notify(this.snackBar, message);
+    this.notifier.show(message);
     this.goBack();
   }
 
@@ -365,6 +334,27 @@ export class PurchaseFormPage {
       });
   }
 
+  /** Abre o calendário no dia do campo (ou hoje). */
+  protected openCalendar(): void {
+    this.calendarSelection.set(plainOf(this.form.controls.date.value));
+    this.calendarOpen.set(true);
+  }
+
+  protected pickDate(date: Date): void {
+    const control = this.form.controls.date;
+    control.setValue(date);
+    control.markAsDirty();
+    control.markAsTouched();
+    this.calendarOpen.set(false);
+  }
+
+  protected onCalendarKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.calendarOpen.set(false);
+    }
+  }
+
   protected cancel(): void {
     this.goBack();
   }
@@ -405,7 +395,7 @@ export class PurchaseFormPage {
   private leaveWith(message: string): void {
     this.leaving = true;
     this.goBack();
-    notify(this.snackBar, message);
+    this.notifier.show(message);
   }
 
   private goBack(): void {

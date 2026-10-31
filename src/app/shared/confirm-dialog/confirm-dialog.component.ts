@@ -1,13 +1,5 @@
+import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { MatButton } from '@angular/material/button';
-import {
-  MAT_DIALOG_DATA,
-  MatDialogActions,
-  MatDialogContent,
-  MatDialogRef,
-  MatDialogTitle,
-} from '@angular/material/dialog';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { Observable } from 'rxjs';
 
 import { genericErrorMessage } from '../../core/http/error-messages';
@@ -25,44 +17,44 @@ export interface ConfirmDialogData {
   action?: () => Observable<unknown>;
 }
 
+/** `id` do título, para o `aria-labelledby` do diálogo (só um diálogo aberto por vez). */
+export const CONFIRM_DIALOG_TITLE_ID = 'app-confirm-dialog-title';
+
 /**
  * Confirmação com título, linhas, aviso e dois botões (cancelar primeiro, para receber o foco). Com `action`, executa,
- * mostra carregando e o erro dentro do diálogo (ADR-10).
+ * mostra carregando e o erro dentro do diálogo (ADR-10). Miolo `.modal-content` do Bootstrap.
  */
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [
-    MatDialogTitle,
-    MatDialogContent,
-    MatDialogActions,
-    MatButton,
-    MatProgressSpinner,
-    FormAlertComponent,
-  ],
+  imports: [FormAlertComponent],
   template: `
-    <h2 mat-dialog-title>{{ data.title }}</h2>
-    <mat-dialog-content>
-      @if (error(); as message) {
-        <app-form-alert>{{ message }}</app-form-alert>
-      }
-      @for (line of data.lines ?? []; track $index) {
-        <p>{{ line }}</p>
-      }
-      @if (data.warning) {
-        <p class="warning">{{ data.warning }}</p>
-      }
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button type="button" [disabled]="running()" (click)="cancel()">
-        {{ data.cancelLabel }}
-      </button>
-      <button mat-flat-button type="button" [disabled]="running()" (click)="confirm()">
-        @if (running()) {
-          <mat-progress-spinner diameter="20" mode="indeterminate" />
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5" [id]="titleId">{{ data.title }}</h2>
+      </div>
+      <div class="modal-body">
+        @if (error(); as message) {
+          <app-form-alert>{{ message }}</app-form-alert>
         }
-        {{ data.confirmLabel }}
-      </button>
-    </mat-dialog-actions>
+        @for (line of data.lines ?? []; track $index) {
+          <p>{{ line }}</p>
+        }
+        @if (data.warning) {
+          <p class="warning">{{ data.warning }}</p>
+        }
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" [disabled]="running()" (click)="cancel()">
+          {{ data.cancelLabel }}
+        </button>
+        <button type="button" class="btn btn-primary" [disabled]="running()" (click)="confirm()">
+          @if (running()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          }
+          {{ data.confirmLabel }}
+        </button>
+      </div>
+    </div>
   `,
   styles: `
     p {
@@ -70,20 +62,24 @@ export interface ConfirmDialogData {
       overflow-wrap: anywhere;
     }
 
+    p:last-child {
+      margin-bottom: 0;
+    }
+
     app-form-alert {
       margin-bottom: 12px;
     }
 
     .warning {
-      font: var(--mat-sys-body-medium);
-      color: var(--mat-sys-on-surface-variant);
+      color: var(--app-muted);
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmDialogComponent {
-  protected readonly data = inject<ConfirmDialogData>(MAT_DIALOG_DATA);
-  private readonly ref = inject<MatDialogRef<ConfirmDialogComponent, boolean>>(MatDialogRef);
+  protected readonly data = inject<ConfirmDialogData>(DIALOG_DATA);
+  private readonly ref = inject<DialogRef<boolean, ConfirmDialogComponent>>(DialogRef);
+  protected readonly titleId = CONFIRM_DIALOG_TITLE_ID;
 
   protected readonly running = signal(false);
   protected readonly error = signal<string | null>(null);

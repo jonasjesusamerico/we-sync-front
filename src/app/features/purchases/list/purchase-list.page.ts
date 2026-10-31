@@ -1,12 +1,7 @@
+import { Dialog } from '@angular/cdk/dialog';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { MatButton } from '@angular/material/button';
-import { MatCard, MatCardContent } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   catchError,
@@ -28,6 +23,7 @@ import { LABEL_PURCHASES } from '../../../layout/layout.messages';
 import { WIDE_LAYOUT_QUERY } from '../../../layout/breakpoints';
 import { openConfirm } from '../../../shared/confirm-dialog/confirm-dialog';
 import { FormAlertComponent } from '../../../shared/form-alert/form-alert.component';
+import { Notifier } from '../../../shared/notifier/notifier';
 import { PageHeaderComponent } from '../../../shared/page-header/page-header.component';
 import {
   clearFilters,
@@ -41,7 +37,6 @@ import {
   withMonth,
   withPage,
 } from '../list-query';
-import { notify } from '../notify';
 import { OptionsApi, PurchaseOptions } from '../options.api';
 import { formatMonthLabel } from '../plain-date';
 import {
@@ -61,6 +56,7 @@ import { PAGE_SIZE, PurchasePage } from '../purchase.models';
 import { PurchasesApi } from '../purchases.api';
 import { MonthBarComponent, YearMonth } from './month-bar.component';
 import { FiltersPatch, PurchaseFiltersComponent } from './purchase-filters.component';
+import { PaginatorComponent } from './paginator.component';
 import { PurchaseItemsComponent } from './purchase-items.component';
 import { PurchaseRow, toPurchaseRow } from './purchase-row';
 import { PurchaseTableComponent } from './purchase-table.component';
@@ -73,17 +69,13 @@ import { PurchaseTableComponent } from './purchase-table.component';
   selector: 'app-purchase-list-page',
   imports: [
     RouterLink,
-    MatCard,
-    MatCardContent,
-    MatButton,
-    MatPaginator,
-    MatProgressSpinner,
     PageHeaderComponent,
     FormAlertComponent,
     MonthBarComponent,
     PurchaseFiltersComponent,
     PurchaseTableComponent,
     PurchaseItemsComponent,
+    PaginatorComponent,
   ],
   templateUrl: './purchase-list.page.html',
   styleUrl: './purchase-list.page.scss',
@@ -94,8 +86,8 @@ export class PurchaseListPage {
   private readonly router = inject(Router);
   private readonly api = inject(PurchasesApi);
   private readonly optionsApi = inject(OptionsApi);
-  private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(Dialog);
+  private readonly notifier = inject(Notifier);
   private readonly breakpoints = inject(BreakpointObserver);
 
   /** O endereço canônico em uso. */
@@ -221,8 +213,8 @@ export class PurchaseListPage {
     this.navigateTo(clearFilters(this.query()!), false);
   }
 
-  protected onPage(event: PageEvent): void {
-    this.navigateTo(withPage(this.query()!, event.pageIndex + 1), false);
+  protected onPage(page: number): void {
+    this.navigateTo(withPage(this.query()!, page), false);
   }
 
   /** RF-24, RN-13, RN-14: confirma e exclui; o `404` também é sucesso (tratado no `PurchasesApi`). */
@@ -238,7 +230,7 @@ export class PurchaseListPage {
       if (!deleted) {
         return;
       }
-      notify(this.snackBar, MSG_DELETED);
+      this.notifier.show(MSG_DELETED);
       const q = this.query();
       if (q && this.page()?.items.length === 1 && q.page > 1) {
         this.navigateTo(withPage(q, q.page - 1), true);

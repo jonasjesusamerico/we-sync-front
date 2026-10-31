@@ -33,9 +33,6 @@ describe('BrandComponent', () => {
     const fixture = TestBed.createComponent(DefaultHostComponent);
     await fixture.whenStable();
     const host = (fixture.nativeElement as HTMLElement).querySelector('app-brand') as HTMLElement;
-    const icon = host.querySelector('mat-icon');
-    expect(icon?.textContent?.trim()).toBe('sync');
-    expect(icon?.getAttribute('aria-hidden')).toBe('true');
     expect(host.querySelector('.name')?.textContent).toBe('we-sync');
     expect(host.classList).not.toContain('large');
     expect(host.classList).not.toContain('primary');

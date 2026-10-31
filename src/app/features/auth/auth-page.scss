@@ -1,40 +1,28 @@
-// Estilo comum às telas de login e cadastro (RF-12 da 001: utilizável a partir de 360 px).
+// Estilo comum às telas de login e cadastro, dentro do cartão do AuthLayout (RF-12 da 001: utilizável a partir
+// de 360 px).
 :host {
   display: block;
 }
 
-.auth-page {
-  // Largura e margens vêm da coluna do AuthLayout (feature 002).
-  width: 100%;
-  padding-top: 24px;
-}
-
 h1 {
-  margin: 0 0 16px;
-  font: var(--mat-sys-headline-small);
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.field,
-.submit {
-  width: 100%;
-}
-
-.submit {
-  margin-top: 8px;
-}
-
-.submit mat-progress-spinner {
-  display: inline-block;
-  margin-right: 8px;
-  vertical-align: middle;
+  margin: 0 0 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 400;
+  text-align: center;
 }
 
 app-form-alert {
-  margin-bottom: 8px;
+  margin-bottom: 1rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .submit {
+    width: 100%;
+  }
 }

@@ -1,12 +1,19 @@
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
+import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
+import { ConnectedPosition } from '@angular/cdk/overlay';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  Injector,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { MatIconButton } from '@angular/material/button';
-import { MatIcon } from '@angular/material/icon';
-import { MatListItem, MatListItemIcon, MatListItemTitle, MatNavList } from '@angular/material/list';
-import { MatMenu, MatMenuItem, MatMenuTrigger } from '@angular/material/menu';
-import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
-import { MatToolbar } from '@angular/material/toolbar';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { finalize, map } from 'rxjs';
 
@@ -14,12 +21,19 @@ import { AuthApi } from '../core/auth/auth.api';
 import { SessionStore } from '../core/auth/session.store';
 import { BrandComponent } from '../shared/brand/brand.component';
 import { WIDE_LAYOUT_QUERY } from './breakpoints';
-import { LABEL_ACCOUNT, LABEL_LOGOUT, LABEL_MAIN_NAV, LABEL_OPEN_MENU } from './layout.messages';
+import {
+  LABEL_ACCOUNT,
+  LABEL_CLOSE_MENU,
+  LABEL_LOGOUT,
+  LABEL_MAIN_NAV,
+  LABEL_MENU_SECTION,
+  LABEL_OPEN_MENU,
+} from './layout.messages';
 import { NAV_ITEMS } from './nav-items';
 
 /**
- * Layout das rotas internas (feature 002): topo com marca e menu de conta (Sair), menu lateral fixo no modo largo
- * e por cima no estreito.
+ * Layout das rotas internas no visual do ArchitectUI: topo com marca e menu de conta (Sair), menu lateral fixo no
+ * modo largo e por cima no estreito (com fundo escurecido, foco preso e `Esc`).
  */
 @Component({
   selector: 'app-shell',
@@ -27,23 +41,14 @@ import { NAV_ITEMS } from './nav-items';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
-    MatToolbar,
-    MatIconButton,
-    MatIcon,
-    MatMenu,
-    MatMenuItem,
-    MatMenuTrigger,
-    MatSidenavContainer,
-    MatSidenav,
-    MatSidenavContent,
-    MatNavList,
-    MatListItem,
-    MatListItemIcon,
-    MatListItemTitle,
+    CdkMenu,
+    CdkMenuItem,
+    CdkMenuTrigger,
+    CdkTrapFocus,
     BrandComponent,
   ],
   templateUrl: './shell.component.html',
-  styleUrl: './shell.component.scss',
+  host: { '(keydown.escape)': 'onEscape()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellComponent {
@@ -51,6 +56,9 @@ export class ShellComponent {
   private readonly store = inject(SessionStore);
   private readonly router = inject(Router);
   private readonly breakpoints = inject(BreakpointObserver);
+  private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
 
   protected readonly isWide = toSignal(
     this.breakpoints.observe(WIDE_LAYOUT_QUERY).pipe(map((s) => s.matches)),
@@ -62,23 +70,40 @@ export class ShellComponent {
   protected readonly navItems = NAV_ITEMS;
   protected readonly text = {
     openMenu: LABEL_OPEN_MENU,
+    closeMenu: LABEL_CLOSE_MENU,
     account: LABEL_ACCOUNT,
     logout: LABEL_LOGOUT,
     mainNav: LABEL_MAIN_NAV,
+    menuSection: LABEL_MENU_SECTION,
   };
+  /** Menu de conta alinhado à direita, embaixo do botão. */
+  protected readonly accountMenuPosition: ConnectedPosition[] = [
+    { originX: 'end', originY: 'bottom', overlayX: 'end', overlayY: 'top' },
+  ];
 
+  /** Abre o menu por cima e leva o foco ao primeiro item (como o drawer fazia). */
   protected openMenu(): void {
     this.menuOpen.set(true);
+    afterNextRender(
+      () => this.host.nativeElement.querySelector<HTMLElement>('#app-sidenav a')?.focus(),
+      { injector: this.injector },
+    );
   }
 
-  /**
-   * Fechar pelo fundo escurecido ou pelo `Esc` (modo estreito). Recebe o estado real do drawer (`sidenav.opened`),
-   * e não o valor do evento: o `openedChange` é assíncrono, e um aviso atrasado reabriria o menu num ciclo sem fim
-   * (decisão da TF-03, feature 002).
-   */
-  protected onOpenedChange(open: boolean): void {
-    if (!this.isWide()) {
-      this.menuOpen.set(open);
+  /** Fecha o menu por cima; pelo fundo ou pelo `Esc`, o foco volta ao ☰. */
+  protected closeMenu(restoreFocus: boolean): void {
+    this.menuOpen.set(false);
+    if (restoreFocus) {
+      afterNextRender(() => this.menuButton()?.nativeElement.focus(), {
+        injector: this.injector,
+      });
+    }
+  }
+
+  /** `Esc` só fecha o menu por cima (o foco está preso nele); o menu fixo continua aberto. */
+  protected onEscape(): void {
+    if (!this.isWide() && this.menuOpen()) {
+      this.closeMenu(true);
     }
   }
 

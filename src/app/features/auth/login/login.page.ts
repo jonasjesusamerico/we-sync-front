@@ -1,12 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { ErrorStateMatcher } from '@angular/material/core';
-import { MatButton } from '@angular/material/button';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
@@ -16,7 +11,7 @@ import { SessionStore } from '../../../core/auth/session.store';
 import { genericErrorMessage, MSG_SERVER } from '../../../core/http/error-messages';
 import { FormAlertComponent } from '../../../shared/form-alert/form-alert.component';
 import { PasswordFieldComponent } from '../../../shared/password-field/password-field.component';
-import { controlErrorMessage } from '../../../shared/validators/control-error-message';
+import { touchedErrorMessage } from '../../../shared/validators/control-error-message';
 import { emailValidator } from '../../../shared/validators/email.validator';
 import { passwordValidator } from '../../../shared/validators/password.validators';
 import {
@@ -29,16 +24,6 @@ import {
   MSG_SESSION_EXPIRED,
 } from '../auth.messages';
 
-/**
- * Erro visível só com o campo tocado (e não por o formulário já ter sido enviado, como no padrão do Material).
- * Assim, depois do `401`, a senha limpa e "não tocada" não mostra `Informe a senha.` junto do aviso (RN-06). Um
- * envio inválido continua mostrando os erros, porque o `submit()` chama `markAllAsTouched()`.
- */
-const touchedErrorStateMatcher: ErrorStateMatcher = {
-  isErrorState: (control: AbstractControl | null) =>
-    !!control && control.invalid && control.touched,
-};
-
 interface LoginAlert {
   kind: 'info' | 'error';
   message: string;
@@ -47,20 +32,9 @@ interface LoginAlert {
 /** RF-03: login. Sucesso grava a sessão e volta à rota pedida (RN-09). */
 @Component({
   selector: 'app-login-page',
-  imports: [
-    ReactiveFormsModule,
-    MatFormField,
-    MatLabel,
-    MatInput,
-    MatError,
-    MatButton,
-    MatProgressSpinner,
-    PasswordFieldComponent,
-    FormAlertComponent,
-  ],
+  imports: [ReactiveFormsModule, PasswordFieldComponent, FormAlertComponent],
   templateUrl: './login.page.html',
   styleUrl: '../auth-page.scss',
-  providers: [{ provide: ErrorStateMatcher, useValue: touchedErrorStateMatcher }],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginPage {
@@ -78,13 +52,17 @@ export class LoginPage {
   readonly submitting = signal(false);
   readonly alert = signal<LoginAlert | null>(noticeAlert(this.navigationState.notice));
 
-  protected readonly emailError = controlErrorMessage(this.form.controls.email, 'email');
+  protected readonly emailError = touchedErrorMessage(this.form.controls.email, 'email');
   protected readonly text = {
     email: LABEL_EMAIL,
     password: LABEL_PASSWORD,
     login: LABEL_LOGIN,
   };
 
+  /**
+   * Os erros só aparecem com o campo tocado (`touchedErrorMessage`): depois do `401`, a senha limpa e "não tocada"
+   * não mostra `Informe a senha.` junto do aviso (RN-06). Um envio inválido mostra tudo (`markAllAsTouched()`).
+   */
   submit(): void {
     if (this.submitting()) {
       return;

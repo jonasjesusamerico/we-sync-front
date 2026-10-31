@@ -86,9 +86,13 @@ const button = (page: Page, name: string) => page.getByRole('button', { name, ex
 const discardDialog = (page: Page) => page.getByRole('alertdialog', { name: DISCARD_DIALOG_TITLE });
 const dataRows = (page: Page) => page.getByRole('row').filter({ has: page.getByRole('cell') });
 
+/** Opção escolhida do `<select>` nativo. */
+const chosen = (page: Page, name: string) => combobox(page, name).locator('option:checked');
+/** Opções que a pessoa vê (sem o vazio `hidden` dos campos obrigatórios). */
+const options = (page: Page, name: string) => combobox(page, name).locator('option:not([hidden])');
+
 async function choose(page: Page, name: string, option: string) {
-  await combobox(page, name).click();
-  await page.getByRole('option', { name: option, exact: true }).click();
+  await combobox(page, name).selectOption({ label: option });
 }
 
 /** Abre a lista e clica em "Novo lançamento" (para o formulário ter a origem). */
@@ -124,11 +128,11 @@ test.describe('formulário de lançamento', () => {
     await newFromList(page, OCTOBER);
     await expect(page.getByRole('heading', { level: 1, name: LABEL_NEW_PURCHASE })).toBeVisible();
     await expect(field(page, LABEL_DATE)).toHaveValue('22/10/2026');
-    await expect(combobox(page, LABEL_STATUS)).toHaveText('Pago');
+    await expect(chosen(page, LABEL_STATUS)).toHaveText('Pago');
     await expect(field(page, LABEL_DESCRIPTION)).toHaveValue('');
     await expect(field(page, LABEL_AMOUNT)).toHaveValue('');
-    await expect(combobox(page, LABEL_CATEGORY)).toHaveText('');
-    await expect(combobox(page, LABEL_PAYMENT_METHOD)).toHaveText('');
+    await expect(chosen(page, LABEL_CATEGORY)).toHaveText('');
+    await expect(chosen(page, LABEL_PAYMENT_METHOD)).toHaveText('');
   });
 
   test('CA-14 novo em outro mês', async ({ page }) => {
@@ -184,9 +188,9 @@ test.describe('formulário de lançamento', () => {
     expect(mock.calls.create).toBe(1);
     await expect(page).toHaveURL('/lancamentos/novo');
     await expect(field(page, LABEL_DATE)).toHaveValue('01/09/2026');
-    await expect(combobox(page, LABEL_CATEGORY)).toHaveText('Alimentação');
-    await expect(combobox(page, LABEL_PAYMENT_METHOD)).toHaveText('Pix');
-    await expect(combobox(page, LABEL_STATUS)).toHaveText('Pago');
+    await expect(chosen(page, LABEL_CATEGORY)).toHaveText('Alimentação');
+    await expect(chosen(page, LABEL_PAYMENT_METHOD)).toHaveText('Pix');
+    await expect(chosen(page, LABEL_STATUS)).toHaveText('Pago');
     await expect(field(page, LABEL_DESCRIPTION)).toHaveValue('');
     await expect(field(page, LABEL_AMOUNT)).toHaveValue('');
     await expect(field(page, LABEL_DESCRIPTION)).toBeFocused();
@@ -309,8 +313,8 @@ test.describe('formulário de lançamento', () => {
     await expect(page.getByRole('heading', { level: 1, name: TITLE_EDIT_PURCHASE })).toBeVisible();
     await expect(field(page, LABEL_DATE)).toHaveValue('05/10/2026');
     await expect(field(page, LABEL_AMOUNT)).toHaveValue('1.234,50');
-    await expect(combobox(page, LABEL_PAYMENT_METHOD)).toHaveText('Pix');
-    await expect(combobox(page, LABEL_STATUS)).toHaveText('Cancelado');
+    await expect(chosen(page, LABEL_PAYMENT_METHOD)).toHaveText('Pix');
+    await expect(chosen(page, LABEL_STATUS)).toHaveText('Cancelado');
   });
 
   test('CA-23 Cancelar com alteração', async ({ page }) => {
@@ -440,12 +444,11 @@ test.describe('formulário de lançamento', () => {
     await button(page, LABEL_SAVE).click();
     await expect(page.getByText(MSG_CATEGORY_GONE)).toBeVisible();
     await expect(page).toHaveURL('/lancamentos/novo');
-    await expect(combobox(page, LABEL_CATEGORY)).toHaveText('');
+    await expect(chosen(page, LABEL_CATEGORY)).toHaveText('');
     await expect(field(page, LABEL_DESCRIPTION)).toHaveValue('Mercado');
     await expect(field(page, LABEL_AMOUNT)).toHaveValue('1.234,56');
-    await combobox(page, LABEL_CATEGORY).click();
-    await expect(page.getByRole('option')).toHaveCount(7);
-    await expect(page.getByRole('option', { name: 'Academia' })).toHaveCount(0);
+    await expect(options(page, LABEL_CATEGORY)).toHaveCount(7);
+    await expect(options(page, LABEL_CATEGORY).filter({ hasText: 'Academia' })).toHaveCount(0);
   });
 
   test('CA-30 forma excluída', async ({ page }) => {
@@ -458,7 +461,7 @@ test.describe('formulário de lançamento', () => {
     mock.user('A1').paymentMethods = mock.user('A1').paymentMethods.filter((p) => p.id !== 41);
     await button(page, LABEL_SAVE).click();
     await expect(page.getByText(MSG_PAYMENT_METHOD_GONE)).toBeVisible();
-    await expect(combobox(page, LABEL_PAYMENT_METHOD)).toHaveText('');
+    await expect(chosen(page, LABEL_PAYMENT_METHOD)).toHaveText('');
   });
 
   test('404 de instância antiga', async ({ page }) => {
@@ -520,8 +523,7 @@ test.describe('formulário de lançamento', () => {
       users: { A1: { categories: [...GLOBAL_CATEGORIES, ...PERSONAL_CATEGORIES] } },
     });
     await page.goto('/lancamentos/novo');
-    await combobox(page, LABEL_CATEGORY).click();
-    await expect(page.getByRole('option')).toHaveText([
+    await expect(options(page, LABEL_CATEGORY)).toHaveText([
       'Academia',
       'Alimentação',
       'Educação',

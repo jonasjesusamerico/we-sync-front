@@ -1,48 +1,59 @@
-<app-page-header [title]="text.title" />
-<mat-card>
-  <mat-card-content>
-    <div class="toolbar">
-      @if (query(); as q) {
-        <app-month-bar
-          class="month"
-          [year]="q.year"
-          [month]="q.month"
-          [isCurrent]="isCurrent()"
-          (monthChange)="onMonthChange($event)"
+<app-page-header [title]="text.title" icon="pe-7s-cash">
+  @if (query(); as q) {
+    <a
+      class="btn btn-primary btn-shadow new"
+      routerLink="/lancamentos/novo"
+      [state]="{ origin: q }"
+    >
+      <i class="pe-7s-plus me-1" aria-hidden="true"></i>{{ text.newPurchase }}
+    </a>
+  }
+</app-page-header>
+<div class="main-card mb-3 card">
+  <div class="card-header">
+    @if (query(); as q) {
+      <app-month-bar
+        class="month"
+        [year]="q.year"
+        [month]="q.month"
+        [isCurrent]="isCurrent()"
+        (monthChange)="onMonthChange($event)"
+      />
+    }
+  </div>
+  <div class="card-body">
+    @if (query(); as q) {
+      @if (options(); as opts) {
+        <app-purchase-filters
+          class="filters"
+          [status]="q.status"
+          [categoryId]="q.categoryId"
+          [paymentMethodId]="q.paymentMethodId"
+          [categories]="opts.categories"
+          [paymentMethods]="opts.paymentMethods"
+          (filtersChange)="onFiltersChange($event)"
+          (clear)="onClearFilters()"
         />
-        <a mat-flat-button class="new" routerLink="/lancamentos/novo" [state]="{ origin: q }">{{
-          text.newPurchase
-        }}</a>
-        @if (options(); as opts) {
-          <app-purchase-filters
-            class="filters"
-            [status]="q.status"
-            [categoryId]="q.categoryId"
-            [paymentMethodId]="q.paymentMethodId"
-            [categories]="opts.categories"
-            [paymentMethods]="opts.paymentMethods"
-            (filtersChange)="onFiltersChange($event)"
-            (clear)="onClearFilters()"
-          />
-        }
       }
-    </div>
+    }
 
     @switch (status()) {
       @case ('loading') {
-        <mat-progress-spinner
-          class="spinner"
-          mode="indeterminate"
-          diameter="40"
-          role="progressbar"
-          [attr.aria-label]="text.loading"
-        />
+        <div class="loading">
+          <div
+            class="spinner-border text-primary"
+            role="progressbar"
+            [attr.aria-label]="text.loading"
+          ></div>
+        </div>
       }
       @case ('error') {
         @if (errorMessage(); as msg) {
           <div class="error">
             <app-form-alert>{{ msg }}</app-form-alert>
-            <button mat-stroked-button type="button" (click)="retry()">{{ text.retry }}</button>
+            <button type="button" class="btn btn-outline-primary" (click)="retry()">
+              {{ text.retry }}
+            </button>
           </div>
         }
       }
@@ -52,13 +63,13 @@
             <div class="empty" role="status">
               @if (filtered()) {
                 <p>{{ text.emptyFiltered }}</p>
-                <button mat-stroked-button type="button" (click)="onClearFilters()">
+                <button type="button" class="btn btn-outline-primary" (click)="onClearFilters()">
                   {{ text.clearFilters }}
                 </button>
               } @else {
                 <p>{{ emptyMonthMessage(monthLabel()) }}</p>
                 <a
-                  mat-stroked-button
+                  class="btn btn-outline-primary"
                   routerLink="/lancamentos/novo"
                   [state]="{ origin: query() }"
                   >{{ text.newPurchase }}</a
@@ -80,17 +91,16 @@
               />
             }
             @if (p.total_pages > 1) {
-              <mat-paginator
-                [length]="p.total"
-                [pageIndex]="p.page - 1"
+              <app-paginator
+                [page]="p.page"
+                [total]="p.total"
                 [pageSize]="pageSize"
-                [hidePageSize]="true"
-                (page)="onPage($event)"
+                (pageChange)="onPage($event)"
               />
             }
           }
         }
       }
     }
-  </mat-card-content>
-</mat-card>
+  </div>
+</div>

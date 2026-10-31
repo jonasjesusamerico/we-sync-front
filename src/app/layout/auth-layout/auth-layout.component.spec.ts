@@ -2,7 +2,6 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { provideRouter, Router, Routes } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
@@ -55,7 +54,6 @@ describe('AuthLayoutComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: '/api/v1' },
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
       ],
     });
     const harness = await RouterTestingHarness.create();
@@ -66,9 +64,9 @@ describe('AuthLayoutComponent', () => {
       harness,
       el,
       router: TestBed.inject(Router),
-      tabs: () => Array.from(el.querySelectorAll<HTMLAnchorElement>('a[mat-tab-link]')),
+      tabs: () => Array.from(el.querySelectorAll<HTMLAnchorElement>('a[role="tab"]')),
       tab: (name: string) =>
-        Array.from(el.querySelectorAll<HTMLAnchorElement>('a[mat-tab-link]')).find(
+        Array.from(el.querySelectorAll<HTMLAnchorElement>('a[role="tab"]')).find(
           (a) => a.textContent?.trim() === name,
         ) as HTMLAnchorElement,
     };
@@ -88,14 +86,14 @@ describe('AuthLayoutComponent', () => {
     const { el, tab } = await open('/login');
     expect(tab('Entrar').getAttribute('aria-selected')).toBe('true');
     expect(tab('Criar conta').getAttribute('aria-selected')).toBe('false');
-    expect(el.querySelector('mat-tab-nav-panel app-stub-login')).not.toBeNull();
+    expect(el.querySelector('[role="tabpanel"] app-stub-login')).not.toBeNull();
   });
 
   it('Criar conta ativa em /cadastro', async () => {
     const { el, tab } = await open('/cadastro');
     expect(tab('Criar conta').getAttribute('aria-selected')).toBe('true');
     expect(tab('Entrar').getAttribute('aria-selected')).toBe('false');
-    expect(el.querySelector('mat-tab-nav-panel app-stub-register')).not.toBeNull();
+    expect(el.querySelector('[role="tabpanel"] app-stub-register')).not.toBeNull();
   });
 
   it('trocar de aba troca a URL', async () => {
@@ -107,12 +105,37 @@ describe('AuthLayoutComponent', () => {
     expect(tab('Entrar').getAttribute('aria-selected')).toBe('false');
   });
 
-  it('painel e marca', async () => {
+  it('cartão sobre o degradê, com a marca', async () => {
     const { el } = await open('/login');
-    const panel = el.querySelector('aside.auth-panel') as HTMLElement;
-    expect(panel.getAttribute('aria-hidden')).toBe('true');
-    expect(panel.querySelector('app-brand')?.classList).toContain('large');
-    expect(el.querySelector('app-brand.brand-small')?.classList).toContain('primary');
+    const layout = el.querySelector('app-auth-layout') as HTMLElement;
+    expect(layout.classList).toContain('bg-plum-plate');
+    const brand = layout.querySelector('app-brand') as HTMLElement;
+    expect(brand.classList).toContain('large');
+    expect(brand.classList).not.toContain('primary');
+    expect(layout.querySelector('.card [role="tablist"]')).not.toBeNull();
+  });
+
+  it('abas ligadas ao painel, foco só na ativa', async () => {
+    const { el, tab } = await open('/login');
+    const panel = el.querySelector('[role="tabpanel"]') as HTMLElement;
+    expect(tab('Entrar').getAttribute('aria-controls')).toBe(panel.id);
+    expect(tab('Entrar').getAttribute('tabindex')).toBe('0');
+    expect(tab('Criar conta').getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('setas movem o foco entre as abas', async () => {
+    const { tab } = await open('/login');
+    const press = (key: string) =>
+      document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    tab('Entrar').focus();
+    press('ArrowRight');
+    expect(document.activeElement).toBe(tab('Criar conta'));
+    press('ArrowRight');
+    expect(document.activeElement).toBe(tab('Entrar'));
+    press('End');
+    expect(document.activeElement).toBe(tab('Criar conta'));
+    press('Home');
+    expect(document.activeElement).toBe(tab('Entrar'));
   });
 
   it('sem Google e sem esqueci a senha', async () => {

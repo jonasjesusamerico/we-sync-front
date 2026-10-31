@@ -39,6 +39,7 @@ export const rangeLabel = (start: number, end: number, total: number) =>
   `${start}–${end} de ${total}`;
 export const LABEL_NEXT_PAGE = 'Próxima página';
 export const LABEL_PREVIOUS_PAGE = 'Página anterior';
+export const LABEL_PAGINATION = 'Paginação';
 
 export const DATE_HINT = 'dd/mm/aaaa';
 
@@ -69,26 +70,19 @@ export const MSG_PAYMENT_METHOD_GONE =
   'A forma de pagamento escolhida não existe mais. Escolha outra.';
 export const MSG_PURCHASE_GONE = 'Este lançamento não existe mais.';
 
-// Avisos (snackbar)
+// Avisos (toast)
 export const MSG_SAVED = 'Lançamento salvo.';
 export const savedInMonthMessage = (monthLabel: string) => `Lançamento salvo em ${monthLabel}.`;
 export const MSG_DELETED = 'Lançamento excluído.';
 export const MSG_NOT_FOUND = 'Lançamento não encontrado.';
 
-/** Textos do calendário (`MatDatepickerIntl`). */
-export const DATEPICKER_LABELS = {
-  openCalendarLabel: 'Abrir calendário',
-  closeCalendarLabel: 'Fechar calendário',
-  calendarLabel: 'Calendário',
-  prevMonthLabel: 'Mês anterior',
-  nextMonthLabel: 'Próximo mês',
-  prevYearLabel: 'Ano anterior',
-  nextYearLabel: 'Próximo ano',
-  prevMultiYearLabel: '24 anos anteriores',
-  nextMultiYearLabel: 'Próximos 24 anos',
-  switchToMonthViewLabel: 'Escolher data',
-  switchToMultiYearViewLabel: 'Escolher mês e ano',
+/** Textos do calendário (campo de data e seletor de mês). */
+export const CALENDAR_LABELS = {
+  open: 'Abrir calendário',
+  calendar: 'Calendário',
+  previous: { days: 'Mês anterior', months: 'Ano anterior', years: '24 anos anteriores' },
+  next: { days: 'Próximo mês', months: 'Próximo ano', years: 'Próximos 24 anos' },
 } as const;
 
-/** Rótulo acessível do intervalo de anos do calendário (`MatDatepickerIntl.formatYearRangeLabel`). */
+/** Título da grade de anos do calendário (`2016 a 2039`). */
 export const yearRangeLabel = (start: string, end: string) => `${start} a ${end}`;

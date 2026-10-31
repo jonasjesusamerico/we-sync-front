@@ -3,7 +3,6 @@ import localePt from '@angular/common/locales/pt';
 import { Location } from '@angular/common';
 import { Component, LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { provideRouter, Router } from '@angular/router';
 
 import { purchase } from '../../../../testing/purchases-contract';
@@ -33,7 +32,6 @@ describe('PurchaseTableComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'lancamentos/:id', component: StubPage }]),
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
         { provide: LOCALE_ID, useValue: 'pt-BR' },
       ],
     });
@@ -49,7 +47,7 @@ describe('PurchaseTableComponent', () => {
   }
 
   const host = () => fixture.nativeElement as HTMLElement;
-  const dataRows = () => Array.from(host().querySelectorAll<HTMLTableRowElement>('tr.mat-mdc-row'));
+  const dataRows = () => Array.from(host().querySelectorAll<HTMLTableRowElement>('tbody tr'));
   const two = () => [
     toPurchaseRow(purchase()),
     toPurchaseRow(purchase({ id: 41, description: 'Padaria' })),
@@ -67,7 +65,7 @@ describe('PurchaseTableComponent', () => {
       'Status',
       'Ações',
     ]);
-    expect(host().querySelectorAll('th')[6].querySelector('.cdk-visually-hidden')).not.toBeNull();
+    expect(host().querySelectorAll('th')[6].querySelector('.visually-hidden')).not.toBeNull();
     expect(dataRows()).toHaveLength(2);
   });
 

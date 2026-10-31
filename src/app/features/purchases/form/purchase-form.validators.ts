@@ -1,6 +1,7 @@
 import { ValidationErrors, ValidatorFn } from '@angular/forms';
 
 import { AMOUNT_MAX_CENTS, parseBrl } from '../money';
+import { DATE_PARSE_ERROR } from './br-date-input.directive';
 import {
   MSG_AMOUNT_MAX,
   MSG_AMOUNT_POSITIVE,
@@ -43,7 +44,7 @@ export type PurchaseField = 'date' | 'description' | 'amount' | 'categoryId' | '
 /** Chave do erro → mensagem, na ordem em que são conferidas. */
 const MESSAGES: Record<PurchaseField, readonly (readonly [string, string])[]> = {
   date: [
-    ['matDatepickerParse', MSG_DATE_INVALID],
+    [DATE_PARSE_ERROR, MSG_DATE_INVALID],
     ['required', MSG_DATE_REQUIRED],
   ],
   description: [

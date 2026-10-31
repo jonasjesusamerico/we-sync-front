@@ -1,99 +1,51 @@
-@use '@angular/material' as mat;
-@use '@fontsource/roboto/400' as *;
-@use '@fontsource/roboto/500' as roboto-500;
-@use 'material-symbols/outlined' as symbols;
-@use './styles/theme-colors' as theme-colors;
+// Visual do ArchitectUI (free) sobre Bootstrap 5.3. Único lugar com valores de cor (junto de `src/styles/`):
+// os componentes usam só `var(--bs-*)` e `var(--app-*)`.
+@use '@angular/cdk' as cdk;
 
-html {
-  height: 100%;
-  color-scheme: light;
-  @include mat.theme(
-    (
-      color: (
-        primary: theme-colors.$primary-palette,
-        tertiary: theme-colors.$tertiary-palette,
-        theme-type: light,
-      ),
-      typography: Roboto,
-      density: 0,
-    )
-  );
-  // ADR-02: cores exatas, com contraste AA para o branco.
-  @include mat.theme-overrides(
-    (
-      primary: #4b66fe,
-      on-primary: #ffffff,
-      tertiary: #ea0050,
-      on-tertiary: #ffffff,
-    )
-  );
+// 1. Funções do Bootstrap, para as variáveis do tema poderem usá-las.
+@import 'bootstrap/scss/functions';
 
-  // Tokens do app (ADR-01). Único lugar com valores de cor.
-  --app-content-background: #f6f7ff;
-  --app-surface: #ffffff;
-  --app-nav-active-background: #f3f5ff;
-  --app-nav-active-text: #405dfe;
-  --app-card-shadow: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.04);
+// 2. Variáveis do tema ArchitectUI (cores, fonte, sombras), antes das do Bootstrap.
+@import './styles/architectui/themes/layout-variables';
 
-  @include mat.toolbar-overrides(
-    (
-      container-background-color: var(--mat-sys-primary),
-      container-text-color: var(--mat-sys-on-primary),
-    )
-  );
-  @include mat.sidenav-overrides(
-    (
-      container-background-color: var(--app-surface),
-      container-shape: 0,
-      container-width: 240px,
-      content-background-color: var(--app-content-background),
-    )
-  );
-  @include mat.card-overrides(
-    (
-      elevated-container-color: var(--app-surface),
-      elevated-container-shape: 4px,
-      elevated-container-elevation: var(--app-card-shadow),
-    )
-  );
-  // ADR-06: campo preenchido sem fundo cinza.
-  @include mat.form-field-overrides(
-    (
-      filled-container-color: transparent,
-    )
-  );
-}
+// 3. Bootstrap (só o que o app usa).
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+@import 'bootstrap/scss/containers';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/tables';
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/transitions';
+@import 'bootstrap/scss/dropdown';
+@import 'bootstrap/scss/nav';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/pagination';
+@import 'bootstrap/scss/badge';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/list-group';
+@import 'bootstrap/scss/close';
+@import 'bootstrap/scss/toasts';
+@import 'bootstrap/scss/modal';
+@import 'bootstrap/scss/spinners';
+@import 'bootstrap/scss/helpers';
+@import 'bootstrap/scss/utilities/api';
 
-// ADR-05: contorno sólido no foco por teclado; branco dentro do topo.
-@include mat.strong-focus-indicators(
-  (
-    border-color: var(--mat-sys-primary),
-  )
-);
+// 4. Layout e elementos do ArchitectUI.
+@import './styles/architectui/index';
 
-.mat-toolbar {
-  --mat-focus-indicator-border-color: var(--mat-sys-on-primary);
-  // RF-04: ☰ e conta em branco no topo (o `mat-icon-button` não herda a cor do `mat-toolbar`).
-  @include mat.icon-button-overrides(
-    (
-      icon-color: var(--mat-sys-on-primary),
-      state-layer-color: var(--mat-sys-on-primary),
-      ripple-color: color-mix(in srgb, var(--mat-sys-on-primary) 12%, transparent),
-    )
-  );
-}
+// 5. Ícones Pe-icon-7-stroke (os mesmos do template), empacotados (sem CDN, por causa da CSP).
+$pe-7s-font-path: '../fonts';
+@import 'pe7-icon/dist/scss/pe-icon-7-stroke';
 
-body {
-  margin: 0;
-  height: 100%;
-  background-color: var(--app-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
-  font-family: Roboto, sans-serif;
-}
+// 6. Overlay do CDK (menu de conta, diálogos, seletor de mês).
+@include cdk.overlay();
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+// 7. Ajustes do we-sync.
+@import './styles/we-sync';

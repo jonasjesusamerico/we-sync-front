@@ -69,8 +69,8 @@ describe('LoginPage', () => {
   const settle = () => harness.fixture.whenStable();
   const alert = () => root().querySelector('app-form-alert');
   const fieldError = (index: number) => {
-    const field = root().querySelectorAll('mat-form-field').item(index);
-    return field.querySelector('mat-error')?.textContent?.trim() ?? null;
+    const field = root().querySelectorAll('.field').item(index);
+    return field.querySelector('.invalid-feedback')?.textContent?.trim() ?? null;
   };
 
   function type(input: HTMLInputElement, value: string) {
@@ -252,7 +252,7 @@ describe('LoginPage', () => {
 
     const req = http.expectOne(LOGIN);
     expect(submitButton().disabled).toBe(true);
-    expect(submitButton().querySelector('mat-progress-spinner')).not.toBeNull();
+    expect(submitButton().querySelector('.spinner-border')).not.toBeNull();
     req.flush(TOKENS);
   });
 

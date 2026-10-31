@@ -66,12 +66,16 @@ async function setup(
 
 const nav = (page: Page) => page.getByRole('navigation', { name: LABEL_MAIN_NAV });
 const dataRows = (page: Page) => page.getByRole('row').filter({ has: page.getByRole('cell') });
-const rangeLabel = (page: Page) => page.locator('.mat-mdc-paginator-range-label');
+const rangeLabel = (page: Page) => page.locator('.range-label');
 const combobox = (page: Page, name: string) => page.getByRole('combobox', { name });
 
+/** Opção escolhida do `<select>` nativo. */
+const chosen = (page: Page, name: string) => combobox(page, name).locator('option:checked');
+/** Opções que a pessoa vê (sem o vazio `hidden` dos campos obrigatórios). */
+const options = (page: Page, name: string) => combobox(page, name).locator('option:not([hidden])');
+
 async function choose(page: Page, field: string, option: string) {
-  await combobox(page, field).click();
-  await page.getByRole('option', { name: option, exact: true }).click();
+  await combobox(page, field).selectOption({ label: option });
 }
 
 const listUrls = (mock: Awaited<ReturnType<typeof setup>>) =>
@@ -146,7 +150,7 @@ test.describe('lista de lançamentos', () => {
     await expect(page.getByRole('button', { name: pickMonthLabel('março de 2025') })).toHaveText(
       'março de 2025',
     );
-    await expect(page.locator('mat-calendar')).toHaveCount(0);
+    await expect(page.locator('app-calendar-panel')).toHaveCount(0);
     await expect.poll(() => listUrls(mock).at(-1)).toContain('year=2025&month=3');
   });
 
@@ -178,8 +182,8 @@ test.describe('lista de lançamentos', () => {
     await expect(page).toHaveURL(`${OCTOBER}&categoria=1&forma=4`);
     await page.getByRole('button', { name: LABEL_PREVIOUS_MONTH }).click();
     await expect(page).toHaveURL('/lancamentos?ano=2026&mes=9&categoria=1&forma=4');
-    await expect(combobox(page, LABEL_CATEGORY)).toContainText('Alimentação');
-    await expect(combobox(page, LABEL_PAYMENT_METHOD)).toContainText('Pix');
+    await expect(chosen(page, LABEL_CATEGORY)).toHaveText('Alimentação');
+    await expect(chosen(page, LABEL_PAYMENT_METHOD)).toHaveText('Pix');
   });
 
   test('CA-07 paginador', async ({ page }) => {
@@ -194,7 +198,7 @@ test.describe('lista de lançamentos', () => {
     mock.user('A1').purchases = seeds(15, { date: '2026-10-10' });
     await page.goto(OCTOBER);
     await expect(dataRows(page)).toHaveCount(15);
-    await expect(page.locator('mat-paginator')).toHaveCount(0);
+    await expect(page.locator('app-paginator')).toHaveCount(0);
   });
 
   test('CA-08 recarregar', async ({ page }) => {
@@ -206,7 +210,7 @@ test.describe('lista de lançamentos', () => {
     await page.reload();
     await expect(page).toHaveURL(url);
     await expect(rangeLabel(page)).toHaveText('21–25 de 25');
-    await expect(combobox(page, LABEL_STATUS)).toContainText('Pendente');
+    await expect(chosen(page, LABEL_STATUS)).toHaveText('Pendente');
     expect(await page.locator('td.description').allTextContents()).toEqual(before);
   });
 
@@ -376,8 +380,7 @@ test.describe('lista de lançamentos', () => {
       users: { A1: { categories: [...GLOBAL_CATEGORIES, ...PERSONAL_CATEGORIES] } },
     });
     await page.goto(OCTOBER);
-    await combobox(page, LABEL_CATEGORY).click();
-    await expect(page.getByRole('option')).toHaveText([
+    await expect(options(page, LABEL_CATEGORY)).toHaveText([
       'Todas',
       'Academia',
       'Alimentação',

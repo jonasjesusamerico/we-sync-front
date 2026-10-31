@@ -1,20 +1,32 @@
-<div class="form-side">
-  <div class="form-column">
-    <app-brand class="brand-small" size="small" tone="primary" />
-    <nav mat-tab-nav-bar mat-stretch-tabs [tabPanel]="panel" [attr.aria-label]="tabsLabel">
-      @for (tab of tabs; track tab.path) {
-        <a
-          mat-tab-link
-          [routerLink]="tab.path"
-          routerLinkActive
-          #rla="routerLinkActive"
-          [active]="rla.isActive"
-        >
-          {{ tab.label }}
-        </a>
-      }
-    </nav>
-    <mat-tab-nav-panel #panel><router-outlet /></mat-tab-nav-panel>
+<div class="auth-box app-login-box">
+  <div class="brand"><app-brand size="large" tone="on-primary" /></div>
+  <div class="card shadow-lg border-0">
+    <div class="card-header">
+      <nav
+        class="nav nav-tabs card-header-tabs nav-fill"
+        role="tablist"
+        [attr.aria-label]="tabsLabel"
+      >
+        @for (tab of tabs; track tab.path) {
+          <a
+            #rla="routerLinkActive"
+            class="nav-link"
+            role="tab"
+            [id]="tab.id"
+            [routerLink]="tab.path"
+            routerLinkActive="active"
+            [attr.aria-selected]="rla.isActive"
+            [attr.aria-controls]="panelId"
+            [attr.tabindex]="rla.isActive ? 0 : -1"
+            (keydown)="onTabKeydown($event)"
+          >
+            {{ tab.label }}
+          </a>
+        }
+      </nav>
+    </div>
+    <div class="card-body p-4 p-md-5" role="tabpanel" [id]="panelId">
+      <router-outlet />
+    </div>
   </div>
 </div>
-<aside class="auth-panel" aria-hidden="true"><app-brand size="large" tone="on-primary" /></aside>

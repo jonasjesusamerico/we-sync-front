@@ -15,8 +15,7 @@ import {
   LABEL_REGISTER,
 } from './support/texts';
 
-const PRIMARY = 'rgb(75, 102, 254)';
-const WHITE = 'rgb(255, 255, 255)';
+const PRIMARY = 'rgb(3, 60, 115)';
 
 const nav = (page: Page) => page.getByRole('navigation', { name: LABEL_MAIN_NAV });
 const homeLink = (page: Page) => nav(page).getByRole('link', { name: LABEL_HOME });
@@ -53,7 +52,7 @@ test.describe('teclado', () => {
 
     await page.keyboard.press('Tab');
     await expect(menuButton).toBeFocused();
-    expect(await focusRingColor(menuButton)).toBe(WHITE);
+    expect(await focusRingColor(menuButton)).toBe(PRIMARY);
 
     await page.keyboard.press('Enter');
     await expect(nav(page)).toBeVisible();
@@ -71,7 +70,7 @@ test.describe('teclado', () => {
 
     await page.keyboard.press('Tab');
     await expect(account).toBeFocused();
-    expect(await focusRingColor(account)).toBe(WHITE);
+    expect(await focusRingColor(account)).toBe(PRIMARY);
 
     await page.keyboard.press('Enter');
     await expect(page.getByRole('menuitem', { name: LABEL_LOGOUT })).toBeFocused();

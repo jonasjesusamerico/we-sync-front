@@ -25,8 +25,8 @@ const password = (page: Page) => page.getByLabel('Senha', { exact: true });
 const confirmPassword = (page: Page) => page.getByLabel('Confirmar senha');
 const fieldError = (page: Page, label: string) =>
   page
-    .locator('mat-form-field', { has: page.getByLabel(label, { exact: true }) })
-    .locator('mat-error');
+    .locator('.field', { has: page.getByLabel(label, { exact: true }) })
+    .locator('.invalid-feedback');
 
 test.describe('auth', () => {
   test('fluxo principal', async ({ page }) => {
@@ -133,7 +133,7 @@ test.describe('auth', () => {
     await expect(page.getByRole('alert')).toHaveText(MSG_INVALID_CREDENTIALS);
     await expect(password(page)).toHaveValue('');
     await expect(email(page)).toHaveValue('ana@exemplo.com');
-    await expect(page.locator('mat-error')).toHaveCount(0);
+    await expect(page.locator('.invalid-feedback')).toHaveCount(0);
   });
 
   test('API fora do ar', async ({ page }) => {
@@ -181,24 +181,24 @@ test.describe('auth', () => {
     await expect(password(page)).toHaveAttribute('type', 'password');
   });
 
-  test('CA-06 tela dividida', async ({ page }) => {
+  test('CA-06 cartão sobre o degradê', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/login');
 
-    const aside = page.locator('aside');
-    await expect(aside).toBeVisible();
-    await expect(aside).toHaveCSS('background-color', 'rgb(75, 102, 254)');
-    await expect(aside.locator('.name')).toHaveText(APP_NAME);
-    const asideBox = await aside.boundingBox();
-    const formBox = await page.locator('form').boundingBox();
-    expect(asideBox!.x).toBeGreaterThan(formBox!.x);
+    const layout = page.locator('app-auth-layout');
+    await expect(layout).toHaveClass(/bg-plum-plate/);
+    const brand = layout.locator('app-brand');
+    await expect(brand.locator('.name')).toHaveText(APP_NAME);
+    const card = layout.locator('.card');
+    const brandBox = await brand.boundingBox();
+    const cardBox = await card.boundingBox();
+    expect(brandBox!.y).toBeLessThan(cardBox!.y);
+    expect(cardBox!.width).toBeLessThanOrEqual(500);
 
-    // O `mat-tab-nav-bar` dá `role="tablist"` ao `<nav>`; o nome `Acesso` fica nele.
     const tablist = page.getByRole('tablist', { name: LABEL_AUTH_TABS });
     await expect(tablist).toBeVisible();
     await expect(tablist.getByRole('tab')).toHaveText([LABEL_LOGIN, LABEL_REGISTER]);
     await expect(tab(page, LABEL_LOGIN)).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('.brand-small')).toBeHidden();
   });
 
   test('CA-08 abas trocam a URL', async ({ page }) => {

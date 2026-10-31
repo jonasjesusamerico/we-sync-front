@@ -53,11 +53,9 @@ describe('validadores do lançamento', () => {
   });
 
   it('mensagens', () => {
-    expect(purchaseFieldError('date', { matDatepickerParse: { text: 'x' } })).toBe(
-      MSG_DATE_INVALID,
-    );
+    expect(purchaseFieldError('date', { dateParse: { text: 'x' } })).toBe(MSG_DATE_INVALID);
     expect(purchaseFieldError('date', { required: true })).toBe(MSG_DATE_REQUIRED);
-    expect(purchaseFieldError('date', { matDatepickerParse: { text: 'x' }, required: true })).toBe(
+    expect(purchaseFieldError('date', { dateParse: { text: 'x' }, required: true })).toBe(
       'Data inválida.',
     );
     expect(purchaseFieldError('description', { required: true })).toBe(MSG_DESCRIPTION_REQUIRED);

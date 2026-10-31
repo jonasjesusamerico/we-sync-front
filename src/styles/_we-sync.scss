@@ -1,0 +1,207 @@
+// Ajustes do we-sync sobre o ArchitectUI. Importado por `src/styles.scss` depois do Bootstrap e do template.
+@use 'breakpoints' as bp;
+
+:root {
+  // Tokens do app para os componentes (cores só aqui e no tema).
+  --app-content-background: #{$app-container-bg};
+  --app-muted: #{$gray-600};
+  --app-border: #{$gray-200};
+  --app-focus-ring: #{$primary};
+  --app-icon-box-shadow: #{$box-shadow-default};
+  --app-logo: #3f6ad8;
+  --app-on-primary: #{$white};
+}
+
+body {
+  background: $app-container-bg;
+}
+
+// ADR-05 (002): contorno sólido no foco por teclado (o template some com o foco).
+:focus-visible {
+  outline: 2px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+// O Bootstrap troca o `outline` por `box-shadow` no foco, e o tema do template zera essa sombra: volta o contorno.
+.btn:focus-visible,
+.nav-link:focus-visible,
+.page-link:focus-visible,
+.dropdown-item:focus-visible,
+.btn-close:focus-visible {
+  outline: 2px solid var(--app-focus-ring);
+  outline-offset: 2px;
+}
+
+.form-control:focus-visible,
+.form-select:focus-visible {
+  outline: 0;
+}
+
+// Ícones decorativos do Pe-icon-7-stroke não roubam o alinhamento do texto.
+[class^='pe-7s-'],
+[class*=' pe-7s-'] {
+  line-height: 1;
+  vertical-align: middle;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Shell (layout das telas internas). Modo largo: menu fixo de 280 px. Modo estreito (< bp.$wide): menu por cima,
+// escondido até o ☰, com fundo escurecido.
+// ---------------------------------------------------------------------------------------------------------------
+
+.app-header {
+  top: 0;
+  left: 0;
+  background: $app-header-bg;
+
+  .app-header__mobile-menu {
+    display: flex;
+    padding: 0 0 0 $layout-spacer-x;
+  }
+
+  .logo-src {
+    display: flex;
+  }
+
+  .account-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    color: var(--bs-primary);
+    background: $dropdown-link-hover-bg;
+    font-size: 1.6rem;
+    text-decoration: none;
+  }
+}
+
+.app-sidebar {
+  top: 0;
+  left: 0;
+  background: $app-sidebar-bg;
+
+  .app-header__logo {
+    background: $app-header-bg;
+  }
+}
+
+// O template anima o recuo do conteúdo para o menu recolhível (80 px), que o we-sync não tem; sem a animação, a
+// troca de modo não passa por larguras intermediárias com rolagem horizontal.
+.app-main__outer,
+.app-header .app-header__content {
+  transition: none !important;
+}
+
+.app-container.narrow {
+  .app-header {
+    z-index: 25;
+
+    .app-header__content {
+      padding-left: 0;
+    }
+  }
+
+  .app-sidebar {
+    z-index: 20;
+    padding-top: $app-header-height;
+    transform: translateX(-100%);
+    visibility: hidden;
+    box-shadow: none;
+    transition:
+      transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      visibility 0s linear 0.3s;
+  }
+
+  &.sidebar-mobile-open .app-sidebar {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: $sidebar-box-shadow;
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .app-main__outer {
+    padding-left: 0;
+  }
+
+  .app-main__inner {
+    padding: 16px 16px 0;
+  }
+
+  .sidebar-menu-overlay {
+    border: 0;
+    padding: 0;
+    cursor: default;
+    visibility: visible;
+    opacity: 1;
+    width: 100%;
+    height: 100%;
+  }
+
+  .app-page-title {
+    margin: -16px -16px 16px;
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-container.narrow .app-sidebar {
+    transition: none;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Overlays do CDK com a cara do Bootstrap.
+// ---------------------------------------------------------------------------------------------------------------
+
+// Menu de conta (`cdkMenu`): o `.dropdown-menu` do Bootstrap só aparece com `.show`.
+.cdk-overlay-pane .dropdown-menu {
+  position: static;
+  display: block;
+  margin: 0.25rem 0;
+}
+
+.cdk-overlay-dark-backdrop {
+  background: rgba($black, $modal-backdrop-opacity);
+}
+
+// Diálogo (`Dialog` do CDK) com o miolo `.modal-content` do Bootstrap. As variáveis `--bs-modal-*` ficam na classe
+// `.modal`, que não é usada (quem posiciona é o overlay do CDK): declaradas aqui.
+.app-modal-pane {
+  --#{$prefix}modal-padding: #{$modal-inner-padding};
+  --#{$prefix}modal-color: #{$modal-content-color};
+  --#{$prefix}modal-bg: #{$modal-content-bg};
+  --#{$prefix}modal-border-color: #{$modal-content-border-color};
+  --#{$prefix}modal-border-width: #{$modal-content-border-width};
+  --#{$prefix}modal-border-radius: #{$modal-content-border-radius};
+  --#{$prefix}modal-inner-border-radius: #{$modal-content-inner-border-radius};
+  --#{$prefix}modal-header-padding: #{$modal-header-padding};
+  --#{$prefix}modal-header-border-color: #{$modal-header-border-color};
+  --#{$prefix}modal-header-border-width: #{$modal-header-border-width};
+  --#{$prefix}modal-title-line-height: #{$modal-title-line-height};
+  --#{$prefix}modal-footer-gap: #{$modal-footer-margin-between};
+  --#{$prefix}modal-footer-bg: #{$modal-footer-bg};
+  --#{$prefix}modal-footer-border-color: #{$modal-footer-border-color};
+  --#{$prefix}modal-footer-border-width: #{$modal-footer-border-width};
+
+  .modal-content {
+    box-shadow: $box-shadow-lg-default;
+  }
+
+  .modal-header,
+  .modal-footer {
+    background: $gray-100;
+  }
+}
+
+// Aviso que some sozinho (`Notifier`), no canto inferior.
+.app-toast-region {
+  position: fixed;
+  z-index: 1090;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+}

@@ -1,48 +1,32 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { MatIcon } from '@angular/material/icon';
 
 import { APP_NAME } from '../../layout/layout.messages';
 
-/** Marca do app: ícone `sync` + nome (RF-03). Sem link, foco ou estado. */
+/** Marca do app em texto, como o logo do ArchitectUI (RF-03). Sem link, foco ou estado. */
 @Component({
   selector: 'app-brand',
-  imports: [MatIcon],
-  template: `<mat-icon aria-hidden="true">sync</mat-icon><span class="name">{{ name }}</span>`,
+  template: `<span class="name">{{ name }}</span>`,
   styles: `
     :host {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      color: var(--mat-sys-on-primary);
+      color: var(--app-on-primary);
     }
 
     :host(.primary) {
-      color: var(--mat-sys-primary);
-    }
-
-    mat-icon {
-      font-size: 28px;
-      width: 28px;
-      height: 28px;
+      color: var(--app-logo);
     }
 
     .name {
-      font: var(--mat-sys-title-large);
-    }
-
-    :host(.large) {
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    :host(.large) mat-icon {
-      font-size: 96px;
-      width: 96px;
-      height: 96px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      white-space: nowrap;
     }
 
     :host(.large) .name {
-      font: var(--mat-sys-display-large);
+      font-size: 2.5rem;
+      letter-spacing: -1px;
     }
   `,
   host: {

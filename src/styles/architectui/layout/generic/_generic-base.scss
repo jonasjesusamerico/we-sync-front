@@ -1,0 +1,10 @@
+// General
+// we-sync: the template's `outline: none !important` on links and buttons was removed (visible keyboard focus,
+// ADR-05 of feature 002); the focus ring lives in `src/styles/_we-sync.scss`.
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  margin: 0;
+}

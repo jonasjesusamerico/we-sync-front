@@ -1,0 +1,20 @@
+// ArchitectUI (free) styles, vendored from https://github.com/DashboardPack/architectui-angular-theme-free (MIT, see
+// LICENSE in this folder). Only the parts we-sync uses; imported by `src/styles.scss` after Bootstrap.
+
+@import 'layout/layout-variables';
+@import 'layout/generic/generic-base';
+@import 'layout/header/header-base';
+@import 'layout/sidebar/sidebar-base';
+@import 'layout/main/main-base';
+@import 'layout/main/themes/main-white';
+@import 'layout/elements/page-title/page-title-base';
+
+@import 'utils/backgrounds';
+
+@import 'elements/buttons';
+@import 'elements/dropdown';
+@import 'elements/modals';
+
+@import 'pages/userpages';
+
+@import 'components/hamburgers/hamburgers';

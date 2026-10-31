@@ -1,60 +1,101 @@
-<mat-toolbar>
-  @if (!isWide()) {
-    <button
-      mat-icon-button
-      type="button"
-      [attr.aria-label]="text.openMenu"
-      [attr.aria-expanded]="menuOpen()"
-      aria-controls="app-sidenav"
-      (click)="openMenu()"
-    >
-      <mat-icon aria-hidden="true">menu</mat-icon>
-    </button>
-  }
-  <app-brand size="small" tone="on-primary" />
-  <span class="spacer"></span>
-  <button
-    mat-icon-button
-    type="button"
-    [attr.aria-label]="text.account"
-    [matMenuTriggerFor]="accountMenu"
-  >
-    <mat-icon aria-hidden="true">account_circle</mat-icon>
-  </button>
-</mat-toolbar>
-<mat-menu #accountMenu="matMenu" xPosition="before">
-  <button mat-menu-item type="button" (click)="logout()" [disabled]="loggingOut()">
-    {{ text.logout }}
-  </button>
-</mat-menu>
-<mat-sidenav-container>
-  <mat-sidenav
-    #sidenav
-    id="app-sidenav"
-    [mode]="isWide() ? 'side' : 'over'"
-    [opened]="isWide() || menuOpen()"
-    [disableClose]="isWide()"
-    (openedChange)="onOpenedChange(sidenav.opened)"
-  >
-    <nav [attr.aria-label]="text.mainNav">
-      <mat-nav-list>
-        @for (item of navItems; track item.path) {
-          <a
-            mat-list-item
-            [routerLink]="item.path"
-            routerLinkActive="nav-active"
-            [routerLinkActiveOptions]="item.match"
-            ariaCurrentWhenActive="page"
-            (click)="onNavigate()"
+<div
+  class="app-container app-theme-white fixed-header fixed-sidebar"
+  [class.narrow]="!isWide()"
+  [class.sidebar-mobile-open]="menuOpen()"
+>
+  <header class="app-header header-shadow">
+    @if (!isWide()) {
+      <div class="app-header__mobile-menu">
+        <button
+          #menuButton
+          type="button"
+          class="hamburger hamburger--elastic"
+          [class.is-active]="menuOpen()"
+          [attr.aria-label]="text.openMenu"
+          [attr.aria-expanded]="menuOpen()"
+          aria-controls="app-sidenav"
+          (click)="openMenu()"
+        >
+          <span class="hamburger-box"><span class="hamburger-inner"></span></span>
+        </button>
+      </div>
+      <div class="logo-src ms-3"><app-brand size="small" tone="primary" /></div>
+    }
+    <div class="app-header__content">
+      <div class="app-header-right">
+        <div class="header-btn-lg">
+          <button
+            type="button"
+            class="btn btn-link p-0 account-toggle"
+            [attr.aria-label]="text.account"
+            [cdkMenuTriggerFor]="accountMenu"
+            [cdkMenuPosition]="accountMenuPosition"
           >
-            <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
-            <span matListItemTitle>{{ item.label }}</span>
-          </a>
-        }
-      </mat-nav-list>
-    </nav>
-  </mat-sidenav>
-  <mat-sidenav-content>
-    <main class="content"><router-outlet /></main>
-  </mat-sidenav-content>
-</mat-sidenav-container>
+            <i class="pe-7s-user" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <ng-template #accountMenu>
+    <div class="dropdown-menu dropdown-menu-sm" cdkMenu>
+      <button
+        type="button"
+        class="dropdown-item"
+        cdkMenuItem
+        [cdkMenuItemDisabled]="loggingOut()"
+        [disabled]="loggingOut()"
+        (cdkMenuItemTriggered)="logout()"
+      >
+        <i class="pe-7s-power me-2" aria-hidden="true"></i>{{ text.logout }}
+      </button>
+    </div>
+  </ng-template>
+
+  <div id="app-sidenav" class="app-sidebar sidebar-shadow" [cdkTrapFocus]="!isWide() && menuOpen()">
+    @if (isWide()) {
+      <div class="app-header__logo">
+        <div class="logo-src"><app-brand size="small" tone="primary" /></div>
+      </div>
+    }
+    <div class="app-sidebar-content">
+      <div class="app-sidebar-scroll">
+        <nav class="v-sidebar-menu" [attr.aria-label]="text.mainNav">
+          <div class="vsm-list">
+            <div class="vsm-header" aria-hidden="true">{{ text.menuSection }}</div>
+            @for (item of navItems; track item.path) {
+              <div class="vsm-item">
+                <a
+                  class="vsm-link"
+                  [routerLink]="item.path"
+                  routerLinkActive="active-item"
+                  [routerLinkActiveOptions]="item.match"
+                  ariaCurrentWhenActive="page"
+                  (click)="onNavigate()"
+                >
+                  <i class="vsm-icon" [class]="item.icon" aria-hidden="true"></i>
+                  <span class="vsm-title">{{ item.label }}</span>
+                </a>
+              </div>
+            }
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-main__outer">
+    <main class="app-main__inner"><router-outlet /></main>
+  </div>
+
+  @if (!isWide() && menuOpen()) {
+    <button
+      type="button"
+      class="sidebar-menu-overlay"
+      tabindex="-1"
+      [attr.aria-label]="text.closeMenu"
+      (click)="closeMenu(true)"
+    ></button>
+  }
+</div>

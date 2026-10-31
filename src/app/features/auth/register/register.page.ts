@@ -2,10 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { MatButton } from '@angular/material/button';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
-import { MatInput } from '@angular/material/input';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
@@ -13,7 +9,7 @@ import { AuthApi } from '../../../core/auth/auth.api';
 import { genericErrorMessage, MSG_SERVER } from '../../../core/http/error-messages';
 import { FormAlertComponent } from '../../../shared/form-alert/form-alert.component';
 import { PasswordFieldComponent } from '../../../shared/password-field/password-field.component';
-import { controlErrorMessage } from '../../../shared/validators/control-error-message';
+import { touchedErrorMessage } from '../../../shared/validators/control-error-message';
 import { emailValidator } from '../../../shared/validators/email.validator';
 import {
   confirmPasswordValidator,
@@ -34,18 +30,7 @@ type RegisterAlert = { kind: 'conflict' } | { kind: 'error'; message: string };
 /** RF-02: cadastro. Sucesso leva ao login (RN-04); não abre sessão. */
 @Component({
   selector: 'app-register-page',
-  imports: [
-    ReactiveFormsModule,
-    RouterLink,
-    MatFormField,
-    MatLabel,
-    MatInput,
-    MatError,
-    MatButton,
-    MatProgressSpinner,
-    PasswordFieldComponent,
-    FormAlertComponent,
-  ],
+  imports: [ReactiveFormsModule, RouterLink, PasswordFieldComponent, FormAlertComponent],
   templateUrl: './register.page.html',
   styleUrl: '../auth-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,7 +48,7 @@ export class RegisterPage {
   readonly submitting = signal(false);
   readonly alert = signal<RegisterAlert | null>(null);
 
-  protected readonly emailError = controlErrorMessage(this.form.controls.email, 'email');
+  protected readonly emailError = touchedErrorMessage(this.form.controls.email, 'email');
   protected readonly text = {
     email: LABEL_EMAIL,
     password: LABEL_PASSWORD,

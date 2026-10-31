@@ -1,19 +1,25 @@
-import { MatDialog } from '@angular/material/dialog';
+import { Dialog } from '@angular/cdk/dialog';
 import { map, Observable } from 'rxjs';
 
-import { ConfirmDialogComponent, ConfirmDialogData } from './confirm-dialog.component';
+import {
+  CONFIRM_DIALOG_TITLE_ID,
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from './confirm-dialog.component';
 
 /** Abre o diálogo e devolve `true` só quando confirmado (e, com ação, só quando a ação terminou bem). */
-export function openConfirm(dialog: MatDialog, data: ConfirmDialogData): Observable<boolean> {
+export function openConfirm(dialog: Dialog, data: ConfirmDialogData): Observable<boolean> {
   return dialog
-    .open<ConfirmDialogComponent, ConfirmDialogData, boolean>(ConfirmDialogComponent, {
+    .open<boolean, ConfirmDialogData, ConfirmDialogComponent>(ConfirmDialogComponent, {
       data,
       role: 'alertdialog',
+      ariaLabelledBy: CONFIRM_DIALOG_TITLE_ID,
       autoFocus: 'first-tabbable',
       restoreFocus: true,
       width: '400px',
       maxWidth: 'calc(100vw - 32px)',
+      panelClass: 'app-modal-pane',
+      backdropClass: 'cdk-overlay-dark-backdrop',
     })
-    .afterClosed()
-    .pipe(map((result) => result === true));
+    .closed.pipe(map((result) => result === true));
 }

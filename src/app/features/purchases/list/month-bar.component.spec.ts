@@ -2,18 +2,9 @@ import { registerLocaleData } from '@angular/common';
 import localePt from '@angular/common/locales/pt';
 import { ApplicationRef, LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  DateAdapter,
-  MAT_DATE_FORMATS,
-  MAT_DATE_LOCALE,
-  MATERIAL_ANIMATIONS,
-} from '@angular/material/core';
-import { MatDatepickerIntl } from '@angular/material/datepicker';
 
-import { BR_DATE_FORMATS, BrDateAdapter } from '../br-date-adapter';
-import { PtBrDatepickerIntl } from '../pt-br-datepicker-intl';
 import {
-  DATEPICKER_LABELS,
+  CALENDAR_LABELS,
   LABEL_CURRENT_MONTH,
   LABEL_NEXT_MONTH,
   LABEL_PREVIOUS_MONTH,
@@ -30,14 +21,7 @@ describe('MonthBarComponent', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 9, 22, 12, 0));
     TestBed.configureTestingModule({
-      providers: [
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
-        { provide: LOCALE_ID, useValue: 'pt-BR' },
-        { provide: DateAdapter, useClass: BrDateAdapter },
-        { provide: MAT_DATE_FORMATS, useValue: BR_DATE_FORMATS },
-        { provide: MAT_DATE_LOCALE, useValue: 'pt-BR' },
-        { provide: MatDatepickerIntl, useClass: PtBrDatepickerIntl },
-      ],
+      providers: [{ provide: LOCALE_ID, useValue: 'pt-BR' }],
     });
   });
 
@@ -63,9 +47,12 @@ describe('MonthBarComponent', () => {
   const buttonByText = (text: string) =>
     Array.from(host().querySelectorAll('button')).find((b) => b.textContent?.trim() === text);
   const settle = () => TestBed.inject(ApplicationRef).whenStable();
-  const calendar = () => document.querySelector('mat-calendar');
-  const cell = (label: string) =>
-    document.querySelector<HTMLElement>(`.mat-calendar-body-cell[aria-label="${label}"]`);
+  const calendar = () => document.querySelector('app-calendar-panel');
+  /** Botão do calendário pelo nome acessível (`aria-label` ou texto). */
+  const cell = (name: string) =>
+    Array.from(document.querySelectorAll<HTMLButtonElement>('app-calendar-panel button')).find(
+      (b) => (b.getAttribute('aria-label') ?? b.textContent?.trim()) === name,
+    );
 
   it('mostra o mês', async () => {
     await render(2026, 10, true);
@@ -124,11 +111,25 @@ describe('MonthBarComponent', () => {
     await render(2026, 10, true);
     monthButton().click();
     await settle();
-    const switcher = document.querySelector('.mat-calendar-period-button');
-    // Em `multi-year`, o botão de troca leva à visão de dias.
-    expect(switcher?.getAttribute('aria-label')).toBe(DATEPICKER_LABELS.switchToMonthViewLabel);
-    expect(
-      document.querySelector('.mat-calendar-previous-button')?.getAttribute('aria-label'),
-    ).toBe(DATEPICKER_LABELS.prevMultiYearLabel);
+    expect(calendar()?.querySelector('[role="dialog"]')?.getAttribute('aria-label')).toBe(
+      CALENDAR_LABELS.calendar,
+    );
+    expect(document.querySelector('.calendar-title')?.textContent?.trim()).toBe('2016 a 2039');
+    expect(cell(CALENDAR_LABELS.previous.years)).toBeDefined();
+    expect(cell(CALENDAR_LABELS.next.years)).toBeDefined();
+    cell('2026')!.click();
+    await settle();
+    expect(cell(CALENDAR_LABELS.previous.months)).toBeDefined();
+    expect(cell('outubro de 2026')?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('Esc fecha o seletor', async () => {
+    await render(2026, 10, true);
+    monthButton().click();
+    await settle();
+    document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await settle();
+    expect(calendar()).toBeNull();
+    expect(emitted).toEqual([]);
   });
 });

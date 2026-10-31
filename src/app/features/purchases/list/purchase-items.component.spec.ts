@@ -3,7 +3,6 @@ import localePt from '@angular/common/locales/pt';
 import { Location } from '@angular/common';
 import { Component, LOCALE_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { provideRouter, Router } from '@angular/router';
 
 import { purchase } from '../../../../testing/purchases-contract';
@@ -33,7 +32,6 @@ describe('PurchaseItemsComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'lancamentos/:id', component: StubPage }]),
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
         { provide: LOCALE_ID, useValue: 'pt-BR' },
       ],
     });

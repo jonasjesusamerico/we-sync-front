@@ -56,10 +56,12 @@ describe('RegisterPage', () => {
   const submitButton = () => root().querySelector('button[type=submit]') as HTMLButtonElement;
   const settle = () => harness.fixture.whenStable();
   const errors = () =>
-    Array.from(root().querySelectorAll('mat-error')).map((e) => e.textContent?.trim() ?? '');
+    Array.from(root().querySelectorAll('.invalid-feedback')).map(
+      (e) => e.textContent?.trim() ?? '',
+    );
   const fieldError = (index: number) => {
-    const field = root().querySelectorAll('mat-form-field').item(index);
-    return field.querySelector('mat-error')?.textContent?.trim() ?? null;
+    const field = root().querySelectorAll('.field').item(index);
+    return field.querySelector('.invalid-feedback')?.textContent?.trim() ?? null;
   };
   const alert = () => root().querySelector('app-form-alert');
 
@@ -252,7 +254,7 @@ describe('RegisterPage', () => {
 
     const req = http.expectOne(REGISTER);
     expect(submitButton().disabled).toBe(true);
-    expect(submitButton().querySelector('mat-progress-spinner')).not.toBeNull();
+    expect(submitButton().querySelector('.spinner-border')).not.toBeNull();
 
     req.flush({ id: 42, email: 'ana@exemplo.com' }, { status: 201, statusText: 'Created' });
     await settle();

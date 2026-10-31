@@ -14,7 +14,7 @@ describe('HomePage', () => {
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('app-page-header h1')?.textContent).toBe('Início');
-    expect(el.querySelector(':scope > mat-card h2')?.textContent).toBe('Bem-vindo ao we-sync');
+    expect(el.querySelector(':scope > .main-card h2')?.textContent).toBe('Bem-vindo ao we-sync');
     expect(el.querySelectorAll('h1')).toHaveLength(1);
     expect(HOME_TITLE).toBe('Bem-vindo ao we-sync');
   });

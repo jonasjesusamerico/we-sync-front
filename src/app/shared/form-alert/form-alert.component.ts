@@ -1,30 +1,23 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-/** Aviso fixo no formulário (RN-04, RN-05, RN-06, RN-08, RN-15). */
+/** Aviso fixo no formulário, como `.alert` do Bootstrap (RN-04, RN-05, RN-06, RN-08, RN-15). */
 @Component({
   selector: 'app-form-alert',
   template: '<ng-content />',
   styles: `
     :host {
       display: block;
-      padding: 12px;
-      border-radius: 8px;
+      margin-bottom: 0;
       overflow-wrap: anywhere;
-    }
-
-    :host(.error) {
-      background-color: var(--mat-sys-error-container);
-      color: var(--mat-sys-on-error-container);
-    }
-
-    :host(.info) {
-      background-color: var(--mat-sys-secondary-container);
-      color: var(--mat-sys-on-secondary-container);
     }
   `,
   host: {
+    class: 'alert',
     '[attr.role]': "kind() === 'error' ? 'alert' : 'status'",
-    '[class]': 'kind()',
+    '[class.alert-danger]': "kind() === 'error'",
+    '[class.alert-info]': "kind() === 'info'",
+    '[class.error]': "kind() === 'error'",
+    '[class.info]': "kind() === 'info'",
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

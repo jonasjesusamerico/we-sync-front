@@ -1,6 +1,6 @@
 # we-sync-front
 
-Front-end do we-sync: Angular 22 (standalone, signals, zoneless) com Angular Material.
+Front-end do we-sync: Angular 22 (standalone, signals, zoneless) com o visual do ArchitectUI (Bootstrap 5.3).
 
 ## Requisitos
 
@@ -30,17 +30,19 @@ Abra `http://localhost:4200`.
 
 ## Tema
 
-Tema Material 3 próprio (feature 002). As paletas vêm do schematic do Material, a partir das cores do ADR-02:
+Visual do [ArchitectUI free](https://github.com/DashboardPack/architectui-angular-theme-free) (MIT) sobre
+Bootstrap 5.3 (só o SCSS; o comportamento de menus, diálogos e overlays vem do `@angular/cdk`). O SCSS do template
+usado pelo app está copiado em `src/styles/architectui/` (com a `LICENSE`), e só o necessário. Ícones
+Pe-icon-7-stroke (`pe7-icon`), os mesmos do template, empacotados.
 
-```bash
-ng generate @angular/material:theme-color --primary-color='#4B66FE' --tertiary-color='#EA0050' \
-  --directory=src/styles/ --is-scss --no-include-high-contrast
-```
+- `src/styles.scss`: ordem de importação (funções do Bootstrap → variáveis do tema → Bootstrap → ArchitectUI →
+  ícones → overlay do CDK → ajustes do we-sync).
+- `src/styles/architectui/themes/blue-alt/_variables.scss`: cores e medidas do tema (as do demo publicado).
+- `src/styles/_we-sync.scss`: tokens `--app-*`, foco visível, Shell estreito/largo e overlays do CDK com a cara do
+  Bootstrap.
 
-Isso gera `src/styles/_theme-colors.scss`, que não é editado à mão. As cores exatas (`mat.theme-overrides`), os
-tokens do app (`--app-*`) e os ajustes de componentes (`mat.*-overrides`) ficam em `src/styles.scss`, o único lugar
-com valores de cor. Os componentes usam só `var(--mat-sys-*)` e `var(--app-*)`. O breakpoint de 960 px fica em
-`src/styles/_breakpoints.scss` e em `src/app/layout/breakpoints.ts`.
+Cores só em `src/styles/` e `src/styles.scss`. Os componentes usam só `var(--bs-*)` e `var(--app-*)`. O breakpoint
+de 960 px fica em `src/styles/_breakpoints.scss` e em `src/app/layout/breakpoints.ts`.
 
 ## Scripts
 

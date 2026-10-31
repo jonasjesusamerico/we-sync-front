@@ -16,7 +16,7 @@ test.use({ timezoneId: 'America/Sao_Paulo', locale: 'pt-BR' });
 
 const nav = (page: Page) => page.getByRole('navigation', { name: LABEL_MAIN_NAV });
 const menuButton = (page: Page) => page.getByRole('button', { name: LABEL_OPEN_MENU });
-const backdrop = (page: Page) => page.locator('.mat-drawer-backdrop.mat-drawer-shown');
+const backdrop = (page: Page) => page.locator('.sidebar-menu-overlay');
 
 async function openHome(page: Page, width: number, height: number) {
   await page.setViewportSize({ width, height });
@@ -31,8 +31,8 @@ test.describe('layout', () => {
     await page.clock.setFixedTime(new Date('2026-10-21T12:00:00-03:00'));
     await openHome(page, 1280, 800);
 
-    const toolbar = page.locator('mat-toolbar');
-    await expect(toolbar.locator('app-brand .name')).toHaveText(APP_NAME);
+    const toolbar = page.locator('header.app-header');
+    await expect(page.locator('.app-sidebar app-brand .name')).toHaveText(APP_NAME);
     await expect(toolbar.getByRole('button', { name: LABEL_ACCOUNT })).toBeVisible();
     await expect(menuButton(page)).toHaveCount(0);
     await expect(nav(page)).toBeVisible();
@@ -78,7 +78,7 @@ test.describe('layout', () => {
     await openHome(page, 360, 640);
     await menuButton(page).click();
     await expect(nav(page)).toBeVisible();
-    // O `Esc` é ouvido pelo drawer: espera o foco entrar nele (fim da abertura), como faz quem usa o teclado.
+    // Espera o foco entrar no menu (fim da abertura), como faz quem usa o teclado.
     await expect(nav(page).getByRole('link', { name: LABEL_HOME })).toBeFocused();
 
     await page.keyboard.press('Escape');
@@ -115,6 +115,11 @@ test.describe('layout', () => {
     await page.setViewportSize({ width: 960, height: 800 });
     await expect(menuButton(page)).toHaveCount(0);
     await expect(nav(page)).toBeVisible();
+  });
+
+  test('marca no topo do celular', async ({ page }) => {
+    await openHome(page, 360, 640);
+    await expect(page.locator('header.app-header app-brand .name')).toHaveText(APP_NAME);
   });
 
   test('cabeçalho no celular', async ({ page }) => {

@@ -1,11 +1,8 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MATERIAL_ANIMATIONS } from '@angular/material/core';
-import { MatSidenavHarness } from '@angular/material/sidenav/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import { FakeBreakpointObserver } from '../../testing/fake-breakpoint-observer';
@@ -43,7 +40,6 @@ describe('ShellComponent', () => {
         ]),
         { provide: API_BASE_URL, useValue: '/api/v1' },
         { provide: BreakpointObserver, useClass: FakeBreakpointObserver },
-        { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -69,14 +65,26 @@ describe('ShellComponent', () => {
     const fixture = TestBed.createComponent(ShellComponent);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
-    const loader = TestbedHarnessEnvironment.loader(fixture);
     return {
       fixture,
       el,
-      sidenav: () => loader.getHarness(MatSidenavHarness),
+      sidenav: () => sidenavState(el),
       menuButton: () =>
         el.querySelector(`button[aria-label="${LABEL_OPEN_MENU}"]`) as HTMLButtonElement | null,
-      navLinks: () => Array.from(el.querySelectorAll<HTMLAnchorElement>('a[mat-list-item]')),
+      navLinks: () => Array.from(el.querySelectorAll<HTMLAnchorElement>('#app-sidenav a.vsm-link')),
+    };
+  }
+
+  /**
+   * Estado do menu lateral, com os nomes do antigo `MatSidenavHarness`: `side` (fixo, sempre aberto) ou `over` (por
+   * cima, aberto com a classe `sidebar-mobile-open`).
+   */
+  function sidenavState(el: HTMLElement) {
+    const container = el.querySelector('.app-container') as HTMLElement;
+    const narrow = container.classList.contains('narrow');
+    return {
+      getMode: async () => (narrow ? 'over' : 'side'),
+      isOpen: async () => !narrow || container.classList.contains('sidebar-mobile-open'),
     };
   }
 
@@ -85,7 +93,7 @@ describe('ShellComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     (el.querySelector(`button[aria-label="${LABEL_ACCOUNT}"]`) as HTMLButtonElement).click();
     await fixture.whenStable();
-    return document.querySelector('[mat-menu-item]') as HTMLButtonElement;
+    return document.querySelector('.cdk-overlay-container [role="menuitem"]') as HTMLButtonElement;
   }
 
   async function clickLogout(fixture: ComponentFixture<ShellComponent>) {
@@ -96,16 +104,16 @@ describe('ShellComponent', () => {
   function expectLoggedOut(el: HTMLElement) {
     expect(localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(navigate).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
-    expect(el.querySelector('[role=alert], [role=status], mat-snack-bar-container')).toBeNull();
-    expect(document.querySelector('mat-snack-bar-container')).toBeNull();
+    expect(el.querySelector('[role=alert], [role=status]')).toBeNull();
+    expect(document.querySelector('.toast')).toBeNull();
   }
 
   // Casos da 001 ajustados: o Sair passa pelo menu de conta.
 
   it('mostra o topo', async () => {
     const { el, menuButton } = await render();
-    const toolbar = el.querySelector('mat-toolbar') as HTMLElement;
-    expect(toolbar.querySelector('app-brand')?.textContent).toContain('we-sync');
+    const toolbar = el.querySelector('header.app-header') as HTMLElement;
+    expect(el.querySelector('.app-sidebar app-brand')?.textContent).toContain('we-sync');
     expect(toolbar.querySelector(`button[aria-label="${LABEL_ACCOUNT}"]`)).not.toBeNull();
     expect(menuButton()).toBeNull();
     expect(el.querySelector('main router-outlet')).not.toBeNull();
@@ -238,6 +246,34 @@ describe('ShellComponent', () => {
     expect(await harness.isOpen()).toBe(false);
   });
 
+  it('fundo escurecido fecha', async () => {
+    const { fixture, el, sidenav, menuButton } = await render({ wide: false });
+    menuButton()!.click();
+    await fixture.whenStable();
+    (el.querySelector('.sidebar-menu-overlay') as HTMLElement).click();
+    await fixture.whenStable();
+    expect(await (await sidenav()).isOpen()).toBe(false);
+    expect(el.querySelector('.sidebar-menu-overlay')).toBeNull();
+    expect(document.activeElement).toBe(menuButton());
+  });
+
+  it('Esc fecha só o menu por cima', async () => {
+    const { fixture, el, sidenav, menuButton } = await render({ wide: false });
+    menuButton()!.click();
+    await fixture.whenStable();
+    const sidebar = el.querySelector('#app-sidenav') as HTMLElement;
+    sidebar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await fixture.whenStable();
+    expect(await (await sidenav()).isOpen()).toBe(false);
+    expect(document.activeElement).toBe(menuButton());
+
+    fake().setWide(true);
+    await fixture.whenStable();
+    sidebar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await fixture.whenStable();
+    expect(await (await sidenav()).isOpen()).toBe(true);
+  });
+
   it('clique no item no modo largo', async () => {
     const { fixture, sidenav, navLinks } = await render({ wide: true });
     navLinks()[0].click();
@@ -249,17 +285,15 @@ describe('ShellComponent', () => {
     const { el, navLinks } = await render();
     const links = navLinks();
     expect(links).toHaveLength(2);
-    expect(links.map((l) => l.querySelector('[matListItemTitle]')?.textContent)).toEqual([
+    expect(links.map((l) => l.querySelector('.vsm-title')?.textContent)).toEqual([
       LABEL_HOME,
       LABEL_PURCHASES,
     ]);
-    expect(links[0].querySelector('[matListItemIcon]')?.textContent).toBe('home');
+    expect(links[0].querySelector('.vsm-icon')?.classList).toContain('pe-7s-home');
     expect(links[0].getAttribute('href')).toBe('/');
-    expect(links[1].querySelector('[matListItemIcon]')?.textContent).toBe('receipt_long');
+    expect(links[1].querySelector('.vsm-icon')?.classList).toContain('pe-7s-cash');
     expect(links[1].getAttribute('href')).toBe('/lancamentos');
-    expect(el.querySelector('nav[aria-label="Navegação principal"] a[mat-list-item]')).toBe(
-      links[0],
-    );
+    expect(el.querySelector('nav[aria-label="Navegação principal"] a.vsm-link')).toBe(links[0]);
   });
 
   it('Lançamentos ativo nas três rotas', async () => {
@@ -268,9 +302,9 @@ describe('ShellComponent', () => {
       await TestBed.inject(Router).navigateByUrl(url);
       await fixture.whenStable();
       const [home, purchases] = navLinks();
-      expect(purchases.classList).toContain('nav-active');
+      expect(purchases.classList).toContain('active-item');
       expect(purchases.getAttribute('aria-current')).toBe('page');
-      expect(home.classList).not.toContain('nav-active');
+      expect(home.classList).not.toContain('active-item');
       expect(home.getAttribute('aria-current')).toBeNull();
     }
   });
@@ -280,21 +314,23 @@ describe('ShellComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/');
     await fixture.whenStable();
     let [home, purchases] = navLinks();
-    expect(home.classList).toContain('nav-active');
+    expect(home.classList).toContain('active-item');
     expect(home.getAttribute('aria-current')).toBe('page');
-    expect(purchases.classList).not.toContain('nav-active');
+    expect(purchases.classList).not.toContain('active-item');
 
     await TestBed.inject(Router).navigateByUrl('/lancamentos');
     await fixture.whenStable();
     [home, purchases] = navLinks();
-    expect(home.classList).not.toContain('nav-active');
-    expect(purchases.classList).toContain('nav-active');
+    expect(home.classList).not.toContain('active-item');
+    expect(purchases.classList).toContain('active-item');
   });
 
   it('menu de conta', async () => {
     const { fixture } = await render();
     await openAccountMenu(fixture);
-    const items = document.querySelectorAll<HTMLButtonElement>('[mat-menu-item]');
+    const items = document.querySelectorAll<HTMLButtonElement>(
+      '.cdk-overlay-container [role="menuitem"]',
+    );
     expect(items).toHaveLength(1);
     expect(items[0].textContent?.trim()).toBe(LABEL_LOGOUT);
     expect(items[0].disabled).toBe(false);
