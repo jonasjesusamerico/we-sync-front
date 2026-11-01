@@ -199,3 +199,33 @@ Exemplo: primeira em out/2026, última em dez/2028 → **27 parcelas**.
 Por valor total: R$ 1.000,00 em 3× → 333,33 + 333,33 + 333,34.
 
 **Juros (backlog BKL-01):** `juros = parcela × N − valor à vista`. Ex.: 50 × 1.500 − 50.000 = **R$ 25.000**.
+
+## 11. Sonhos do casal (SON-02..SON-04)
+
+```
+n      = meses do mês atual até o mês alvo (depósitos no fim de cada mês)
+alíquota IR pelo prazo: n ≤ 6 → 22,5% · ≤ 12 → 20% · ≤ 24 → 17,5% · > 24 → 15%
+r      = ((1 + CDI_ano)^(1/12) − 1) × %CDI/100 × (1 − alíquota)        taxa mensal líquida estimada
+falta  = valor − saldo × (1 + r)^n
+guardar por mês = falta × r ÷ ((1 + r)^n − 1)        arredondado para cima, ao real (0 se falta ≤ 0)
+parte de cada um = guardar × proporção da renda      cada parte arredondada para cima, ao real
+previsão: menor k com  saldo × (1 + r)^k + ritmo × ((1 + r)^k − 1) ÷ r ≥ valor
+  ritmo = média do que foi guardado (confirmado) nos últimos 3 meses; sem depósitos, o valor sugerido
+situação: k ≤ n − 1 → Adiantado · k = n → No ritmo · k > n → Atrasado · saldo ≥ valor → Concluído
+```
+
+Exemplo (protótipo, CDI de exemplo 14,9% ao ano): **Viagem para o Chile**, R$ 12.000 até jul/2027, saldo R$ 3.800,
+100% do CDI, mês atual out/2026.
+
+- n = 9 meses → alíquota 20%; CDI mensal = 1,1642% → r = 1,1642% × 0,8 = **0,9313% ao mês**.
+- (1 + r)^9 = 1,08701 → o saldo vira R$ 4.130,64; falta R$ 7.869,36.
+- Guardar por mês = 7.869,36 × 0,009313 ÷ 0,08701 = R$ 842,30 → **R$ 843**.
+- Proporção 63% / 37% (R$ 8.500 / R$ 5.000): Jonas 530,75 → **R$ 531**; Amanda 312,25 → **R$ 313**.
+- Ritmo (R$ 900 + R$ 900 + R$ 800 nos últimos 3 meses → média R$ 866,67): chega em **9 meses → jul/2027**, situação **No ritmo**.
+
+**Resgate do sonho no mês (SON-10):** entra no acerto como um resgate da seção 2c (abate do total a dividir e do
+"pago" de quem recebeu) e sai do gasto comparado com a meta e o padrão: `gasto do mês = compras − resgates de sonho`.
+Exemplo (protótipo, outubro): compras da casa R$ 3.229,42, resgate do sonho de R$ 1.500 para o Jonas → gasto
+R$ 1.729,42 (dentro do padrão) e o acerto passa a ser "Jonas deposita R$ 425,99". No exemplo, a viagem não tem
+compras lançadas em outubro, por isso o acerto se inverte; numa viagem real, as compras do cartão e o resgate se
+compensam.

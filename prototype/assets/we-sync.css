@@ -1643,3 +1643,215 @@ section:has(> #daily-bars) {
 .ws-archived #open-config {
   display: none !important;
 }
+
+/* ---------- Guided tour (TOUR-*) ---------- */
+.ws-tour {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+}
+.ws-tour-shade {
+  position: absolute;
+  inset: 0;
+}
+/* The spotlight darkens everything around the highlighted element with a large shadow. */
+.ws-tour-spot {
+  position: fixed;
+  border-radius: var(--ws-radius-sm);
+  box-shadow: 0 0 0 9999px rgba(8, 18, 36, 0.55);
+  outline: 2px solid var(--ws-primary);
+  pointer-events: none;
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+.ws-tour-spot[hidden] + .ws-tour-card,
+.ws-tour-card.is-center {
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%);
+}
+.ws-tour:has(.ws-tour-spot[hidden]) .ws-tour-shade {
+  background: rgba(8, 18, 36, 0.55);
+}
+.ws-tour-card {
+  position: fixed;
+  width: min(360px, calc(100vw - 16px));
+  padding: 1rem 1rem 0.85rem;
+  background: var(--ws-surface);
+  color: var(--ws-text);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius);
+  box-shadow: var(--ws-shadow-lg);
+  outline: none;
+}
+.ws-tour-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ws-primary);
+}
+.ws-tour-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0.1rem 0 0.35rem;
+}
+.ws-tour-text {
+  color: var(--ws-muted);
+  margin-bottom: 0.75rem;
+}
+.ws-tour-dots {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+.ws-tour-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--ws-border);
+}
+.ws-tour-dots span.is-active {
+  width: 18px;
+  background: var(--ws-primary);
+}
+.ws-tour-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ---------- Novidade banner ---------- */
+.ws-news {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-radius: var(--ws-radius);
+  background: var(--ws-primary-soft);
+  color: var(--ws-text);
+}
+.ws-news > svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--ws-primary);
+}
+
+/* ---------- Sonhos do casal (SON-*) ---------- */
+.ws-dream {
+  padding: 1rem;
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-sm);
+  background: var(--ws-surface-2);
+}
+.ws-dream .ws-cat {
+  flex: none;
+}
+.ws-dream .progress {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--ws-surface-2);
+}
+.ws-dream .progress-bar {
+  background: var(--ws-primary);
+  border-radius: 99px;
+}
+.ws-dream-state {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.ws-dream-state.is-ahead,
+.ws-dream-state.is-done {
+  background: var(--ws-success-soft);
+  color: var(--ws-success);
+}
+.ws-dream-state.is-ontrack {
+  background: var(--ws-primary-soft);
+  color: var(--ws-primary);
+}
+.ws-dream-state.is-late {
+  background: var(--ws-warning-soft);
+  color: var(--ws-warning);
+}
+
+/* ---------- Encontro do mês (ENC-*) ---------- */
+.ws-meet-steps {
+  display: flex;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  overflow-x: auto;
+}
+.ws-meet-steps li {
+  flex: 1 0 auto;
+}
+.ws-meet-steps button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--ws-border);
+  border-radius: 99px;
+  background: var(--ws-surface);
+  color: var(--ws-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ws-meet-steps button[aria-current='step'] {
+  background: var(--ws-primary);
+  border-color: var(--ws-primary);
+  color: var(--ws-primary-contrast);
+}
+.ws-meet-steps .ws-meet-n {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 99px;
+  background: var(--ws-surface-2);
+  color: var(--ws-text);
+  font-size: 0.72rem;
+}
+.ws-meet-steps button[aria-current='step'] .ws-meet-n {
+  background: rgba(255, 255, 255, 0.25);
+  color: inherit;
+}
+.ws-meet-body {
+  min-height: 220px;
+}
+.ws-meet-big {
+  font-size: 2rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.ws-meet-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.ws-meet-list li {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+.ws-meet-list li > svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+.ws-meet-ask {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--ws-primary);
+  background: var(--ws-surface-2);
+  border-radius: 0 var(--ws-radius-sm) var(--ws-radius-sm) 0;
+}

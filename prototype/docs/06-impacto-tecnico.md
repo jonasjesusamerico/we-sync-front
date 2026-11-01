@@ -35,6 +35,9 @@ Regra de segurança atual: **cada usuário só vê os próprios dados** (isolame
 | CDI | tabela CDI diário (data única) + **job semanal** idempotente (2 instâncias: `app1`, `app2`) | CDI-* |
 | Metas | metas mensais e por tópico com **escopo** (usuário ou casa) | MET-* |
 | Relatórios/padrões | endpoint de relatório por escopo e mês (projeção, tendência, desvio, frequência, ticket) calculado na API | MET-07, PAD-* |
+| Tour guiado | estado por usuário, tour, versão e plataforma (visto / não exibir); data de criação da conta para decidir "novidade" × tour completo; conteúdo dos passos fica no front | TOUR-* |
+| Sonhos | sonho (nome, valor, mês alvo, casa) ligado a uma caixinha exclusiva; plano e previsão calculados na API | SON-* |
+| Encontro do mês | endpoint por casa e mês fechado que monta os 5 passos com a rotina de metas/padrões (nada gravado) | ENC-* |
 | Notificações | notificações no site e no app (lida/não lida, **push no Android**), agendadas (confirmação no dia seguinte), destinatários | NOT-*, CX-05 |
 | Dependência externa | API do Banco Central (SGS) | CDI-01 |
 
@@ -56,7 +59,7 @@ Regra de segurança atual: **cada usuário só vê os próprios dados** (isolame
 
 ## Ordem das features (decidida em 01/11/2026)
 
-Cada linha vira **uma feature** em `we-sync-requirements/docs/features/` (numeração a partir de `004`) e passa pelo
+Atualizada em 01/11/2026 (13ª rodada) com Tour guiado, Sonhos do casal e Encontro do mês. Cada linha vira **uma feature** em `we-sync-requirements/docs/features/` (numeração a partir de `004`) e passa pelo
 fluxo completo (`requisitos` → `arquiteto` → `sdd-backend` / `sdd-frontend` → `dev-backend` / `dev-frontend`).
 O front antigo (Material, features 001–003) é **desconsiderado**: tudo é refeito com base no protótipo. O que
 essas features entregaram **na API** (auth, compras, CORS com `Max-Age`, códigos de erro, serviço `front` no
@@ -78,30 +81,33 @@ Critérios usados para não complicar a implementação:
 |---|---|---|---|---|
 | 1 | 004 Front novo: base e acesso | Projeto Angular + Bootstrap do zero na `master` (sem Material), design system, layout (menu lateral/inferior, tema claro e escuro), login, cadastro **com nome** (`users.name` na API), sessão e renovação de token; troca coordenada do serviço `front` do compose | CONF-01, `02` | — |
 | 2 | 005 Compras e Início | Lista do mês com filtros, nova/editar/excluir compra, Início com os totais do mês (sem renda nem meta ainda) | LAN-01, LAN-05 (parte) | 004 |
-| 3 | 006 Conta e cadastros | Perfil, trocar senha, tema, **dia de início do mês financeiro** (aplicado em compras e Início), excluir conta; categorias com ícone e cor; formas de pagamento | CONF-04..06 | 005 |
-| 4 | 007 Rendas | Rendas com vigência por mês, ativa/pausada, renda única; indicadores (renda do mês, disponível, sobra prevista) no Início | CONF-02, CONF-03, LAN-05 | 006 |
-| 5 | 008 Tópicos | Tópicos globais e próprios, `purchases.topic_id`, sugestão pela descrição e pelo histórico | TOP-* | 006 |
-| 6 | 009 Repetição | Conta fixa e parcelada (série, k/N, centavos na última, "atualizar as próximas") | REP-* | 005 |
-| 7 | 010 Administração | Flag de admin checada na API, menu Sistema, configuração geral (salário mínimo com vigência + "Buscar no Banco Central", cadastros padrão, palavras-chave, parâmetros), histórico de alterações | ADM-01..08 | 008 |
-| 8 | 011 Metas e relatórios (pessoal) | Rotina única com escopo (só pessoal agora): meta mensal e por tópico, projeção, alertas, relatório por tópico, detecção de padrão | MET-*, PAD-* | 007, 008, 009, 010 |
-| 9 | 012 Notificações | Sino no site, lida/não lida, notificações agendadas; primeiro uso: alertas de metas. Push no Android fica na feature do app | NOT-01, NOT-02 | 011 |
-| 10 | 013 E-mail | Confirmar o e-mail no cadastro e recuperar a senha (dependência nova: envio de e-mail) | NOT-03 | 004 |
-| 11 | 014 Rotinas agendadas e CDI | Infraestrutura de job idempotente (2 instâncias), job semanal do CDI (Banco Central), situação das rotinas e CDI manual no admin | CDI-01, ADM-06 | 010 |
-| 12 | 015 Caixinhas pessoais | Menu Investimentos com as caixinhas pessoais: movimentações provisórias e confirmação no dia seguinte, rendimento estimado (CDI, IR regressivo, IOF), ajustar saldo | INV-01, CX-02..06 (escopo pessoal), CDI-02 | 012, 014 |
-| 13 | 016 Nossa casa: vínculo | Criar casa, convite de 48h (reenviar invalida), entrar, rendas visíveis, configurar (dia de início, renda mínima), sair e casa arquivada; **testes de vazamento entre usuários** | CASA-*, DIV-05, DIV-06 | 007, 010, 012 |
-| 14 | 017 Compra compartilhada, divisão e acerto | Compra compartilhada (só quem registrou edita), divisão proporcional à renda, acerto do mês por transferência, travar e reabrir | LAN-02..04, DIV-*, ACE-* | 016 |
-| 15 | 018 Caixinhas da casa | Caixinhas com dono = casa (reuso da 015), titular e conta conjunta, acerto via caixinha, migração ao arquivar | CX-*, CASA-07, INV-08 (caixinhas) | 015, 017 |
-| 16 | 019 Metas e padrão da casa | Mesma rotina da 011 com escopo casa, padrão de 12/3 meses, sugestão de resgate (de quem sai, proporcional, arredondamento, menor IR) | MET-01/02 (casa), RES-* | 011, 018 |
-| 17 | 020 Corretoras | Corretoras do usuário com corretagem, saldo, depositar e sacar, lançamento mensal "Investimento" fora da meta | INV-04 (corretagem), INV-09..12 | 015 |
-| 18 | 021 Catálogo de ativos e cotações | Catálogo no admin, pedidos de cadastro, job diário de cotações (brapi; Alpha Vantage de reserva), taxas da B3 | INV-03, INV-13..15, ADM-09 | 014, 020 |
-| 19 | 022 Ações e FIIs | Compra e venda com taxas, posição, preço médio, lucro/prejuízo, preço desatualizado com aviso | INV-02, INV-04..06 | 021 |
-| 20 | 023 Tesouro Direto | Títulos cadastrados sozinhos pelo Tesouro Transparente, job do PU, quantidade fracionada, custódia | INV-07, INV-16 | 021, 022 |
-| 21 | 024 Proventos | Proventos manuais caindo no saldo da corretora; depois, sugestão pelo informe da CVM para FIIs | INV-05 | 022 |
+| 3 | 006 Tour guiado | Motor do tour, estado na conta (por tour, versão e plataforma), botão de ajuda, "Rever os tours", aviso de novidade; tours das telas da 004 e 005. **A partir daqui, toda feature de front traz o tour das suas telas** | TOUR-* | 005 |
+| 4 | 007 Conta e cadastros | Perfil, trocar senha, tema, **dia de início do mês financeiro** (aplicado em compras e Início), excluir conta; categorias com ícone e cor; formas de pagamento | CONF-04..06 | 006 |
+| 5 | 008 Rendas | Rendas com vigência por mês, ativa/pausada, renda única; indicadores (renda do mês, disponível, sobra prevista) no Início | CONF-02, CONF-03, LAN-05 | 007 |
+| 6 | 009 Tópicos | Tópicos globais e próprios, `purchases.topic_id`, sugestão pela descrição e pelo histórico | TOP-* | 007 |
+| 7 | 010 Repetição | Conta fixa e parcelada (série, k/N, centavos na última, "atualizar as próximas") | REP-* | 006 |
+| 8 | 011 Administração | Flag de admin checada na API, menu Sistema, configuração geral (salário mínimo com vigência + "Buscar no Banco Central", cadastros padrão, palavras-chave, parâmetros), histórico de alterações | ADM-01..08 | 009 |
+| 9 | 012 Metas e relatórios (pessoal) | Rotina única com escopo (só pessoal agora): meta mensal e por tópico, projeção, alertas, relatório por tópico, detecção de padrão | MET-*, PAD-* | 008, 009, 010, 011 |
+| 10 | 013 Notificações | Sino no site, lida/não lida, notificações agendadas; primeiro uso: alertas de metas. Push no Android fica na feature do app | NOT-01, NOT-02 | 012 |
+| 11 | 014 E-mail | Confirmar o e-mail no cadastro e recuperar a senha (dependência nova: envio de e-mail) | NOT-03 | 004 |
+| 12 | 015 Rotinas agendadas e CDI | Infraestrutura de job idempotente (2 instâncias), job semanal do CDI (Banco Central), situação das rotinas e CDI manual no admin | CDI-01, ADM-06 | 011 |
+| 13 | 016 Caixinhas pessoais | Menu Investimentos com as caixinhas pessoais: movimentações provisórias e confirmação no dia seguinte, rendimento estimado (CDI, IR regressivo, IOF), ajustar saldo | INV-01, CX-02..06 (escopo pessoal), CDI-02 | 013, 015 |
+| 14 | 017 Nossa casa: vínculo | Criar casa, convite de 48h (reenviar invalida), entrar, rendas visíveis, configurar (dia de início, renda mínima), sair e casa arquivada; **testes de vazamento entre usuários** | CASA-*, DIV-05, DIV-06 | 008, 011, 013 |
+| 15 | 018 Compra compartilhada, divisão e acerto | Compra compartilhada (só quem registrou edita), divisão proporcional à renda, acerto do mês por transferência, travar e reabrir | LAN-02..04, DIV-*, ACE-* | 017 |
+| 16 | 019 Caixinhas da casa | Caixinhas com dono = casa (reuso da 016), titular e conta conjunta, acerto via caixinha, migração ao arquivar | CX-*, CASA-07, INV-08 (caixinhas) | 016, 018 |
+| 17 | 020 Sonhos do casal | Sonho com caixinha exclusiva, guardar por mês pela renda, previsão e situação, guardar provisório | SON-* | 019 |
+| 18 | 021 Metas e padrão da casa | Mesma rotina da 012 com escopo casa, padrão de 12/3 meses, sugestão de resgate (de quem sai, proporcional, arredondamento, menor IR) | MET-01/02 (casa), RES-* | 012, 019 |
+| 19 | 022 Encontro do mês | Mês fechado abre o encontro (5 passos), resumo do mês fechado, notificação de fechamento | ENC-* | 018, 020, 021 |
+| 20 | 023 Corretoras | Corretoras do usuário com corretagem, saldo, depositar e sacar, lançamento mensal "Investimento" fora da meta | INV-04 (corretagem), INV-09..12 | 016 |
+| 21 | 024 Catálogo de ativos e cotações | Catálogo no admin, pedidos de cadastro, job diário de cotações (brapi; Alpha Vantage de reserva), taxas da B3 | INV-03, INV-13..15, ADM-09 | 015, 023 |
+| 22 | 025 Ações e FIIs | Compra e venda com taxas, posição, preço médio, lucro/prejuízo, preço desatualizado com aviso | INV-02, INV-04..06 | 024 |
+| 23 | 026 Tesouro Direto | Títulos cadastrados sozinhos pelo Tesouro Transparente, job do PU, quantidade fracionada, custódia | INV-07, INV-16 | 024, 025 |
+| 24 | 027 Proventos | Proventos manuais caindo no saldo da corretora; depois, sugestão pelo informe da CVM para FIIs | INV-05 | 025 |
 
 Observações:
 
-- **Paralelo possível**: 008 e 009 são independentes entre si; 013 (e-mail) pode entrar em qualquer ponto depois
+- **Paralelo possível**: 009 e 010 são independentes entre si; 014 (e-mail) pode entrar em qualquer ponto depois
   da 004.
 - **App Android** (`we-sync-app`): cada feature com API nova pode ganhar uma feature do app depois, sem bloquear o
-  front. O push (NOT-01) entra junto com a feature do app que consumir a 012.
+  front. O push (NOT-01) entra junto com a feature do app que consumir a 013.
 - **Backlog** (BKL-*) fica fora desta ordem.

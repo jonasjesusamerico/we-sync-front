@@ -1,6 +1,6 @@
 # 01 — Visão geral e decisões
 
-Estado em **01/11/2026**. Este documento resume o que foi decidido na conversa de refinamento do novo front-end do
+Estado em **01/11/2026** (15ª rodada). Este documento resume o que foi decidido na conversa de refinamento do novo front-end do
 we-sync, por que, e onde cada coisa está.
 
 ## Objetivo
@@ -45,7 +45,8 @@ Não precisa instalar nada nem subir servidor. Nada é salvo: ao recarregar a p�
 | D-05 | Regras de negócio e cálculos (divisão, acerto, metas, padrões) devem ficar **centralizados na API**, numa rotina única que recebe o **escopo** (pessoal ou casa). | Pedido do usuário ("código centralizado para evitar problemas"); também serve ao app Android (`we-sync-app`). |
 | D-06 | Features grandes passam pelo fluxo formal de requisitos (`we-sync-requirements`) antes de virar código. | Regra do projeto; "Nossa casa" mexe no isolamento de dados entre usuários. |
 | D-07 | **Tudo do front antigo é desconsiderado** (features 001–003 no front, débito DT-004). O front novo sai só do protótipo; o que essas features entregaram na API continua valendo. | Pedido do usuário (12ª rodada). |
-| D-08 | As features são implementadas **na ordem de `06-impacto-tecnico.md`** (004–024): pequenas, pessoal antes da casa, base antes do que depende dela. | Pedido do usuário: "a ordem mais correta, para não complicar a implementação". |
+| D-08 | As features são implementadas **na ordem de `06-impacto-tecnico.md`** (hoje 004–027): pequenas, pessoal antes da casa, base antes do que depende dela. | Pedido do usuário: "a ordem mais correta, para não complicar a implementação". |
+| D-09 | **Limite de escopo**: ideia nova vai para o backlog (BKL), salvo se simplificar algo ou fizer o casal usar mais o app. | 13ª rodada: 21+ features e nada em uso ainda. |
 
 ## Decisões de produto (resumo — detalhes em `04-regras-de-negocio.md`)
 
@@ -67,6 +68,10 @@ Não precisa instalar nada nem subir servidor. Nada é salvo: ao recarregar a p�
 - **Metas** pessoais e da casa, com alertas pela **projeção** do mês; **tópicos** (subcategorias) sugeridos pela
   descrição; **detecção de padrão** por regressão linear e desvio padrão.
 - **Repetição**: conta fixa por N meses e parcelada (nº de parcelas ou última parcela).
+- **Sonhos do casal**: objetivo com valor, mês alvo e caixinha própria; o app diz quanto cada um guarda por mês (pela
+  renda) e quando chega lá.
+- **Encontro do mês**: ao abrir um mês fechado na casa, um roteiro de 5 passos para o casal conversar sobre ele.
+- **Tour guiado** em toda tela; quem já tem conta vê o tour das novidades.
 
 ## Histórico (31/10 e 01/11/2026)
 
@@ -110,6 +115,16 @@ Não precisa instalar nada nem subir servidor. Nada é salvo: ao recarregar a p�
     Selic isento até R$ 10 mil, Educa+/Renda+ com isenção por salários mínimos). Sem perguntas de produto em aberto.
 19. 12ª rodada: protótipo e docs commitados; front antigo desconsiderado por completo (D-07); ordem das features
     004–024 definida em `06-impacto-tecnico.md` (D-08). Próximo passo: revisão e aprovação do protótipo.
+20. 13ª rodada: ideias de livros de finanças para casais. Entraram **Sonhos do casal** (objetivo com caixinha,
+    guardar por mês pela renda) e **Encontro do mês** (roteiro de 5 passos ao abrir um mês fechado). Ficaram de
+    fora "dinheiro livre de cada um" e "combinado de compra grande". O usuário propôs o **Tour guiado** em toda
+    tela, com tour de novidade para quem já tem conta. Limite de escopo (D-09). Ordem das features passou a 004–027.
+21. 14ª rodada: mês fechado = mês financeiro terminou; **resgatar do sonho** (o casal decide como usar, ex.: pagar
+    a fatura da viagem) e a ideia de **modo viagem** no backlog; caixinha do sonho reservada; tour fechado volta só
+    numa próxima sessão; Encontro só na casa; tour também no app Android. Em aberto: efeito do resgate do sonho no
+    mês (J-07).
+22. 15ª rodada: o resgate do sonho funciona como o resgate da caixinha (RES-05) e fica fora da meta e do padrão
+    (SON-10); o modo viagem, quando vier, automatiza isso. Sem perguntas de produto em aberto.
 
 Documentos seguintes:
 [02 Design system](02-design-system.md) ·

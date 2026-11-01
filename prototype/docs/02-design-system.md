@@ -83,6 +83,10 @@ etc.), então componentes do Bootstrap já saem no tema.
 | Amostras de cor | `.ws-swatches` | Cor da categoria própria |
 | Botões | `.btn-primary`, `.btn-soft`, `.btn-ghost`, `.btn-icon`, `.btn-outline-danger` | |
 | Modal | Bootstrap `.modal` (tela cheia no celular) | Formulários curtos e confirmações |
+| Tour guiado | `.ws-tour`, `.ws-tour-spot`, `.ws-tour-card(.is-center)`, `.ws-tour-dots` | Destaque com sombra em volta do elemento; cartão abaixo/acima dele ou centralizado; `WS.startTour(chave)` |
+| Novidade | `.ws-news` | Faixa azul-clara no Início com "Fazer o tour" / "Agora não" |
+| Sonho | `.ws-dream`, `.ws-dream-state.is-ahead/.is-ontrack/.is-late/.is-done` | Cartão com progresso e situação |
+| Encontro do mês | `.ws-meet-steps`, `.ws-meet-body`, `.ws-meet-list`, `.ws-meet-ask` | Passos em pílulas (rolagem horizontal no celular) e pergunta para conversar |
 
 ## Padrões de interação
 
@@ -93,6 +97,9 @@ etc.), então componentes do Bootstrap já saem no tema.
   "Sim, foi sacado/depositado" / "Não".
 - **Sugestões** (tópico pela descrição, resgate) são marcadas como sugeridas e nunca aplicadas sem a pessoa ver.
 - **Em breve**: itens futuros aparecem desabilitados com a etiqueta "em breve".
+- **Tour guiado**: toda tela tem o seu (TOUR-02). Passos curtos (título + uma ou duas frases), no máximo ~7 por
+  tela; cada passo aponta para o elemento do computador e o do celular (ex.: menu lateral / menu inferior). Foco
+  preso no cartão, Esc fecha, setas navegam.
 
 ## Formatos
 

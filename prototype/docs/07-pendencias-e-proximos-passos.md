@@ -4,8 +4,37 @@ Para retomar o refinamento. Cada pendência traz uma sugestão para facilitar a 
 
 ## Pendências em aberto
 
-Nenhuma pergunta de produto em aberto. O refinamento das ideias está completo o bastante para seguir para os
-requisitos formais.
+Nenhuma pergunta de produto em aberto.
+
+## Respostas da 15ª rodada (01/11/2026)
+
+| # | Decisão | Regra |
+|---|---|---|
+| J-07 | O **resgate do sonho** funciona como o resgate RES-05 (abate do total a dividir e do "pago" de quem recebeu) e fica fora da meta e do padrão. O **modo viagem** (backlog) vai automatizar isso | SON-10, BKL-07 |
+
+## Respostas da 14ª rodada (01/11/2026)
+
+| # | Decisão | Regra |
+|---|---|---|
+| J-01 | Mês fechado = **mês financeiro da casa terminou**, mesmo com acerto pendente | ENC-01 |
+| J-02 | **Resgatar do sonho**, e o casal decide como usar o dinheiro (ex.: pagar a fatura da viagem). Ideia futura: **modo viagem** | SON-09, BKL-07 |
+| J-03 | Caixinha do sonho **reservada** para ele, fora do acerto e do resgate | SON-01, SON-07 |
+| J-04 | Tour fechado sem marcar aparece de novo na **próxima sessão**, não na mesma | TOUR-05 |
+| J-05 | Encontro **só na casa** | ENC-06 |
+| J-06 | **Tour também no app Android** | TOUR-07 |
+
+## Respostas da 13ª rodada (01/11/2026)
+
+| # | Decisão | Regra |
+|---|---|---|
+| H-01 | **Sonhos do casal** entram no produto | SON-* |
+| H-02 | **Encontro do mês** entra: ao abrir um mês fechado na casa ele aparece no lugar da tela; **Fechar** mostra o mês normal; ao sair do mês e voltar, aparece de novo | ENC-01, ENC-02 |
+| H-03 | Guardar para um sonho **não conta na meta** | SON-05 |
+| H-04 | O Encontro é **opcional**, não trava o acerto | ENC-04 |
+| H-05 | Sonhos viram uma feature **logo depois das caixinhas da casa** | `06` |
+| H-06 | **Limite de escopo**: ideia nova vai para o backlog, salvo se simplificar algo ou fizer o casal usar mais o app | D-09 |
+| H-07 | **Tour guiado** em toda tela (Voltar, Prosseguir, Fechar, "Não exibir novamente"); conta nova vê tudo desde o início, conta existente vê o tour da **novidade** | TOUR-01..04 |
+| H-08 | Não adotadas: **dinheiro livre de cada um** (já fica claro com compra pessoal × compartilhada) e **combinado de compra grande** | — |
 
 ## Respostas da 12ª rodada (01/11/2026)
 
@@ -120,6 +149,22 @@ requisitos formais.
 | P-12 | Lista de tópicos aprovada; tópicos próprios | TOP-01, TOP-04 |
 | P-13 | Compras pagas pelo outro não entram na visão pessoal | LAN-04 |
 | P-14 | Início usa a meta pessoal | LAN-05 |
+
+## O que o protótipo mostra desde a 15ª rodada
+
+- Resgatar do sonho muda o **acerto** ("− resgate do sonho" no total a dividir) e o **padrão de gastos** da casa.
+
+## O que o protótipo mostra desde a 14ª rodada
+
+- **Resgatar** em cada sonho com saldo (valor até o saldo, quem recebe, "para quê"), provisório até confirmar.
+- Tour fechado sem marcar não volta na mesma sessão do navegador (abra uma nova aba ou janela para ver de novo).
+
+## O que o protótipo mostra desde a 13ª rodada
+
+- **Tour guiado** em todas as telas (primeira visita), botão **?** no topo, "Rever os tours" em Configurações → Conta.
+- Aviso **"Novidade: Sonhos do casal"** no Início, que abre o tour da novidade na casa.
+- **Sonhos do casal** em `casa.html` (guardar por mês, parte de cada um, previsão, guardar provisório, novo sonho).
+- **Encontro do mês**: em `casa.html`, voltar de outubro para setembro (ou `casa.html?mes=setembro`).
 
 ## O que o protótipo mostra desde a 10ª rodada
 

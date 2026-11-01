@@ -78,14 +78,16 @@
               </div>
               <div class="d-flex flex-wrap gap-2 align-items-center">
                 <div class="ws-month" role="group" aria-label="Mês">
-                  <button type="button" class="btn btn-icon" aria-label="Mês anterior"><i data-icon="chevL"></i></button>
-                  <span class="ws-month-label">outubro 2026</span>
-                  <button type="button" class="btn btn-icon" aria-label="Próximo mês"><i data-icon="chevR"></i></button>
+                  <button type="button" class="btn btn-icon" id="month-prev" aria-label="Mês anterior"><i data-icon="chevL"></i></button>
+                  <span class="ws-month-label" id="month-label" aria-live="polite">outubro 2026</span>
+                  <button type="button" class="btn btn-icon" id="month-next" aria-label="Próximo mês"><i data-icon="chevR"></i></button>
                 </div>
                 <button type="button" class="btn btn-ghost btn-icon" id="open-config" aria-label="Configurar casa"><i data-icon="sliders"></i></button>
               </div>
             </div>
 
+            <!-- Current month -->
+            <div id="month-view">
             <div id="pending" class="d-grid gap-2 mb-3"></div>
 
             <div class="row g-3 mb-3">
@@ -179,6 +181,55 @@
                   <ul class="ws-tx-list" id="movements"></ul>
                 </section>
               </div>
+            </div>
+
+            <div class="mt-3">
+              <section class="ws-card" aria-labelledby="dreams-title" id="sonhos">
+                <div class="ws-card-head">
+                  <div>
+                    <h2 id="dreams-title">Sonhos do casal</h2>
+                    <div class="ws-card-sub" id="dreams-sub"></div>
+                  </div>
+                  <button type="button" class="btn btn-soft btn-sm d-inline-flex align-items-center gap-1" id="new-dream"><i data-icon="plus"></i>Novo sonho</button>
+                </div>
+                <div class="row g-3" id="dreams"></div>
+                <p class="small text-muted mt-3 mb-0">
+                  Guardar para um sonho não é gasto: não entra na meta, no padrão nem nos gráficos. A caixinha de cada sonho é só dele e
+                  não entra no acerto nem na sugestão de resgate. Valores estimados com o CDI de exemplo, já descontado o IR.
+                </p>
+              </section>
+            </div>
+            </div>
+
+            <!-- Closed month: the meeting shows first (ENC-01); closing it shows the month as read-only. -->
+            <div id="meet-view" hidden>
+              <section class="ws-card" aria-labelledby="meet-title">
+                <div class="ws-card-head">
+                  <div>
+                    <h2 id="meet-title">Encontro do mês</h2>
+                    <div class="ws-card-sub">Um roteiro de 5 passos para conversarem sobre o mês que fechou. Leva uns 10 minutos.</div>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-sm d-inline-flex align-items-center gap-1" id="meet-close"><i data-icon="x"></i>Fechar</button>
+                </div>
+                <ol class="ws-meet-steps" id="meet-steps" aria-label="Passos do encontro"></ol>
+                <div class="ws-meet-body" id="meet-body" aria-live="polite"></div>
+                <div class="d-flex justify-content-between gap-2 mt-3">
+                  <button type="button" class="btn btn-ghost" id="meet-back">Voltar</button>
+                  <button type="button" class="btn btn-primary" id="meet-next">Prosseguir</button>
+                </div>
+              </section>
+            </div>
+
+            <div id="closed-view" hidden>
+              <div class="ws-callout mb-3">
+                <i data-icon="lockSmall"></i>
+                <div class="flex-grow-1">
+                  <strong id="closed-title">Mês fechado</strong>
+                  <div class="small text-muted mb-2">Só leitura. No app esta é a mesma tela do mês; o protótipo mostra um resumo.</div>
+                  <button type="button" class="btn btn-soft btn-sm d-inline-flex align-items-center gap-1" id="closed-meet"><i data-icon="coffee"></i>Ver o encontro do mês</button>
+                </div>
+              </div>
+              <div class="row g-3" id="closed-cards"></div>
             </div>
           </div>
         </main>
@@ -304,6 +355,130 @@
       </div>
     </div>
 
+    <!-- New dream -->
+    <div class="modal fade" id="dream-modal" tabindex="-1" aria-labelledby="dream-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="dream-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="dream-title">Novo sonho</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-3" style="grid-template-columns: minmax(0, 1fr)">
+            <div>
+              <label class="form-label" for="dr-name">Qual é o sonho?</label>
+              <input id="dr-name" class="form-control" placeholder="Ex.: Viagem de férias" maxlength="40" aria-describedby="dr-name-error" />
+              <div class="invalid-feedback" id="dr-name-error">Informe o sonho.</div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-sm-6">
+                <label class="form-label" for="dr-target">Quanto custa?</label>
+                <div class="ws-money-sm">
+                  <span aria-hidden="true">R$</span><input id="dr-target" class="form-control" inputmode="numeric" aria-describedby="dr-target-error" />
+                </div>
+                <div class="invalid-feedback d-block" id="dr-target-error" hidden>Informe um valor maior que zero.</div>
+              </div>
+              <div class="col-12 col-sm-6">
+                <label class="form-label" for="dr-due">Para quando?</label>
+                <input id="dr-due" type="month" class="form-control" min="2026-11" value="2027-12" aria-describedby="dr-due-error" />
+                <div class="invalid-feedback" id="dr-due-error">Escolha um mês a partir do próximo.</div>
+              </div>
+            </div>
+            <fieldset class="d-grid gap-3">
+              <legend class="form-label fs-6 mb-0">Caixinha do sonho</legend>
+              <div>
+                <label class="form-label" for="dr-bank">Instituição</label>
+                <input id="dr-bank" class="form-control" placeholder="Ex.: banco onde o dinheiro fica" aria-describedby="dr-bank-error" />
+                <div class="invalid-feedback" id="dr-bank-error">Informe a instituição.</div>
+              </div>
+              <div class="row g-3">
+                <div class="col-12 col-sm-7">
+                  <label class="form-label" for="dr-owner">Em nome de</label>
+                  <select id="dr-owner" class="form-select">
+                    <option>Conta conjunta</option>
+                    <option>Jonas</option>
+                    <option>Amanda</option>
+                  </select>
+                </div>
+                <div class="col-12 col-sm-5">
+                  <label class="form-label" for="dr-cdi">% do CDI</label>
+                  <input id="dr-cdi" type="number" min="1" max="300" class="form-control" value="100" />
+                </div>
+              </div>
+            </fieldset>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Criar sonho</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Save for a dream -->
+    <div class="modal fade" id="save-modal" tabindex="-1" aria-labelledby="save-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="save-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="save-title">Guardar no sonho</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-3" style="grid-template-columns: minmax(0, 1fr)">
+            <p class="text-muted mb-0" id="save-text"></p>
+            <div>
+              <label class="form-label" for="save-who">Quem está guardando?</label>
+              <select id="save-who" class="form-select">
+                <option>Jonas</option>
+                <option>Amanda</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="save-value">Valor</label>
+              <div class="ws-money"><span>R$</span><input id="save-value" inputmode="numeric" /></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Rescue from a dream -->
+    <div class="modal fade" id="dream-rescue-modal" tabindex="-1" aria-labelledby="dr-rescue-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="dream-rescue-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="dr-rescue-title">Resgatar do sonho</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-3" style="grid-template-columns: minmax(0, 1fr)">
+            <p class="text-muted mb-0" id="dr-rescue-text"></p>
+            <div>
+              <label class="form-label" for="dr-rescue-value">Quanto resgatar</label>
+              <div class="ws-money"><span>R$</span><input id="dr-rescue-value" inputmode="numeric" aria-describedby="dr-rescue-error" /></div>
+              <div class="invalid-feedback d-block" id="dr-rescue-error" hidden>Informe um valor entre R$ 0,01 e o saldo do sonho.</div>
+            </div>
+            <div>
+              <label class="form-label" for="dr-rescue-to">Quem recebe o dinheiro</label>
+              <select id="dr-rescue-to" class="form-select">
+                <option>Jonas</option>
+                <option>Amanda</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="dr-rescue-note">Para quê? <span class="text-muted">(opcional)</span></label>
+              <input id="dr-rescue-note" class="form-control" maxlength="60" placeholder="Ex.: pagar a fatura da viagem" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Resgatar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Adjust balance -->
     <div class="modal fade" id="adjust-modal" tabindex="-1" aria-labelledby="adjust-title" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -404,9 +579,18 @@
         const rescueTotal = (r) => r.parts.reduce((a, p) => a + p.amount, 0);
         const rescueText = (r) => r.parts.map((p) => brl(p.amount) + ' da ' + W.escapeHtml(boxById(p.boxId).name)).join(' e ');
 
+        // A rescue from a dream works like the box rescue (RES-05): it lowers the total to split and what the
+        // member who received it paid. It is also left out of the spending compared with the goal and the
+        // standard, so purchases paid with the dream do not count twice (SON-09).
         function month() {
           const r = state.rescue;
-          return W.houseMonth(r ? r.parts.map((p) => ({ amount: p.amount, to: p.to })) : null);
+          const parts = r ? r.parts.map((p) => ({ amount: p.amount, to: p.to })) : [];
+          const dr = state.dreamRescue;
+          if (dr) parts.push({ amount: dr.amount, to: dr.to });
+          const m = W.houseMonth(parts.length ? parts : null);
+          m.dreamRescue = dr ? dr.amount : 0;
+          m.spent = m.grossTotal - m.dreamRescue;
+          return m;
         }
 
         // Rescue options: everything from one box, or proportional to the month's split. Each part is
@@ -473,6 +657,26 @@
                 '<button type="button" class="btn btn-ghost btn-sm" data-act="deposit-no">Não depositei</button></div></div></div>',
             );
           }
+          const ds = state.dreamSave;
+          if (ds) {
+            items.push(
+              '<div class="ws-callout">' + W.icon('clock') +
+                '<div class="flex-grow-1"><strong>' + ds.who + ' guardou ' + brl(ds.amount) + ' no sonho ' + W.escapeHtml(ds.dream.name) + '?</strong>' +
+                '<div class="small text-muted mb-2">Fica provisório até a confirmação. No app real, este aviso chega no dia seguinte.</div>' +
+                '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="dream-ok">Sim, guardei</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-act="dream-no">Não guardei</button></div></div></div>',
+            );
+          }
+          const dr = state.dreamRescue;
+          if (dr && dr.status !== 'confirmed') {
+            items.push(
+              '<div class="ws-callout">' + W.icon('clock') +
+                '<div class="flex-grow-1"><strong>' + dr.to + ' resgatou ' + brl(dr.amount) + ' do sonho ' + W.escapeHtml(dr.dream.name) + '?</strong>' +
+                '<div class="small text-muted mb-2">Fica provisório até a confirmação. No app real, este aviso chega no dia seguinte.</div>' +
+                '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="dream-rescue-ok">Sim, resgatei</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-act="dream-rescue-no">Não resgatei</button></div></div></div>',
+            );
+          }
           if (state.archived) {
             items.unshift(
               '<div class="ws-callout is-warning">' + W.icon('lockSmall') + '<div class="flex-grow-1"><strong>Casa arquivada em ' + today + '</strong>' +
@@ -519,7 +723,9 @@
             brl(m.paidMe + m.paidP) + '</td><td></td></tr>';
 
           let sub = 'Compras compartilhadas pagas: ' + brl(m.grossTotal);
-          if (m.rescue) sub += ' − resgate ' + brl(m.rescue) + (state.rescue.status === 'provisional' ? ' (provisório)' : '');
+          const boxRescue = m.rescue - m.dreamRescue;
+          if (boxRescue) sub += ' − resgate ' + brl(boxRescue) + (state.rescue.status === 'provisional' ? ' (provisório)' : '');
+          if (m.dreamRescue) sub += ' − resgate do sonho ' + brl(m.dreamRescue) + (state.dreamRescue.status === 'confirmed' ? '' : ' (provisório)');
           $('settle-sub').textContent = sub;
 
           const d = state.deposit;
@@ -573,7 +779,7 @@
         function renderStandard(m) {
           const std = W.houseStandard();
           $('std-rule').textContent = 'Padrão: ' + brl(std.value) + ', ' + std.rule;
-          const bars = H.history.concat([['out', m.grossTotal]]);
+          const bars = H.history.concat([['out', m.spent]]);
           const max = Math.max(std.value, ...bars.map((b) => b[1])) * 1.1;
           $('hist').innerHTML =
             bars
@@ -586,7 +792,7 @@
             '<div class="ws-hist-line" style="bottom: calc(1.3rem + (100% - 1.3rem) * ' + (std.value / max).toFixed(3) + ')"></div>';
           $('hist').setAttribute('aria-label', 'Gastos da casa por mês: ' + bars.map((b) => b[0] + ' ' + brl(b[1])).join(', '));
 
-          const excess = m.grossTotal - std.value;
+          const excess = m.spent - std.value;
           if (excess <= 0) {
             $('std-result').innerHTML = '<div class="ws-callout is-success"><strong>Outubro está dentro do padrão.</strong></div>';
             return;
@@ -646,7 +852,7 @@
                 (mv) =>
                   '<li class="ws-tx"><span class="ws-cat" style="--cat:' + (mv.kind === 'in' ? 'var(--ws-success)' : 'var(--ws-warning)') + '">' +
                   W.icon(mv.kind === 'in' ? 'arrowDown' : 'arrowUp') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' +
-                  (mv.kind === 'in' ? 'Depósito' : 'Resgate') + ' · ' + W.escapeHtml(boxById(mv.boxId).name) + '</div><div class="ws-tx-meta">' +
+                  (mv.kind === 'in' ? 'Depósito' : 'Resgate') + ' · ' + W.escapeHtml(mv.boxName || boxById(mv.boxId).name) + '</div><div class="ws-tx-meta">' +
                   mv.date + ' · ' + mv.who + ' · ' + mv.note + '</div></div><div class="d-flex flex-column align-items-end gap-1"><span class="ws-tx-amount">' +
                   (mv.kind === 'in' ? '+' : '−') + brl(mv.amount) + '</span>' +
                   (mv.status === 'confirmed' ? '<span class="ws-status is-paid">Confirmado</span>' : '<span class="ws-status is-provisional">Provisório</span>') +
@@ -678,6 +884,43 @@
           renderBoxes();
           renderMovements();
           renderShared(m);
+          renderDreams(m);
+        }
+
+        // ---------- Dreams (SON-*) ----------
+        function renderDreams(m) {
+          const plans = H.dreams.map((d) => ({ d: d, p: W.dreamPlan(d, m.shareMe) }));
+          const saved = H.dreams.reduce((a, d) => a + d.balance, 0);
+          $('dreams-sub').textContent = H.dreams.length
+            ? H.dreams.length + (H.dreams.length === 1 ? ' sonho' : ' sonhos') + ' · ' + brl(saved) + ' guardados'
+            : 'Um objetivo em comum, com valor e data';
+          $('dreams').innerHTML =
+            plans
+              .map(
+                ({ d, p }) =>
+                  '<div class="col-12 col-lg-6"><div class="ws-dream h-100">' +
+                  '<div class="d-flex align-items-start gap-2 mb-2"><span class="ws-cat" style="--cat: var(--ws-primary)">' + W.icon('star') + '</span>' +
+                  '<div class="flex-grow-1 min-w-0"><div class="ws-tx-title">' + W.escapeHtml(d.name) + '</div>' +
+                  '<div class="ws-tx-meta">Até ' + p.dueLabel + ' · ' + W.escapeHtml(d.bank) + ' · ' + (d.owner === 'Conta conjunta' ? 'conta conjunta' : 'em nome de ' + d.owner) + ' · ' + d.cdi + '% do CDI</div></div>' +
+                  '<span class="ws-dream-state is-' + p.status.key + '">' + p.status.label + '</span></div>' +
+                  '<div class="d-flex justify-content-between small mb-1"><span class="ws-tabular"><strong>' + brl(d.balance) + '</strong> de ' + brl(d.target) + '</span><span>' + p.pct + '%</span></div>' +
+                  '<div class="progress mb-3" role="progressbar" aria-label="' + W.escapeHtml(d.name) + ': ' + p.pct + '% guardado" aria-valuenow="' + p.pct + '" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:' + p.pct + '%"></div></div>' +
+                  (p.status.key === 'done'
+                    ? '<p class="small mb-3">Vocês chegaram lá! Quando forem usar o dinheiro, registrem o resgate.</p>'
+                    : '<div class="small mb-1">Guardar por mês: <strong class="ws-tabular">' + brl(p.need) + '</strong> durante ' + p.months + (p.months === 1 ? ' mês' : ' meses') + '</div>' +
+                      '<div class="small text-muted mb-1">' + H.me.name + ' ' + brl(p.needMe) + ' · ' + H.partner.name + ' ' + brl(p.needP) + ' (' + pct(m.shareMe) + ' / ' + pct(m.shareP) + ', pela renda)</div>' +
+                      '<div class="small text-muted mb-3">' +
+                      (d.last3.length ? 'No ritmo atual (' + brl(p.pace) + ' por mês)' : 'Guardando o valor sugerido') +
+                      (p.forecast ? ', chega em <strong>' + p.forecast + '</strong>.' : ', não chega: aumentem o valor guardado.') + '</div>') +
+                  '<div class="d-flex flex-wrap gap-2">' +
+                  '<button type="button" class="btn btn-soft btn-sm d-inline-flex align-items-center gap-1" data-act="dream-save" data-dream="' + d.id + '">' + W.icon('plus') + 'Guardar</button>' +
+                  (d.balance > 0
+                    ? '<button type="button" class="btn btn-ghost btn-sm d-inline-flex align-items-center gap-1" data-act="dream-rescue" data-dream="' + d.id + '">' + W.icon('arrowUp') + 'Resgatar</button>'
+                    : '') +
+                  '</div>' +
+                  '</div></div>',
+              )
+              .join('') || '<div class="col-12"><p class="ws-empty mb-0">Nenhum sonho ainda. Que tal a primeira viagem juntos?</p></div>';
         }
 
         // ---------- Actions ----------
@@ -721,6 +964,32 @@
           } else if (act === 'deposit-no') {
             state.deposit = null;
             state.movements = state.movements.filter((x) => x.id !== 'd');
+          } else if (act === 'dream-save') {
+            openSave(H.dreams.find((d) => d.id === Number(btn.dataset.dream)));
+            return;
+          } else if (act === 'dream-ok') {
+            const ds = state.dreamSave;
+            ds.dream.balance += ds.amount;
+            state.movements.find((x) => x.id === 'ds').status = 'confirmed';
+            state.dreamSave = null;
+            W.toast('Guardado no sonho');
+          } else if (act === 'dream-no') {
+            state.dreamSave = null;
+            state.movements = state.movements.filter((x) => x.id !== 'ds');
+            W.toast('Lançamento desfeito');
+          } else if (act === 'dream-rescue') {
+            openRescue(H.dreams.find((d) => d.id === Number(btn.dataset.dream)));
+            return;
+          } else if (act === 'dream-rescue-ok') {
+            const dr = state.dreamRescue;
+            dr.dream.balance -= dr.amount;
+            dr.status = 'confirmed';
+            state.movements.find((x) => x.id === 'dr').status = 'confirmed';
+            W.toast('Resgate do sonho confirmado');
+          } else if (act === 'dream-rescue-no') {
+            state.dreamRescue = null;
+            state.movements = state.movements.filter((x) => x.id !== 'dr');
+            W.toast('Resgate desfeito');
           } else if (act === 'adjust') {
             openAdjust(boxById(Number(btn.dataset.box)));
             return;
@@ -809,6 +1078,225 @@
           render();
           W.toast('Saldo ajustado');
         });
+
+        // New dream: each dream gets its own box (SON-01).
+        const dreamModal = new bootstrap.Modal($('dream-modal'));
+        const drTarget = bindMoney($('dr-target'), 0);
+        $('new-dream').addEventListener('click', () => dreamModal.show());
+        $('dream-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          let ok = true;
+          [['dr-name', 'dr-name-error'], ['dr-bank', 'dr-bank-error']].forEach(function (x) {
+            const filled = $(x[0]).value.trim() !== '';
+            $(x[0]).classList.toggle('is-invalid', !filled);
+            ok = ok && filled;
+          });
+          const target = drTarget.get();
+          $('dr-target-error').hidden = target > 0;
+          $('dr-target').classList.toggle('is-invalid', target <= 0);
+          const due = $('dr-due').value;
+          const dueOk = /^\d{4}-\d{2}$/.test(due) && due >= $('dr-due').min;
+          $('dr-due').classList.toggle('is-invalid', !dueOk);
+          if (!ok || target <= 0 || !dueOk) return;
+          H.dreams.push({
+            id: Date.now(), name: $('dr-name').value.trim(), target: target, due: due, bank: $('dr-bank').value.trim(),
+            owner: $('dr-owner').value, cdi: Number($('dr-cdi').value) || 100, balance: 0, last3: [],
+          });
+          $('dream-form').reset();
+          drTarget.set(0);
+          dreamModal.hide();
+          render();
+          W.toast('Sonho criado');
+        });
+
+        // Saving for a dream is a provisional deposit, confirmed the next day like the boxes (SON-06, CX-05).
+        const saveModal = new bootstrap.Modal($('save-modal'));
+        const saveValue = bindMoney($('save-value'), 0);
+        let saving = null;
+        function openSave(dream) {
+          saving = dream;
+          const p = W.dreamPlan(dream, month().shareMe);
+          $('save-text').textContent = 'Sugestão deste mês para ' + dream.name + ': ' + H.me.name + ' ' + brl(p.needMe) + ' e ' + H.partner.name + ' ' + brl(p.needP) + '.';
+          $('save-who').value = H.me.name;
+          saveValue.set(p.needMe);
+          $('save-who').onchange = () => saveValue.set($('save-who').value === H.me.name ? p.needMe : p.needP);
+          saveModal.show();
+        }
+        $('save-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const amount = saveValue.get();
+          if (amount <= 0) return;
+          state.movements = state.movements.filter((x) => x.id !== 'ds');
+          state.dreamSave = { dream: saving, who: $('save-who').value, amount: amount };
+          state.movements.unshift({ id: 'ds', date: today, kind: 'in', boxName: 'Sonho: ' + saving.name, who: state.dreamSave.who, amount: amount, note: 'Guardado para o sonho', status: 'provisional' });
+          saveModal.hide();
+          render();
+          W.toast('Registrado como provisório');
+        });
+
+        // Rescuing from a dream: the couple decides how to use the money (e.g. pay the card used on the trip).
+        // Provisional until confirmed, like the boxes (SON-09).
+        const rescueModal = new bootstrap.Modal($('dream-rescue-modal'));
+        const rescueValue = bindMoney($('dr-rescue-value'), 0);
+        let rescuing = null;
+        function openRescue(dream) {
+          rescuing = dream;
+          $('dr-rescue-text').textContent = dream.name + ' tem ' + brl(dream.balance) + ' guardados. O resgate abate do total do mês a dividir e do que ' +
+            'quem recebe pagou, e fica fora da meta e do padrão: as compras pagas com o sonho não contam duas vezes.';
+          rescueValue.set(dream.balance);
+          $('dr-rescue-error').hidden = true;
+          rescueModal.show();
+        }
+        $('dream-rescue-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const amount = rescueValue.get();
+          const ok = amount > 0 && amount <= rescuing.balance;
+          $('dr-rescue-error').hidden = ok;
+          $('dr-rescue-value').classList.toggle('is-invalid', !ok);
+          if (!ok) return;
+          const note = $('dr-rescue-note').value.trim();
+          state.movements = state.movements.filter((x) => x.id !== 'dr');
+          state.dreamRescue = { dream: rescuing, to: $('dr-rescue-to').value, amount: amount };
+          state.movements.unshift({ id: 'dr', date: today, kind: 'out', boxName: 'Sonho: ' + rescuing.name, who: state.dreamRescue.to, amount: amount, note: note || 'Resgate do sonho', status: 'provisional' });
+          $('dream-rescue-form').reset();
+          rescueModal.hide();
+          render();
+          W.toast('Resgate registrado como provisório');
+        });
+
+        // ---------- Months: October is the current one; September is closed (ENC-*) ----------
+        // Sample of the closed month. In the app the meeting is built by the API with the same routine of goals
+        // and patterns (D-05).
+        const SEPT = {
+          label: 'setembro 2026', name: 'setembro', total: 270000, paidMe: 193930, paidP: 76070, goal: 300000, std: 263333, prev: 275000,
+          settle: { from: 'Amanda', amount: 38000, box: 'Caixinha da Amanda', date: '30/09/2026' },
+          wins: [
+            ['check', 'Ficaram <strong>R$ 300,00 abaixo da meta</strong> da casa.'],
+            ['check', 'Mercado: R$ 610,00, <strong>8% abaixo</strong> da média dos últimos meses.'],
+            ['check', 'O acerto foi feito e confirmado ainda dentro do mês.'],
+          ],
+          watch: [
+            ['trendUp', '<strong>Delivery</strong> cresce há 3 meses seguidos, cerca de 12% ao mês.'],
+            ['alert', '<strong>Farmácia</strong> fora do normal: R$ 210,00 (o comum é perto de R$ 95,00).'],
+          ],
+        };
+        const MEET_STEPS = ['Como foi', 'O que deu certo', 'Pontos de atenção', 'Acerto', 'Próximo mês'];
+        const ask = (q) => '<div class="ws-meet-ask"><strong>Para conversar:</strong> ' + q + '</div>';
+        const list = (rows, color) =>
+          '<ul class="ws-meet-list">' + rows.map((r) => '<li style="color:' + color + '">' + W.icon(r[0]) + '<span class="text-body">' + r[1] + '</span></li>').join('') + '</ul>';
+
+        function meetBody(i) {
+          const S = SEPT;
+          const m = month();
+          if (i === 0) {
+            const vsStd = S.total - S.std;
+            return '<div class="text-muted small">Gastos da casa em ' + S.name + '</div><div class="ws-meet-big mb-2">' + brl(S.total) + '</div>' +
+              '<ul class="ws-meet-list">' +
+              '<li>' + W.icon('target') + '<span>' + brl(S.goal - S.total) + ' abaixo da meta da casa (' + brl(S.goal) + ')</span></li>' +
+              '<li>' + W.icon('chart') + '<span>' + brl(Math.abs(vsStd)) + (vsStd > 0 ? ' acima' : ' abaixo') + ' do padrão (' + brl(S.std) + ', a média real da casa)</span></li>' +
+              '<li>' + W.icon('calendar') + '<span>' + brl(S.prev - S.total) + ' a menos que agosto</span></li></ul>' +
+              ask('o que pesou mais neste mês? Foi algo planejado?');
+          }
+          if (i === 1) return list(S.wins, 'var(--ws-success)') + ask('o que vocês querem repetir em outubro?');
+          if (i === 2) {
+            return list(S.watch, 'var(--ws-warning)') +
+              '<a class="btn btn-ghost btn-sm mt-2" href="metas.html">Ver em Metas e relatórios</a>' +
+              ask('querem criar uma meta para algum desses tópicos?');
+          }
+          if (i === 3) {
+            const shareMe = S.paidMe + S.paidP ? m.shareMe : 0.5;
+            return '<div class="ws-split mb-2" role="img" aria-label="Jonas ' + pct(shareMe) + ', Amanda ' + pct(1 - shareMe) + '"><span style="width:' + shareMe * 100 + '%"></span><span style="width:' + (1 - shareMe) * 100 + '%"></span></div>' +
+              '<ul class="ws-meet-list">' +
+              '<li>' + W.icon('users') + '<span>Divisão pela renda: ' + H.me.name + ' ' + pct(shareMe) + ' · ' + H.partner.name + ' ' + pct(1 - shareMe) + '</span></li>' +
+              '<li>' + W.icon('receipt') + '<span>' + H.me.name + ' pagou ' + brl(S.paidMe) + ' · ' + H.partner.name + ' pagou ' + brl(S.paidP) + '</span></li>' +
+              '<li style="color:var(--ws-success)">' + W.icon('check') + '<span class="text-body">' + S.settle.from + ' depositou ' + brl(S.settle.amount) + ' na ' + S.settle.box + ' em ' + S.settle.date + ' · <strong>acertado</strong></span></li></ul>' +
+              ask('a divisão continua justa para os dois? Mudou alguma renda?');
+          }
+          const dreams = H.dreams
+            .map((d) => {
+              const p = W.dreamPlan(d, m.shareMe);
+              return '<li>' + W.icon('star') + '<span><strong>' + W.escapeHtml(d.name) + '</strong>: ' + p.pct + '% · ' +
+                (p.status.key === 'done' ? 'concluído' : 'guardar ' + brl(p.need) + ' (' + H.me.name + ' ' + brl(p.needMe) + ', ' + H.partner.name + ' ' + brl(p.needP) + ')') +
+                ' · <span class="ws-dream-state is-' + p.status.key + '">' + p.status.label + '</span></span></li>';
+            })
+            .join('');
+          return '<ul class="ws-meet-list">' +
+            '<li>' + W.icon('target') + '<span>Meta da casa para outubro: <strong>' + brl(H.ceiling) + '</strong> · <a href="metas.html">ajustar</a></span></li>' +
+            (dreams || '<li>' + W.icon('star') + '<span>Nenhum sonho ainda.</span></li>') + '</ul>' +
+            ask('tem algum sonho novo? O valor guardado cabe no mês de vocês?');
+        }
+
+        let meetStep = 0;
+        function renderMeet() {
+          $('meet-title').textContent = 'Encontro do mês · ' + SEPT.name;
+          $('meet-steps').innerHTML = MEET_STEPS.map(
+            (t, i) => '<li><button type="button" data-meet="' + i + '"' + (i === meetStep ? ' aria-current="step"' : '') + '><span class="ws-meet-n">' + (i + 1) + '</span>' + t + '</button></li>',
+          ).join('');
+          $('meet-body').innerHTML = '<h3 class="fs-5 fw-bold mb-3">' + (meetStep + 1) + '. ' + MEET_STEPS[meetStep] + '</h3>' + meetBody(meetStep);
+          $('meet-back').disabled = meetStep === 0;
+          $('meet-next').textContent = meetStep === MEET_STEPS.length - 1 ? 'Concluir encontro' : 'Prosseguir';
+        }
+        $('meet-steps').addEventListener('click', function (e) {
+          const b = e.target.closest('[data-meet]');
+          if (!b) return;
+          meetStep = Number(b.dataset.meet);
+          renderMeet();
+        });
+        $('meet-back').addEventListener('click', () => ((meetStep = Math.max(0, meetStep - 1)), renderMeet()));
+        $('meet-next').addEventListener('click', function () {
+          if (meetStep < MEET_STEPS.length - 1) {
+            meetStep++;
+            renderMeet();
+            return;
+          }
+          showClosed();
+          W.toast('Bom encontro! Até o próximo mês.');
+        });
+
+        function renderClosed() {
+          const S = SEPT;
+          $('closed-title').textContent = S.name.charAt(0).toUpperCase() + S.name.slice(1) + ' está fechado e acertado';
+          const card = (title, body) => '<div class="col-12 col-md-6 col-xl-4"><section class="ws-card h-100"><h2 class="fs-6 fw-bold mb-2">' + title + '</h2>' + body + '</section></div>';
+          $('closed-cards').innerHTML =
+            card('Gastos da casa', '<div class="ws-meet-big">' + brl(S.total) + '</div><div class="small text-muted">Meta ' + brl(S.goal) + ' · padrão ' + brl(S.std) + '</div>') +
+            card('Quem pagou', '<div class="small">' + H.me.name + ' ' + brl(S.paidMe) + '</div><div class="small">' + H.partner.name + ' ' + brl(S.paidP) + '</div>') +
+            card('Acerto', '<div class="small">' + S.settle.from + ' depositou ' + brl(S.settle.amount) + ' na ' + S.settle.box + '</div><span class="ws-status is-paid mt-2">Confirmado em ' + S.settle.date + '</span>');
+        }
+
+        const views = { month: $('month-view'), meet: $('meet-view'), closed: $('closed-view') };
+        function showView(key) {
+          Object.keys(views).forEach((k) => (views[k].hidden = k !== key));
+        }
+        function showClosed() {
+          renderClosed();
+          showView('closed');
+          $('closed-meet').focus();
+        }
+        // Opening a closed month always starts at the meeting; it is not remembered (ENC-02).
+        function openMonth(closed) {
+          $('month-label').textContent = closed ? SEPT.label : 'outubro 2026';
+          $('month-prev').disabled = closed;
+          $('month-next').disabled = !closed;
+          $('month-prev').title = closed ? 'O protótipo tem exemplo só até setembro' : '';
+          $('month-next').title = closed ? '' : 'Novembro ainda não começou no exemplo';
+          if (closed) {
+            meetStep = 0;
+            renderMeet();
+            showView('meet');
+          } else {
+            showView('month');
+          }
+        }
+        $('month-prev').addEventListener('click', () => openMonth(true));
+        $('month-next').addEventListener('click', () => openMonth(false));
+        $('meet-close').addEventListener('click', showClosed);
+        $('closed-meet').addEventListener('click', function () {
+          meetStep = 0;
+          renderMeet();
+          showView('meet');
+        });
+        if (new URLSearchParams(location.search).get('mes') === 'setembro') openMonth(true);
+        else openMonth(false);
 
         render();
       });

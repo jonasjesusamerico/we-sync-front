@@ -1,6 +1,6 @@
 # 04 — Regras de negócio
 
-Todas as regras combinadas até a 10ª rodada de refinamento (P, N, I, A, F, C) e a pesquisa de fontes (`08-fontes-de-dados.md`). Legenda: **(decidido)** = confirmado pelo usuário;
+Todas as regras combinadas até a 13ª rodada de refinamento (P, N, I, A, F, C, G, H, J) e a pesquisa de fontes (`08-fontes-de-dados.md`). Legenda: **(decidido)** = confirmado pelo usuário;
 **(sugestão)** = proposta ainda não confirmada (ver `07-pendencias-e-proximos-passos.md`).
 Fórmulas e exemplos numéricos em `05-calculos.md`.
 
@@ -256,6 +256,80 @@ Fórmulas e exemplos numéricos em `05-calculos.md`.
   recusar). Os **títulos do Tesouro entram sozinhos** pelo arquivo oficial (o analista só pausa). Mudanças vão para o
   histórico. *(decidido)*
 
+## SON — Sonhos do casal
+
+Ideia inspirada em livros de finanças para casais (Gustavo Cerbasi, *Casais inteligentes enriquecem juntos*; John
+Gottman): um objetivo em comum dá sentido ao dinheiro guardado da casa. Feature própria, logo depois das caixinhas
+da casa (`06`).
+
+- **SON-01** Um **sonho** tem nome, **valor**, **mês alvo** e uma **caixinha só dele** (instituição, titular — um dos
+  dois ou conta conjunta — e % do CDI), criada junto com o sonho e **reservada** para essa finalidade. *(decidido)*
+- **SON-02** **Guardar por mês**: o valor mensal que, com o rendimento estimado da caixinha (CDI × % do CDI, já
+  descontado o IR pelo prazo até o mês alvo), chega ao valor no mês alvo. É dividido entre os dois **pela proporção
+  da renda** (DIV) do mês, cada parte **arredondada para cima, ao real**. *(sugestão; fórmula em `05`, seção 11)*
+- **SON-03** **Previsão no ritmo atual**: com a média do que foi guardado (confirmado) nos **últimos 3 meses** — ou
+  com o valor sugerido, se ainda não houver depósitos —, o mês em que o sonho chega ao valor. *(sugestão)*
+- **SON-04** **Situação**: **Adiantado** (chega pelo menos 1 mês antes), **No ritmo** (chega no mês alvo),
+  **Atrasado** (depois do mês alvo) e **Concluído** (saldo ≥ valor). *(sugestão)*
+- **SON-05** Guardar para um sonho **não é gasto**: não entra na meta, no padrão nem nos gráficos (como o lançamento
+  "Investimento", INV-09). *(decidido)*
+- **SON-06** Guardar é um **depósito provisório** com quem guardou, confirmado no dia seguinte, como nas caixinhas
+  (CX-05). *(sugestão)*
+- **SON-07** A caixinha do sonho **não entra no acerto** (não é oferecida para o depósito do acerto) **nem na
+  sugestão de resgate** (RES). *(decidido)*
+- **SON-08** Os dois membros criam, editam e guardam em qualquer sonho da casa; ao arquivar a casa, a caixinha do
+  sonho segue CASA-07 (vai para o pessoal do titular). *(sugestão)*
+- **SON-09** **Resgatar do sonho**: valor (até o saldo), **quem recebe** e, opcional, "para quê" (ex.: pagar a fatura
+  da viagem). O casal decide como usar o dinheiro — por exemplo, passar tudo no cartão durante a viagem e depois
+  resgatar para pagar a fatura, sabendo exatamente quanto a viagem custou. Provisório até a confirmação (CX-05).
+  *(decidido)*
+- **SON-10** **Efeito do resgate do sonho no mês**: igual ao resgate da caixinha (RES-05) — abate do **total do mês
+  a dividir** e do **"pago" de quem recebeu** — e fica **fora da meta e do padrão** (gasto do mês = compras −
+  resgates de sonho). Assim as compras pagas com o sonho não contam duas vezes: o sonho já foi enchido pelos dois
+  na proporção da renda. *(decidido)*
+
+## ENC — Encontro do mês
+
+Ideia inspirada no "money date" dos livros de finanças para casais: uma conversa mensal curta e combinada.
+
+- **ENC-01** Ao abrir em **Nossa casa** um **mês já fechado** (o mês financeiro da casa terminou, pelo dia de início
+  — CASA-06), aparece o **Encontro do mês** no lugar da visão do mês, **mesmo com o acerto pendente** (o passo 4
+  leva ao acerto). *(decidido)*
+- **ENC-02** **Fechar** mostra a visão normal do mês (só leitura). O encontro **não fica gravado como visto**: ao ir
+  para outro mês e voltar, ele aparece de novo, a partir do passo 1. Na visão do mês fechado há o botão **"Ver o
+  encontro do mês"**. *(decidido)*
+- **ENC-03** Roteiro de **5 passos**, com Voltar, Prosseguir e atalho para qualquer passo: **1. Como foi** (gasto ×
+  meta × padrão × mês anterior); **2. O que deu certo** (abaixo da meta, tópicos que caíram, acerto em dia);
+  **3. Pontos de atenção** (padrões PAD da casa); **4. Acerto** (divisão, quem pagou, situação do acerto — se
+  pendente, leva ao acerto); **5. Próximo mês** (meta da casa e quanto guardar em cada sonho). Cada passo termina
+  com uma **pergunta para conversar**. *(sugestão do conteúdo)*
+- **ENC-04** É **opcional**: não trava o acerto nem nada do mês. *(decidido)* Quando o mês fecha, os dois recebem a
+  notificação "Outubro fechou. Que tal o encontro de vocês?". *(sugestão)*
+- **ENC-05** O conteúdo é calculado **na API**, pela mesma rotina de metas e padrões (D-05). *(sugestão)*
+- **ENC-06** Só na **casa**; um "resumo do mês" pessoal fica para o backlog. *(decidido)*
+
+## TOUR — Tour guiado
+
+- **TOUR-01** Cada tela tem um **tour guiado** que destaca os elementos e explica o uso, com **Voltar**,
+  **Prosseguir** (no último passo, **Concluir**), **Fechar** e a caixa **"Não exibir novamente"**. *(decidido)*
+- **TOUR-02** **Toda tela ou feature nova traz o seu tour**: faz parte do "pronto" de qualquer feature de front a
+  partir da que criar o tour (`06`). *(decidido)*
+- **TOUR-03** **Conta nova**: tour de boas-vindas no primeiro acesso ao Início e o tour de cada tela na primeira
+  visita. *(decidido)*
+- **TOUR-04** **Conta que já existia** quando uma feature sai: aviso **"Novidade"** no Início com "Fazer o tour"
+  (só o tour da novidade) e "Agora não". Conta criada depois da feature não vê o aviso: recebe o tour da tela na
+  primeira visita. *(decidido)*
+- **TOUR-05** **Concluir** ou marcar "Não exibir novamente" → o tour não aparece mais. **Fechar sem marcar** → aparece
+  de novo ao visitar a tela **numa próxima sessão**, não na mesma. *(decidido)* Sessão = do login até sair ou fechar
+  o navegador/app *(sugestão da definição)*. "Agora não" na novidade conta como não exibir. *(sugestão)*
+- **TOUR-06** Botão de **ajuda (?)** no topo refaz o tour da tela atual a qualquer momento; em Configurações → Conta,
+  **"Rever os tours"** faz todos aparecerem de novo. *(sugestão)*
+- **TOUR-07** O estado (visto / não exibir) fica **na conta**, por tour e **versão**, separado por plataforma (site e
+  app Android têm telas diferentes). O **app Android** também tem tour, com as mesmas regras, numa feature do app.
+  *(decidido)* Mudança grande numa tela gera **nova versão** do tour, oferecida como novidade. *(sugestão)*
+- **TOUR-08** Passo cujo elemento não está na tela (ex.: menu lateral no celular) usa o equivalente (menu inferior)
+  ou aparece centralizado; teclado: Esc fecha, setas avançam e voltam. *(sugestão)*
+
 ## BKL — Backlog (combinado para depois)
 
 - **BKL-01** **Juros pagos** em financiamentos/parcelados: informando o valor à vista (ex.: carro de R$ 50.000) e as
@@ -264,3 +338,9 @@ Fórmulas e exemplos numéricos em `05-calculos.md`.
 - **BKL-03** **Ler a nota de corretagem em PDF** e preencher a operação (valores e taxas) sozinho.
 - **BKL-04** **Proventos automáticos** por API pública.
 - **BKL-05** **IR de ações e FIIs** (isenção de vendas até R$ 20 mil/mês, alíquotas, DARF).
+- **BKL-06** **Resumo do mês pessoal**, no formato do Encontro do mês (ENC-06).
+- **BKL-07** **Modo viagem**: uma seção para a viagem em que tudo o que for lançado enquanto ela estiver ativa cai
+  nela (custo total, por tópico, por dia), ligada ao sonho que pagou a viagem. Ideia do usuário, para refinar
+  depois. O modo viagem **automatiza** o SON-10: as compras da viagem já ficam marcadas como pagas pelo sonho e o
+  app sugere resgatar o total delas. O SON-10 continua sendo a base, porque vale também para sonhos que não são
+  viagem (ex.: o sofá) e para quem não usar o modo viagem.

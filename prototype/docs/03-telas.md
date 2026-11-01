@@ -15,11 +15,20 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
 | `casa.html?vazio=1` | Criar casa (sem vínculo) | índice |
 | `casa.html?semrenda=1` | Casa com a Amanda sem renda no mês (renda mínima) | índice |
 | `casa.html?arquivada=1` | Casa arquivada (depois de sair) | índice / "Sair da casa" |
+| `casa.html?mes=setembro` | Encontro do mês (mês fechado) | ‹ no seletor de mês da casa |
+| `casa.html?tour=sonhos` | Tour da novidade Sonhos do casal | aviso "Novidade" no Início |
 | `convite.html` | Aceitar convite | link do convite |
 | `metas.html` (`#pessoal`, `#casa`) | Metas e relatórios | menu Planejamento |
 | `investimentos.html` | Investimentos | menu Planejamento |
 | `admin.html` (`#salario`, `#padroes`, `#parametros`, `#taxas`, `#jobs`, `#historico`) | Configuração geral (admin) | menu Sistema (só admin) |
 | `configuracoes.html` (`#rendas`, `#orcamento`, `#categorias`, `#pagamentos`, `#conta`) | Configurações | menu Administração / "Ajustes" |
+
+## Em todas as telas: tour guiado
+- Na primeira visita a cada tela abre o **tour** dela: um cartão com "Passo X de N", título, explicação, Voltar,
+  Prosseguir/Concluir, Fechar (×) e "Não exibir novamente"; o elemento explicado fica destacado e o resto escurece.
+- Botão **?** no topo refaz o tour da tela. `?semtour=1` na URL abre a tela sem o tour.
+- Fechar sem marcar "Não exibir novamente": o tour não volta na mesma sessão (nesta aba do navegador).
+- O protótipo guarda o estado no navegador; para ver tudo de novo: Configurações → Conta → **Rever os tours**.
 
 ## Entrar e Criar conta
 - Entrar: painel azul com cartão de exemplo e frase de valor; e-mail, senha com mostrar/ocultar, "Esqueci a
@@ -28,6 +37,7 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
 
 ## Início (dashboard)
 - Saudação, seletor de mês.
+- Aviso **"Novidade: Sonhos do casal"** com "Fazer o tour" (abre a casa no tour da novidade) e "Agora não".
 - Cartão azul: gasto do mês, comparação com o mês anterior, barra da **meta do mês** (link para Metas).
 - Indicadores: já pago, a pagar, nº de compras, média por dia.
 - **Disponível na conta**: renda − já pago (pessoal + casa, 100% do que a pessoa pagou); a pagar; sobra prevista.
@@ -62,7 +72,7 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
   **Tópicos**: lista por categoria (padrão em texto, próprios como etiquetas removíveis) e criação de tópico próprio.
 - **Formas de pagamento**: criar e remover próprias; padrão com cadeado.
 - **Conta**: perfil (nome, e-mail), trocar senha, tema (claro/escuro), **dia de início do mês financeiro** (1–28),
-  excluir conta (confirmação).
+  **Rever os tours**, excluir conta (confirmação).
 
 ## Nossa casa
 - **Divisão do mês**: barra Jonas/Amanda, rendas de cada um (vindas das Configurações), percentuais; aviso quando
@@ -78,6 +88,15 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
 - **Caixinhas**: nome, instituição, titular, % do CDI, aplicado, rendimento, IR estimado, líquido; "Ajustar saldo";
   "Nova caixinha" (nome, instituição, em nome de Jonas/Amanda/Conta conjunta, % CDI).
 - **Compras compartilhadas** do mês com "pago por".
+- **Sonhos do casal**: cada sonho com valor, mês alvo, caixinha (instituição, titular, % CDI), barra de progresso,
+  situação (Adiantado / No ritmo / Atrasado / Concluído), **guardar por mês** com a parte de cada um pela renda e a
+  previsão no ritmo atual. "Guardar" (quem e quanto, sugere a parte da pessoa) registra um depósito **provisório**
+  com aviso "Jonas guardou R$ X no sonho?". **"Resgatar"** (valor até o saldo, quem recebe, "para quê" opcional)
+  também fica provisório. "Novo sonho": nome, valor, mês alvo, caixinha do sonho.
+- **Seletor de mês**: outubro é o mês atual do exemplo. Voltar para **setembro** (fechado) abre o **Encontro do
+  mês** no lugar da tela: 5 passos (Como foi, O que deu certo, Pontos de atenção, Acerto, Próximo mês), cada um com
+  uma pergunta para conversar; Voltar/Prosseguir, atalho pelos passos, "Concluir encontro". **Fechar** mostra o
+  resumo do mês fechado (só leitura) com "Ver o encontro do mês". Ir para outubro e voltar abre o encontro de novo.
 - **Movimentações das caixinhas** (depósito/resgate, Confirmado/Provisório).
 - **Configurar casa** (modal): nome, modo do acerto (caixinha/transferência), **meta mensal da casa**, **dia de
   início do mês**, **renda mínima considerada**, membros, sair da casa (confirmação explicando o que acontece).

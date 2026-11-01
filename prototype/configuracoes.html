@@ -221,6 +221,11 @@
                       <select id="acc-start" class="form-select" style="max-width: 280px" aria-describedby="acc-start-hint"></select>
                       <div class="form-text" id="acc-start-hint">Útil se você recebe o salário no começo do mês, por exemplo, no dia 5.</div>
                     </div>
+                    <div>
+                      <div class="form-label">Tour guiado</div>
+                      <p class="form-text mt-0 mb-2" id="tours-hint">Mostra de novo, em cada tela, os tours que você concluiu ou marcou para não exibir. O botão de ajuda no topo refaz o tour da tela atual.</p>
+                      <button type="button" class="btn btn-soft btn-sm d-inline-flex align-items-center gap-1" id="tours-reset" aria-describedby="tours-hint"><i data-icon="help"></i>Rever os tours</button>
+                    </div>
                   </div>
                 </div>
 
@@ -360,6 +365,10 @@
         });
 
         document.querySelectorAll('[data-save]').forEach((b) => b.addEventListener('click', () => W.toast(b.dataset.save)));
+        document.getElementById('tours-reset').addEventListener('click', function () {
+          W.resetTours();
+          W.toast('Pronto: os tours vão aparecer de novo em cada tela');
+        });
 
         // Tabs (selected tab lives in the URL hash)
         const tabs = Array.from(document.querySelectorAll('[role=tab]'));

@@ -56,6 +56,9 @@
     gift: 'M4 11h16v10H4zM3 7h18v4H3zM12 7v14M12 7c-1.5-3-5-3-5-1s3 1 5 1zM12 7c1.5-3 5-3 5-1s-3 1-5 1z',
     briefcase: 'M3 8h18v12H3zM8 8V5h8v3M3 13h18',
     lockSmall: 'M7 11h10v9H7zM9 11V8a3 3 0 0 1 6 0v3',
+    help: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.5v.4M12 17h.01',
+    star: 'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z',
+    coffee: 'M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10h2a2.5 2.5 0 0 1 0 5h-2M8 3v3M12 3v3',
   };
 
   function icon(name, cls) {
@@ -235,7 +238,52 @@
       { id: 1, name: 'Reserva da casa', bank: 'Nubank', owner: 'Jonas', cdi: 100, invested: 800000, gross: 41235, irRate: 0.2 },
       { id: 2, name: 'Caixinha da Amanda', bank: 'Banco Inter', owner: 'Amanda', cdi: 102, invested: 350000, gross: 9610, irRate: 0.225 },
     ],
+    // Couple's dreams (SON-*): each one has its own box, kept out of the settlement and the rescue suggestion.
+    // "due" is the target month; "last3" are the confirmed deposits of the last 3 months (the current pace).
+    dreams: [
+      { id: 1, name: 'Viagem para o Chile', target: 1200000, due: '2027-07', bank: 'Nubank', owner: 'Conta conjunta', cdi: 100, balance: 380000, last3: [90000, 90000, 80000] },
+      { id: 2, name: 'Sofá novo', target: 450000, due: '2027-01', bank: 'Banco Inter', owner: 'Amanda', cdi: 102, balance: 260000, last3: [40000, 40000, 30000] },
+    ],
   };
+
+  // Month the prototype treats as the current one (the sample data is October 2026).
+  const NOW = { year: 2026, month: 10 };
+  const monthIndex = (y, m) => y * 12 + (m - 1);
+  const monthLabel = (idx) => MONTHS[idx % 12].toLowerCase() + ' ' + Math.floor(idx / 12);
+
+  // Regressive IR by how long the money stays invested (in months).
+  function irByMonths(n) {
+    if (n <= 6) return 0.225;
+    if (n <= 12) return 0.2;
+    if (n <= 24) return 0.175;
+    return 0.15;
+  }
+
+  // Plan for a dream (05, section "Sonhos"): monthly saving needed to reach the target by the due month with
+  // the box yield net of IR, each member's part by the income split, and the forecast at the current pace.
+  function dreamPlan(d, shareMe) {
+    const [y, m] = d.due.split('-').map(Number);
+    const n = Math.max(1, monthIndex(y, m) - monthIndex(NOW.year, NOW.month));
+    const rate = (Math.pow(1 + CDI_YEAR, 1 / 12) - 1) * (d.cdi / 100) * (1 - irByMonths(n));
+    const grow = (k) => Math.pow(1 + rate, k);
+    const ceilReal = (c) => Math.ceil(c / 100) * 100;
+    const missing = d.target - d.balance * grow(n);
+    const need = missing <= 0 ? 0 : ceilReal((missing * rate) / (grow(n) - 1));
+    const pace = d.last3.length ? Math.round(d.last3.reduce((a, x) => a + x, 0) / d.last3.length) : need;
+    let k = 0;
+    while (k < 600 && d.balance * grow(k) + (pace * (grow(k) - 1)) / rate < d.target) k++;
+    const done = d.balance >= d.target;
+    let status;
+    if (done) status = { key: 'done', label: 'Concluído' };
+    else if (k <= n - 1) status = { key: 'ahead', label: 'Adiantado' };
+    else if (k <= n) status = { key: 'ontrack', label: 'No ritmo' };
+    else status = { key: 'late', label: 'Atrasado' };
+    return {
+      months: n, rate: rate, need: need, needMe: ceilReal(need * shareMe), needP: ceilReal(need * (1 - shareMe)),
+      pace: pace, forecast: k >= 600 ? null : monthLabel(monthIndex(NOW.year, NOW.month) + k), dueLabel: monthLabel(monthIndex(y, m)),
+      pct: Math.min(100, Math.round((d.balance / d.target) * 100)), status: status,
+    };
+  }
 
   // Asset catalog kept in the system settings (admin). The daily 00:00 job updates the closing price of each
   // active asset once, and every portfolio reads the price from here (one request per asset, not per user).
@@ -268,6 +316,9 @@
       /* storage unavailable: request lasts for this page only */
     }
   }
+
+  // Annual CDI used in the estimates (sample; the app reads the daily series stored by the weekly job).
+  const CDI_YEAR = 0.149;
 
   // Set in the system settings (admin); 2026 value from Banco Central SGS series 1619.
   const SYSTEM_MIN_WAGE = 162100;
@@ -413,6 +464,9 @@
       '<a class="btn btn-primary d-none d-lg-inline-flex align-items-center gap-2 me-1" href="nova-compra.html">' +
       icon('plus') +
       'Nova compra</a>' +
+      (TOURS[tourKey()]
+        ? '<button type="button" class="btn btn-ghost btn-icon" data-tour-help aria-label="Ajuda: refazer o tour desta tela" title="Tour desta tela">' + icon('help') + '</button>'
+        : '') +
       '<button type="button" class="btn btn-ghost btn-icon" data-theme-toggle></button>' +
       '<div class="dropdown">' +
       '<button type="button" class="btn btn-ghost btn-icon position-relative" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Notificações, ' +
@@ -496,6 +550,317 @@
     }, 3200);
   }
 
+
+  // ---------- Guided tour (TOUR-*) ----------
+  // One tour per screen (key = data-page) plus feature tours announced as "Novidade" to existing accounts.
+  // A step points at an element; "box" highlights the closest card instead of the element itself. The first
+  // selector that is visible wins, so a step can name the desktop and the mobile element (sidebar / bottom nav).
+  // When nothing is visible the card is shown centered.
+  const TOURS = {
+    dashboard: {
+      title: 'Boas-vindas',
+      steps: [
+        { title: 'Boas-vindas ao we-sync', text: 'Em poucos passos mostramos onde fica cada coisa. Use Prosseguir e Voltar, ou feche quando quiser.' },
+        { t: ['#ws-sidebar', '#ws-bottomnav'], title: 'Menu', text: 'Daqui você vai para Compras, Nossa casa, Metas e relatórios e Investimentos.' },
+        { t: '.ws-month', title: 'Troque o mês', text: 'Veja os meses anteriores. Tudo na tela acompanha o mês escolhido.' },
+        { t: '#kpi-total', box: '.ws-hero', title: 'Seu mês num relance', text: 'Quanto você gastou no mês e como está a sua meta pessoal.' },
+        { t: '#avail-title', box: '.ws-card', title: 'Disponível na conta', text: 'Renda do mês menos o que já foi pago. A sobra prevista desconta também o que falta pagar.' },
+        { t: ['.ws-topbar .btn-primary', '.ws-fab'], title: 'Nova compra', text: 'Registre a compra assim que ela acontece: o mês fica sempre em dia.' },
+        { t: '[data-tour-help]', title: 'Ajuda', text: 'Este botão refaz o tour da tela em que você está, quando quiser.' },
+      ],
+    },
+    compras: {
+      title: 'Compras',
+      steps: [
+        { t: '#summary', title: 'Compras do mês', text: 'Todas as compras que saíram do seu bolso no mês escolhido.' },
+        { t: '#f-search', box: '.ws-card', title: 'Filtros', text: 'Busque pela descrição ou filtre por categoria e situação.' },
+        { t: ['#rows', '#cards'], box: '.ws-card', title: 'Lista', text: 'Toque numa compra para editar. Contas fixas e parcelas mostram a posição, como 3/10.' },
+      ],
+    },
+    'nova-compra': {
+      title: 'Nova compra',
+      steps: [
+        { t: '#amount-box', title: 'Valor', text: 'Comece pelo valor. Os centavos entram sozinhos enquanto você digita.' },
+        { t: '#description', title: 'Descrição e tópico', text: 'Pela descrição o app sugere o tópico (ex.: "iFood" → Delivery). Você pode trocar.' },
+        { t: '#categories', title: 'Categoria', text: 'Escolha a categoria. As suas categorias aparecem junto com as padrão.' },
+        { t: '#sc-personal', box: 'fieldset', title: 'De quem é o gasto?', text: 'Pessoal é o padrão. Compartilhada entra na divisão da casa.' },
+        { t: '#rp-none', box: 'fieldset', title: 'Repetição', text: 'Conta fixa por alguns meses ou compra parcelada: o app cria as próximas para você.' },
+      ],
+    },
+    casa: {
+      title: 'Nossa casa',
+      steps: [
+        { t: '#split-title', box: '.ws-card', title: 'Divisão do mês', text: 'Cada um paga a parte proporcional à renda: quem ganha mais paga mais.' },
+        { t: '#settle-title', box: '.ws-card', title: 'Acerto do mês', text: 'Mostra quanto falta para cada um ficar na sua proporção, e como acertar.' },
+        { t: '#padrao', title: 'Padrão de gastos', text: 'A média real da casa. Quando o mês passa do padrão, o app sugere um resgate.' },
+        { t: '#boxes-title', box: '.ws-card', title: 'Caixinhas', text: 'O dinheiro guardado da casa, rendendo pelo CDI.' },
+        { t: '#dreams-title', box: '.ws-card', title: 'Sonhos do casal', text: 'Objetivos com valor e data. O app calcula quanto cada um guarda por mês.' },
+        { t: '.ws-month', title: 'Meses fechados', text: 'Ao voltar para um mês que já fechou, aparece o Encontro do mês: um roteiro para conversarem sobre ele.' },
+      ],
+    },
+    sonhos: {
+      title: 'Novidade: Sonhos do casal',
+      feature: true,
+      steps: [
+        { title: 'Novidade: Sonhos do casal', text: 'Agora vocês podem guardar dinheiro para um objetivo em comum, como uma viagem ou um sofá novo.' },
+        { t: '#dreams-title', box: '.ws-card', title: 'Seus sonhos', text: 'Cada sonho tem valor, data e uma caixinha só dele, rendendo pelo CDI.' },
+        { t: '.ws-dream', title: 'Quanto guardar', text: 'O app mostra quanto guardar por mês e a parte de cada um, proporcional à renda.' },
+        { t: '#new-dream', title: 'Crie o primeiro', text: 'Toque em Novo sonho para começar.' },
+      ],
+    },
+    metas: {
+      title: 'Metas e relatórios',
+      steps: [
+        { t: '#sc-pessoal', box: '.ws-segmented', title: 'Pessoal ou casa', text: 'A mesma tela mostra as suas metas e as da casa.' },
+        { t: '#goal-title', box: '.ws-card', title: 'Meta do mês', text: 'A projeção diz como o mês fecha no ritmo atual e quanto dá para gastar por dia.' },
+        { t: '#insights', box: '.ws-card', title: 'Padrões identificados', text: 'O app avisa quando um tópico cresce todo mês ou foge do normal.' },
+        { t: '#report', box: '.ws-card', title: 'Relatório por tópico', text: 'Até hoje, projeção, média, tendência e ticket médio de cada tópico.' },
+      ],
+    },
+    investimentos: {
+      title: 'Investimentos',
+      steps: [
+        { t: '#k-total', box: '.ws-card, .ws-hero', title: 'Seu patrimônio', text: 'Total investido, custo e lucro ou prejuízo.' },
+        { t: '#add-op', title: 'Nova operação', text: 'Registre compras e vendas de ações, FIIs e Tesouro Direto.' },
+        { t: '#boxes', box: '.ws-card', title: 'Caixinhas pessoais', text: 'As suas caixinhas e as da casa em que você é o titular.' },
+        { t: '#brokers', box: '.ws-card', title: 'Corretoras', text: 'Saldo de cada corretora, depósitos e saques.' },
+      ],
+    },
+    configuracoes: {
+      title: 'Configurações',
+      steps: [
+        { t: '.ws-settings-nav', title: 'Seções', text: 'Rendas, categorias, formas de pagamento e a sua conta.' },
+        { t: '#inc-list', box: '.ws-card', title: 'Rendas', text: 'Cadastre todas as rendas: elas entram no disponível do mês e na divisão da casa.' },
+      ],
+    },
+    admin: {
+      title: 'Configuração geral',
+      steps: [
+        { t: '.ws-settings-nav', title: 'Configuração geral', text: 'Parâmetros que valem para todos os usuários. Toda mudança vai para o histórico.' },
+        { t: '#mw-form', box: '.ws-card', title: 'Salário mínimo', text: 'Usado como renda mínima da casa. "Buscar no Banco Central" sugere o valor.' },
+      ],
+    },
+  };
+
+  // Prototype keeps tour state in this browser; the app stores it in the account, per tour and version (TOUR-07).
+  const TOUR_PREFIX = 'ws-tour-';
+  function tourDone(key) {
+    try {
+      return localStorage.getItem(TOUR_PREFIX + key) === 'done';
+    } catch (e) {
+      return false;
+    }
+  }
+  function setTourDone(key) {
+    try {
+      localStorage.setItem(TOUR_PREFIX + key, 'done');
+    } catch (e) {
+      /* storage unavailable: the tour shows again next time */
+    }
+  }
+  // Closing without the tick hides the tour for the rest of the session only (TOUR-05). The prototype uses the
+  // browser session; in the app the session ends at logout or when the app/browser is closed.
+  function tourSkipped(key) {
+    try {
+      return sessionStorage.getItem(TOUR_PREFIX + key) === 'skip';
+    } catch (e) {
+      return false;
+    }
+  }
+  function setTourSkipped(key) {
+    try {
+      sessionStorage.setItem(TOUR_PREFIX + key, 'skip');
+    } catch (e) {
+      /* storage unavailable: the tour may show again in this session */
+    }
+  }
+  function resetTours() {
+    [localStorage, sessionStorage].forEach(function (store) {
+      try {
+        Object.keys(store)
+          .filter((k) => k.startsWith(TOUR_PREFIX))
+          .forEach((k) => store.removeItem(k));
+      } catch (e) {
+        /* nothing stored */
+      }
+    });
+  }
+
+  function visible(el) {
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+  }
+
+  function stepTarget(step) {
+    if (!step.t) return null;
+    const list = Array.isArray(step.t) ? step.t : [step.t];
+    for (const sel of list) {
+      const el = document.querySelector(sel);
+      if (visible(el)) return step.box ? el.closest(step.box) || el : el;
+    }
+    return null;
+  }
+
+  let activeTour = null;
+
+  // A page may share the menu entry of another (nova-compra highlights Compras) but has its own tour.
+  const tourKey = () => document.body.getAttribute('data-tour') || document.body.getAttribute('data-page');
+
+  function startTour(key) {
+    const tour = TOURS[key];
+    if (!tour || activeTour) return;
+    const opener = document.activeElement;
+    let i = 0;
+    const root = document.createElement('div');
+    root.className = 'ws-tour';
+    root.innerHTML =
+      '<div class="ws-tour-shade"></div><div class="ws-tour-spot" hidden></div>' +
+      '<div class="ws-tour-card" role="dialog" aria-modal="true" aria-labelledby="ws-tour-title" tabindex="-1">' +
+      '<div class="d-flex align-items-start gap-2"><div class="flex-grow-1">' +
+      '<div class="ws-tour-count" id="ws-tour-count"></div><h2 class="ws-tour-title" id="ws-tour-title"></h2></div>' +
+      '<button type="button" class="btn btn-ghost btn-icon btn-sm" data-tour="close" aria-label="Fechar o tour">' + icon('x') + '</button></div>' +
+      '<p class="ws-tour-text" id="ws-tour-text"></p>' +
+      '<div class="ws-tour-dots" aria-hidden="true"></div>' +
+      '<div class="ws-tour-foot">' +
+      '<div class="form-check mb-0"><input class="form-check-input" type="checkbox" id="ws-tour-never" />' +
+      '<label class="form-check-label small" for="ws-tour-never">Não exibir novamente</label></div>' +
+      '<div class="d-flex gap-2"><button type="button" class="btn btn-ghost btn-sm" data-tour="back">Voltar</button>' +
+      '<button type="button" class="btn btn-primary btn-sm" data-tour="next"></button></div></div></div>';
+    document.body.appendChild(root);
+    const card = root.querySelector('.ws-tour-card');
+    const spot = root.querySelector('.ws-tour-spot');
+
+    function place() {
+      const step = tour.steps[i];
+      const el = stepTarget(step);
+      card.classList.toggle('is-center', !el);
+      if (!el) {
+        spot.hidden = true;
+        card.style.top = card.style.left = '';
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      const pad = 6;
+      spot.hidden = false;
+      Object.assign(spot.style, { top: r.top - pad + 'px', left: r.left - pad + 'px', width: r.width + pad * 2 + 'px', height: r.height + pad * 2 + 'px' });
+      const cw = card.offsetWidth;
+      const ch = card.offsetHeight;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let top = r.bottom + 14;
+      if (top + ch > vh - 8) top = r.top - ch - 14;
+      if (top < 8) top = Math.max(8, vh - ch - 8);
+      const left = Math.min(Math.max(8, r.left + r.width / 2 - cw / 2), vw - cw - 8);
+      card.style.top = top + 'px';
+      card.style.left = left + 'px';
+    }
+
+    function show() {
+      const step = tour.steps[i];
+      const last = i === tour.steps.length - 1;
+      root.querySelector('#ws-tour-count').textContent = 'Passo ' + (i + 1) + ' de ' + tour.steps.length;
+      root.querySelector('#ws-tour-title').textContent = step.title;
+      root.querySelector('#ws-tour-text').textContent = step.text;
+      root.querySelector('.ws-tour-dots').innerHTML = tour.steps.map((_, k) => '<span' + (k === i ? ' class="is-active"' : '') + '></span>').join('');
+      root.querySelector('[data-tour="back"]').disabled = i === 0;
+      root.querySelector('[data-tour="next"]').textContent = last ? 'Concluir' : 'Prosseguir';
+      const el = stepTarget(step);
+      // A tall element (a card bigger than the screen) is shown from its top, leaving room for the tour card.
+      if (el && el.offsetHeight > window.innerHeight * 0.6) {
+        const bar = document.getElementById('ws-topbar');
+        const offset = (bar ? bar.getBoundingClientRect().bottom : 0) + 12;
+        window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'instant' });
+      } else if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'instant' });
+      }
+      place();
+      card.focus();
+    }
+
+    // Finishing or ticking "don't show again" marks the tour as seen; closing without the tick shows it again
+    // on a visit in a later session (TOUR-05).
+    function end(finished) {
+      if (finished || root.querySelector('#ws-tour-never').checked) setTourDone(key);
+      else setTourSkipped(key);
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+      document.removeEventListener('keydown', onKey);
+      root.remove();
+      activeTour = null;
+      if (opener && opener.focus) opener.focus();
+    }
+
+    function go(delta) {
+      if (i + delta >= tour.steps.length) return end(true);
+      i = Math.max(0, i + delta);
+      show();
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape') end(false);
+      else if (e.key === 'ArrowRight') go(1);
+      else if (e.key === 'ArrowLeft') go(-1);
+      else if (e.key === 'Tab') {
+        const f = Array.from(card.querySelectorAll('button:not([disabled]), input'));
+        const first = f[0];
+        const lastEl = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          lastEl.focus();
+        } else if (!e.shiftKey && document.activeElement === lastEl) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    root.addEventListener('click', function (e) {
+      const b = e.target.closest('[data-tour]');
+      if (!b) return;
+      if (b.dataset.tour === 'close') end(false);
+      else go(b.dataset.tour === 'next' ? 1 : -1);
+    });
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    document.addEventListener('keydown', onKey);
+    activeTour = key;
+    show();
+  }
+
+  // Feature tours offered as "Novidade" to accounts created before the release; new accounts get every screen
+  // tour from the start instead (TOUR-03, TOUR-04).
+  const NEWS = [
+    { key: 'sonhos', title: 'Novidade: Sonhos do casal', text: 'Guardem juntos para uma viagem, um sofá ou o que sonharem.', href: 'casa.html?tour=sonhos' },
+  ];
+  function renderNews() {
+    const el = document.getElementById('ws-news');
+    if (!el) return;
+    const item = NEWS.find((n) => !tourDone(n.key));
+    if (!item) {
+      el.hidden = true;
+      return;
+    }
+    el.innerHTML =
+      '<div class="ws-news" role="status">' + icon('sparkle') + '<div class="flex-grow-1"><strong>' + item.title + '</strong>' +
+      '<div class="small text-muted">' + item.text + '</div></div>' +
+      '<div class="d-flex flex-wrap gap-2 justify-content-end"><button type="button" class="btn btn-ghost btn-sm" data-news-skip>Agora não</button>' +
+      '<a class="btn btn-primary btn-sm" href="' + item.href + '">Fazer o tour</a></div></div>';
+    el.querySelector('[data-news-skip]').addEventListener('click', function () {
+      setTourDone(item.key);
+      renderNews();
+    });
+  }
+
+  // ?tour=<key> opens a tour on arrival (used by the "Novidade" banner); ?semtour=1 skips the automatic one.
+  function autoTour(active) {
+    const q = new URLSearchParams(location.search);
+    const asked = q.get('tour');
+    if (asked && TOURS[asked]) return setTimeout(() => startTour(asked), 300);
+    if (q.get('semtour') === '1') return;
+    if (TOURS[active] && !tourDone(active) && !tourSkipped(active)) setTimeout(() => startTour(active), 500);
+  }
+
   function initPage() {
     const active = document.body.getAttribute('data-page');
     renderSidebar(active);
@@ -503,6 +868,10 @@
     renderBottomNav(active);
     hydrateIcons();
     bindThemeToggles();
+    const help = document.querySelector('[data-tour-help]');
+    if (help) help.addEventListener('click', () => startTour(tourKey()));
+    renderNews();
+    autoTour(tourKey());
   }
 
   window.WS = {
@@ -531,6 +900,13 @@
     assetRequests: assetRequests,
     saveAssetRequests: saveAssetRequests,
     SYSTEM_MIN_WAGE: SYSTEM_MIN_WAGE,
+    CDI_YEAR: CDI_YEAR,
+    NOW: NOW,
+    dreamPlan: dreamPlan,
+    startTour: startTour,
+    tourDone: tourDone,
+    setTourDone: setTourDone,
+    resetTours: resetTours,
   };
 
   if (document.readyState === 'loading') {
