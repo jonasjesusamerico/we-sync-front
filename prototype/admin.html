@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configuração geral · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body data-page="admin">
+    <div class="ws-app">
+      <aside id="ws-sidebar"></aside>
+      <div class="ws-main">
+        <header id="ws-topbar"></header>
+        <main class="ws-content">
+          <div class="ws-page-head">
+            <div>
+              <h1>Configuração geral <span class="ws-tag is-primary align-middle">admin</span></h1>
+              <p>Vale para todos os usuários. Só contas marcadas como admin no banco veem esta área.</p>
+            </div>
+          </div>
+
+          <div class="ws-callout mb-3">
+            <i data-icon="shield"></i>
+            <div class="small">Esta área <strong>não mostra dados dos usuários</strong> (compras, rendas, casas). Toda alteração fica registrada no histórico.</div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-lg-3">
+              <nav class="ws-settings-nav" role="tablist" aria-label="Seções da configuração geral">
+                <button type="button" role="tab" data-tab="salario"><i data-icon="wallet"></i>Salário mínimo</button>
+                <button type="button" role="tab" data-tab="ativos"><i data-icon="trendUp"></i>Ativos</button>
+                <button type="button" role="tab" data-tab="padroes"><i data-icon="tag"></i>Cadastros padrão</button>
+                <button type="button" role="tab" data-tab="parametros"><i data-icon="sliders"></i>Parâmetros</button>
+                <button type="button" role="tab" data-tab="taxas"><i data-icon="briefcase"></i>Taxas da B3</button>
+                <button type="button" role="tab" data-tab="jobs"><i data-icon="clock"></i>Rotinas</button>
+                <button type="button" role="tab" data-tab="historico"><i data-icon="receipt"></i>Histórico</button>
+              </nav>
+            </div>
+
+            <div class="col-12 col-lg-9">
+              <!-- Minimum wage -->
+              <section role="tabpanel" id="tab-salario" aria-label="Salário mínimo" class="ws-card">
+                <h2 class="ws-section-title">Salário mínimo</h2>
+                <p class="ws-section-sub mb-3">Usado como renda mínima de quem está sem renda no mês, quando a casa não define a própria.</p>
+                <form id="mw-form" class="row g-2 align-items-end mb-3" novalidate>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="mw-value">Valor</label>
+                    <div class="ws-money-sm" style="width: 100%"><span aria-hidden="true">R$</span><input id="mw-value" class="form-control" inputmode="numeric" /></div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="mw-from">Vale a partir de</label>
+                    <input id="mw-from" type="month" class="form-control" value="2027-01" />
+                  </div>
+                  <div class="col-12 col-md-auto"><button type="submit" class="btn btn-primary w-100">Adicionar vigência</button></div>
+                </form>
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                  <button type="button" class="btn btn-soft btn-sm" id="mw-fetch">Buscar no Banco Central</button>
+                  <span class="small text-muted">Série 1619 do SGS (salário mínimo). O valor vem como sugestão: o analista confirma.</span>
+                </div>
+                <ul class="ws-tx-list" id="mw-list"></ul>
+              </section>
+
+              <!-- Asset catalog -->
+              <section role="tabpanel" id="tab-ativos" aria-label="Ativos" hidden>
+                <div class="ws-card mb-3">
+                  <h2 class="ws-section-title">Catálogo de ativos</h2>
+                  <p class="ws-section-sub mb-2">
+                    Só ativos cadastrados aqui podem ser comprados. O job das 00:00 busca o fechamento de cada ativo ativo <strong>uma única vez</strong>
+                    e todas as carteiras usam esse preço. Os <strong>títulos do Tesouro</strong> entram sozinhos pelo arquivo oficial do Tesouro
+                    Transparente; aqui você só pausa os que não quiser.
+                  </p>
+                  <div class="ws-callout mb-3" id="assets-usage"></div>
+                  <form id="asset-form" class="row g-2 align-items-start" novalidate>
+                    <div class="col-6 col-md-3">
+                      <label class="form-label" for="as-code">Código</label>
+                      <input id="as-code" class="form-control text-uppercase" placeholder="Ex.: TAEE11" aria-describedby="as-code-error" />
+                      <div class="invalid-feedback" id="as-code-error">Informe um código novo.</div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                      <label class="form-label" for="as-name">Nome</label>
+                      <input id="as-name" class="form-control" placeholder="Ex.: Taesa Unit" />
+                    </div>
+                    <div class="col-6 col-md-3">
+                      <label class="form-label" for="as-cls">Tipo</label>
+                      <select id="as-cls" class="form-select">
+                        <option value="acao">Ação</option>
+                        <option value="fii">FII</option>
+                      </select>
+                    </div>
+                    <div class="col-6 col-md-2 d-flex align-items-end" style="min-height: 4.6rem">
+                      <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
+                    </div>
+                  </form>
+                </div>
+                <div class="ws-card mb-3">
+                  <h2 class="ws-section-title mb-2">Pedidos de cadastro</h2>
+                  <ul class="ws-tx-list" id="requests"></ul>
+                </div>
+                <div class="ws-card">
+                  <div class="ws-table-wrap">
+                    <table class="ws-table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Ativo</th>
+                          <th scope="col" class="d-none d-md-table-cell">Fonte</th>
+                          <th scope="col" class="is-num">Fechamento</th>
+                          <th scope="col" class="d-none d-sm-table-cell">Situação</th>
+                          <th scope="col">Ativo</th>
+                        </tr>
+                      </thead>
+                      <tbody id="assets"></tbody>
+                    </table>
+                  </div>
+                  <div class="d-flex justify-content-end mt-3">
+                    <button type="button" class="btn btn-ghost" id="assets-run">Rodar o job agora</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Default records -->
+              <section role="tabpanel" id="tab-padroes" aria-label="Cadastros padrão" hidden>
+                <div class="ws-card mb-3">
+                  <h2 class="ws-section-title">Categorias e tópicos padrão</h2>
+                  <p class="ws-section-sub mb-3">Valem para todos. As palavras-chave alimentam a sugestão de tópico pela descrição da compra.</p>
+                  <ul class="ws-tx-list" id="cat-list"></ul>
+                </div>
+                <div class="ws-card">
+                  <h2 class="ws-section-title">Formas de pagamento padrão</h2>
+                  <div class="ws-chips mt-3" id="pay-list"></div>
+                </div>
+              </section>
+
+              <!-- Parameters -->
+              <section role="tabpanel" id="tab-parametros" aria-label="Parâmetros" class="ws-card" hidden>
+                <h2 class="ws-section-title">Detecção de padrão e metas</h2>
+                <p class="ws-section-sub mb-3">Regras usadas para avisar crescimento de gasto e meses fora do normal.</p>
+                <div class="row g-3">
+                  <div class="col-6 col-md-3">
+                    <label class="form-label" for="p-growth">Crescimento mínimo (% ao mês)</label>
+                    <input id="p-growth" type="number" class="form-control" value="10" min="1" />
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <label class="form-label" for="p-rises">Meses seguidos de alta</label>
+                    <input id="p-rises" type="number" class="form-control" value="3" min="1" />
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <label class="form-label" for="p-std">Desvios para "fora do normal"</label>
+                    <input id="p-std" type="number" class="form-control" value="1.5" step="0.1" min="0.5" />
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <label class="form-label" for="p-hist">Histórico mínimo (meses)</label>
+                    <input id="p-hist" type="number" class="form-control" value="3" min="1" />
+                  </div>
+                  <div class="col-6 col-md-3">
+                    <label class="form-label" for="p-invite">Validade do convite (horas)</label>
+                    <input id="p-invite" type="number" class="form-control" value="48" min="1" />
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end mt-3"><button type="button" class="btn btn-primary" data-save="Parâmetros salvos">Salvar parâmetros</button></div>
+              </section>
+
+              <!-- B3 fees -->
+              <section role="tabpanel" id="tab-taxas" aria-label="Taxas da B3" class="ws-card" hidden>
+                <h2 class="ws-section-title">Taxas da B3</h2>
+                <p class="ws-section-sub mb-3">Iguais para todas as corretoras e somadas à corretagem de cada uma no cálculo das operações. Valores de exemplo.</p>
+                <div class="row g-3">
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="t-emol">Emolumentos (%)</label>
+                    <input id="t-emol" type="number" class="form-control" value="0.005" step="0.0001" />
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="t-liq">Liquidação (%)</label>
+                    <input id="t-liq" type="number" class="form-control" value="0.025" step="0.0001" />
+                  </div>
+                </div>
+                <h3 class="ws-section-title mt-4">Custódia do Tesouro Direto</h3>
+                <p class="ws-section-sub mb-3">
+                  Calculada todo dia sobre o valor dos títulos e descontada só na venda antecipada, no vencimento ou no pagamento de juros
+                  (regras do Tesouro Direto). Substitui as taxas de negociação no Tesouro.
+                </p>
+                <div class="row g-3">
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="t-cust">Taxa (% ao ano)</label>
+                    <input id="t-cust" type="number" class="form-control" value="0.20" step="0.01" />
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="t-selic">Isenção do Tesouro Selic (R$ por CPF)</label>
+                    <input id="t-selic" type="number" class="form-control" value="10000" step="100" aria-describedby="t-selic-hint" />
+                    <div class="form-text" id="t-selic-hint">Acima disso, cobra só sobre o excedente.</div>
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="t-rx">Educa+ / Renda+: taxa sobre o excedente (% ao ano)</label>
+                    <input id="t-rx" type="number" class="form-control" value="0.10" step="0.01" />
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="t-educa">Isenção Educa+ (salários mínimos/mês)</label>
+                    <input id="t-educa" type="number" class="form-control" value="4" />
+                  </div>
+                  <div class="col-6 col-md-4">
+                    <label class="form-label" for="t-renda">Isenção Renda+ (salários mínimos/mês)</label>
+                    <input id="t-renda" type="number" class="form-control" value="6" />
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end mt-3"><button type="button" class="btn btn-primary" data-save="Taxas salvas">Salvar taxas</button></div>
+              </section>
+
+              <!-- Jobs -->
+              <section role="tabpanel" id="tab-jobs" aria-label="Rotinas" hidden>
+                <div class="ws-card mb-3">
+                  <h2 class="ws-section-title mb-2">Rotinas automáticas</h2>
+                  <ul class="ws-tx-list" id="jobs"></ul>
+                </div>
+                <div class="ws-card">
+                  <h2 class="ws-section-title">CDI manual</h2>
+                  <p class="ws-section-sub mb-3">Se a rotina do CDI falhar, informe a taxa do dia para não parar o rendimento das caixinhas.</p>
+                  <form class="row g-2 align-items-end" id="cdi-form" novalidate>
+                    <div class="col-6 col-md-4"><label class="form-label" for="cdi-date">Data</label><input id="cdi-date" type="date" class="form-control" value="2026-10-30" /></div>
+                    <div class="col-6 col-md-4"><label class="form-label" for="cdi-rate">Taxa do dia (% a.d.)</label><input id="cdi-rate" type="number" step="0.000001" class="form-control" placeholder="0,055131" /></div>
+                    <div class="col-12 col-md-auto"><button type="submit" class="btn btn-primary w-100">Salvar</button></div>
+                  </form>
+                </div>
+              </section>
+
+              <!-- Audit -->
+              <section role="tabpanel" id="tab-historico" aria-label="Histórico" class="ws-card" hidden>
+                <h2 class="ws-section-title mb-2">Histórico de alterações</h2>
+                <ul class="ws-tx-list" id="audit"></ul>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <nav id="ws-bottomnav"></nav>
+
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <script src="assets/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const W = window.WS;
+        const $ = (id) => document.getElementById(id);
+        const brl = W.formatBrl;
+        const brlPlain = (c) => brl(c).replace(/^R\$\s?/, '');
+
+        const audit = [
+          { who: 'analista@we-sync', when: '28/10/2026 14:02', what: 'Validade do convite: 7 dias → 48 horas' },
+          { who: 'analista@we-sync', when: '02/01/2026 09:15', what: 'Salário mínimo de jan/2026: ' + brl(W.SYSTEM_MIN_WAGE) },
+        ];
+        function log(what) {
+          const d = new Date();
+          const two = (n) => String(n).padStart(2, '0');
+          audit.unshift({ who: W.USER.email, when: two(d.getDate()) + '/' + two(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + two(d.getHours()) + ':' + two(d.getMinutes()), what: what });
+          renderAudit();
+        }
+
+        // Tabs (selected tab in the URL hash)
+        const tabs = Array.from(document.querySelectorAll('[role=tab]'));
+        function openTab(key) {
+          if (!tabs.some((t) => t.dataset.tab === key)) key = 'salario';
+          tabs.forEach(function (t) {
+            const on = t.dataset.tab === key;
+            t.setAttribute('aria-selected', on);
+            t.tabIndex = on ? 0 : -1;
+            $('tab-' + t.dataset.tab).hidden = !on;
+          });
+        }
+        tabs.forEach((t) => t.addEventListener('click', () => (history.replaceState(null, '', '#' + t.dataset.tab), openTab(t.dataset.tab))));
+        openTab(location.hash.slice(1));
+
+        // Minimum wage with validity
+        const wages = [{ from: '2026-01', value: W.SYSTEM_MIN_WAGE }];
+        let mwCents = 0;
+        $('mw-value').addEventListener('input', function () {
+          mwCents = Number(this.value.replace(/\D/g, '').slice(0, 11)) || 0;
+          this.value = brlPlain(mwCents);
+        });
+        function renderWages() {
+          const label = (ym) => W.MONTHS[Number(ym.slice(5)) - 1].slice(0, 3) + '/' + ym.slice(0, 4);
+          $('mw-list').innerHTML = wages
+            .slice()
+            .sort((a, b) => (a.from < b.from ? 1 : -1))
+            .map(
+              (w, i) =>
+                '<li class="ws-tx"><span class="ws-cat" style="--cat: var(--ws-primary)">' + W.icon('calendar') + '</span><div class="ws-tx-main"><div class="ws-tx-title">A partir de ' +
+                label(w.from) + '</div><div class="ws-tx-meta">' + (i === 0 ? 'vigência mais recente' : 'anterior') + '</div></div><span class="ws-tx-amount">' + brl(w.value) + '</span></li>',
+            )
+            .join('');
+        }
+        // In the app the API reads https://api.bcb.gov.br/dados/serie/bcdata.sgs.1619/dados/ultimos/1?formato=json
+        $('mw-fetch').addEventListener('click', function () {
+          mwCents = W.SYSTEM_MIN_WAGE;
+          $('mw-value').value = brlPlain(mwCents);
+          $('mw-from').value = '2026-01';
+          W.toast('Banco Central: ' + brl(mwCents) + ' (2026). Confira e salve.');
+        });
+        $('mw-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          if (mwCents <= 0 || !$('mw-from').value) return;
+          const existing = wages.find((w) => w.from === $('mw-from').value);
+          if (existing) existing.value = mwCents;
+          else wages.push({ from: $('mw-from').value, value: mwCents });
+          log('Salário mínimo a partir de ' + $('mw-from').value + ': ' + brl(mwCents));
+          renderWages();
+          W.toast('Vigência salva');
+        });
+
+        // Default categories, topics and keywords (sample)
+        const DEFAULTS = [
+          [1, 'Mercado, Delivery, Restaurante, Padaria', 'ifood, pizza, hambúrguer, mercado, feira, restaurante, padaria'],
+          [2, 'Combustível, Corridas de aplicativo, Transporte público, Estacionamento, Financiamento', 'uber, 99, posto, gasolina, estacionamento, financiamento'],
+          [3, 'Aluguel/Condomínio, Contas da casa, Manutenção, Limpeza', 'aluguel, condomínio, luz, água, gás, internet, limpeza'],
+          [4, 'Farmácia, Consultas, Plano de saúde', 'farmácia, drogaria, consulta, dentista'],
+          [5, 'Cursos, Livros, Material', 'curso, faculdade, livro'],
+          [6, 'Passeios, Streaming, Viagens', 'cinema, show, netflix, spotify'],
+        ];
+        $('cat-list').innerHTML = DEFAULTS.map(function (d) {
+          const c = W.CATEGORIES.find((x) => x.id === d[0]);
+          return (
+            '<li class="ws-tx is-wrap">' + W.catBubble(c) + '<div class="ws-tx-main"><div class="ws-tx-title">' + c.name + '</div><div class="ws-tx-meta">Tópicos: ' + d[1] +
+            '</div><div class="ws-tx-meta">Palavras-chave: ' + d[2] + '</div></div><div class="ws-tx-actions"><button type="button" class="btn btn-ghost btn-sm" data-edit>Editar</button></div></li>'
+          );
+        }).join('');
+        $('pay-list').innerHTML = W.PAYMENT_METHODS.map((p) => '<span class="ws-tag">' + p.name + '</span>').join('');
+
+        // Jobs
+        $('jobs').innerHTML = [
+          ['CDI diário (Banco Central)', 'Toda semana · última: 27/10/2026 03:00 · 5 dias gravados', 'is-paid', 'OK'],
+          ['Cotações de fechamento', 'Todo dia às 00:00 · brapi; reserva Alpha Vantage (até 25 ativos que falharem) · ativos do catálogo', 'is-paid', 'OK'],
+          ['Preços do Tesouro', 'Todo dia · arquivo do Tesouro Transparente · cadastra títulos novos no catálogo', 'is-paid', 'OK'],
+          ['Confirmações de depósito/resgate', 'Todo dia às 08:00 · 12 avisos enviados', 'is-paid', 'OK'],
+        ]
+          .map(
+            (j) =>
+              '<li class="ws-tx"><span class="ws-cat" style="--cat: var(--ws-primary)">' + W.icon('clock') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' + j[0] +
+              '</div><div class="ws-tx-meta">' + j[1] + '</div></div><span class="ws-status ' + j[2] + '">' + j[3] + '</span></li>',
+          )
+          .join('');
+        $('cdi-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          if (!$('cdi-rate').value) return;
+          log('CDI manual de ' + W.formatDate($('cdi-date').value) + ': ' + $('cdi-rate').value + '% a.d.');
+          W.toast('CDI do dia salvo');
+        });
+
+        function renderAudit() {
+          $('audit').innerHTML = audit
+            .map(
+              (a) =>
+                '<li class="ws-tx"><span class="ws-cat" style="--cat: var(--ws-muted)">' + W.icon('edit') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' +
+                W.escapeHtml(a.what) + '</div><div class="ws-tx-meta">' + a.when + ' · ' + W.escapeHtml(a.who) + '</div></div></li>',
+            )
+            .join('');
+        }
+
+        document.body.addEventListener('click', function (e) {
+          const save = e.target.closest('[data-save]');
+          if (save) {
+            log(save.dataset.save);
+            W.toast(save.dataset.save);
+          }
+          if (e.target.closest('[data-edit]')) W.toast('Edição dos cadastros padrão: a detalhar');
+        });
+
+        // ---------- Asset catalog ----------
+        const BRAPI_FREE_PER_DAY = 500; // ~15,000 requests/month ÷ 30 (docs/08)
+        const clsName = { acao: 'Ação', fii: 'FII', tesouro: 'Tesouro Direto' };
+        function renderAssets() {
+          const quoted = W.ASSETS.filter((a) => a.active && a.cls !== 'tesouro').length;
+          const bonds = W.ASSETS.filter((a) => a.active && a.cls === 'tesouro').length;
+          $('assets-usage').innerHTML =
+            W.icon('clock') + '<div class="small"><strong>' + quoted + ' consultas por dia na brapi</strong> (ações e FIIs ativos) de ~' + BRAPI_FREE_PER_DAY +
+            ' do plano grátis · ' + bonds + ' títulos do Tesouro vêm do arquivo diário do Tesouro Transparente (sem consumir o limite).</div>';
+          $('assets').innerHTML = W.ASSETS.map(
+            (a, i) =>
+              '<tr><td><div class="fw-bold">' + W.escapeHtml(a.ticker) + '</div><div class="small text-muted">' + W.escapeHtml(a.name) + ' · ' + clsName[a.cls] + '</div></td>' +
+              '<td class="d-none d-md-table-cell small">' + (a.cls === 'tesouro' ? 'Tesouro Transparente<div class="text-muted">cadastro automático</div>' : 'brapi') + '</td>' +
+              '<td class="is-num">' + (a.close ? brl(a.close) + '<div class="small text-muted">' + a.date + '</div>' : '—') + '</td>' +
+              '<td class="d-none d-sm-table-cell">' +
+              (!a.active
+                ? '<span class="ws-status is-canceled">Pausado</span>'
+                : a.error
+                  ? '<span class="ws-status is-pending">Não encontrado na fonte</span>'
+                  : a.close
+                    ? '<span class="ws-status is-paid">Atualizado</span>'
+                    : '<span class="ws-status is-provisional">Aguardando o job</span>') +
+              '</td><td><div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" role="switch" data-asset="' + i + '"' +
+              (a.active ? ' checked' : '') + ' aria-label="Atualizar ' + W.escapeHtml(a.ticker) + ' todo dia"></div></td></tr>',
+          ).join('');
+        }
+        function renderRequests() {
+          const list = W.assetRequests();
+          $('requests').innerHTML =
+            list
+              .map(
+                (r) =>
+                  '<li class="ws-tx is-wrap"><span class="ws-cat" style="--cat: var(--ws-primary)">' + W.icon('plus') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' +
+                  W.escapeHtml(r.ticker) + '</div><div class="ws-tx-meta">Pedido em ' + r.date + ' por um usuário</div></div><div class="ws-tx-actions">' +
+                  '<button type="button" class="btn btn-primary btn-sm" data-approve="' + W.escapeHtml(r.ticker) + '">Aprovar</button>' +
+                  '<button type="button" class="btn btn-ghost btn-sm" data-reject="' + W.escapeHtml(r.ticker) + '">Recusar</button></div></li>',
+              )
+              .join('') || '<li class="ws-empty">Nenhum pedido. Em Investimentos, quem tentar comprar um ativo fora do catálogo pode pedir o cadastro.</li>';
+        }
+        $('requests').addEventListener('click', function (e) {
+          const ap = e.target.closest('[data-approve]');
+          const rj = e.target.closest('[data-reject]');
+          const code = (ap || rj || {}).dataset ? (ap || rj).dataset.approve || (ap || rj).dataset.reject : null;
+          if (!code) return;
+          W.saveAssetRequests(W.assetRequests().filter((r) => r.ticker !== code));
+          if (ap && !W.assetOf(code)) W.ASSETS.push({ ticker: code, name: code, cls: code.endsWith('11') ? 'fii' : 'acao', close: null, date: '', active: true });
+          log((ap ? 'Pedido aprovado: ' : 'Pedido recusado: ') + code);
+          renderRequests();
+          renderAssets();
+          W.toast(ap ? code + ' entrou no catálogo; o preço chega no próximo job.' : 'Pedido recusado');
+        });
+        $('assets').addEventListener('change', function (e) {
+          const a = W.ASSETS[Number(e.target.dataset.asset)];
+          if (!a) return;
+          a.active = e.target.checked;
+          log((a.active ? 'Ativo reativado: ' : 'Ativo pausado (fora do job): ') + a.ticker);
+          renderAssets();
+        });
+        $('asset-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const code = $('as-code').value.trim().toUpperCase();
+          const ok = code !== '' && !W.assetOf(code);
+          $('as-code').classList.toggle('is-invalid', !ok);
+          if (!ok) return;
+          W.ASSETS.push({ ticker: code, name: $('as-name').value.trim() || code, cls: $('as-cls').value, close: null, date: '', active: true });
+          log('Ativo cadastrado no catálogo: ' + code);
+          $('asset-form').reset();
+          renderAssets();
+          W.toast(code + ' cadastrado. O preço chega no próximo job das 00:00.');
+        });
+        // Prototype: the job keeps prices it has and marks new assets as not found, to show the error state.
+        $('assets-run').addEventListener('click', function () {
+          W.ASSETS.filter((a) => a.active && !a.close).forEach((a) => (a.error = true));
+          log('Job de cotações executado manualmente');
+          renderAssets();
+          W.toast('Job executado. Ativos sem preço aparecem como "Não encontrado na fonte".');
+        });
+
+        renderWages();
+        renderAssets();
+        renderRequests();
+        renderAudit();
+      });
+    </script>
+  </body>
+</html>

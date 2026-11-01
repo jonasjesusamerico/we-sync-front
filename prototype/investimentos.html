@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Investimentos · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body data-page="investimentos">
+    <div class="ws-app">
+      <aside id="ws-sidebar"></aside>
+      <div class="ws-main">
+        <header id="ws-topbar"></header>
+        <main class="ws-content">
+          <div class="ws-page-head">
+            <div>
+              <h1>Investimentos</h1>
+              <p>Buy and hold · preços do catálogo de ativos (Configuração geral), atualizados pelo job das 00:00 · valores de exemplo</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-ghost d-inline-flex align-items-center gap-2" id="add-income"><i data-icon="gift"></i>Novo provento</button>
+              <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" id="add-op"><i data-icon="plus"></i>Nova operação</button>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6 col-xl-3">
+              <div class="ws-card ws-kpi">
+                <span class="ws-kpi-icon"><i data-icon="wallet"></i></span>
+                <div><div class="ws-kpi-label">Patrimônio</div><div class="ws-kpi-value ws-tabular" id="k-total"></div><div class="ws-kpi-foot">valor atual</div></div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="ws-card ws-kpi">
+                <span class="ws-kpi-icon"><i data-icon="arrowDown"></i></span>
+                <div><div class="ws-kpi-label">Aplicado</div><div class="ws-kpi-value ws-tabular" id="k-cost"></div><div class="ws-kpi-foot">com taxas</div></div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="ws-card ws-kpi">
+                <span class="ws-kpi-icon is-success"><i data-icon="trendUp"></i></span>
+                <div><div class="ws-kpi-label">Resultado</div><div class="ws-kpi-value ws-tabular" id="k-result"></div><div class="ws-kpi-foot" id="k-result-pct"></div></div>
+              </div>
+            </div>
+            <div class="col-6 col-xl-3">
+              <div class="ws-card ws-kpi">
+                <span class="ws-kpi-icon is-warning"><i data-icon="gift"></i></span>
+                <div><div class="ws-kpi-label">Proventos em 2026</div><div class="ws-kpi-value ws-tabular" id="k-income"></div><div class="ws-kpi-foot">lançados à mão</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-xl-5">
+              <section class="ws-card h-100" aria-labelledby="dist-title">
+                <div class="ws-card-head"><h2 id="dist-title">Distribuição</h2></div>
+                <div id="dist"></div>
+              </section>
+            </div>
+            <div class="col-12 col-xl-7">
+              <section class="ws-card h-100" aria-labelledby="month-title">
+                <div class="ws-card-head">
+                  <div>
+                    <h2 id="month-title">Investido em outubro</h2>
+                    <div class="ws-card-sub">Compras pagas pela conta normal, menos os saques, viram o lançamento <strong>Investimento</strong> do mês</div>
+                  </div>
+                  <strong class="fs-5 ws-tabular" id="month-net"></strong>
+                </div>
+                <ul class="ws-tx-list" id="ops"></ul>
+              </section>
+            </div>
+          </div>
+
+          <section class="ws-card mb-3" aria-labelledby="pos-title">
+            <div class="ws-card-head">
+              <div>
+                <h2 id="pos-title">Ações e FIIs</h2>
+                <div class="ws-card-sub">Preço médio inclui as taxas · cotação pelo job das 00:00</div>
+              </div>
+            </div>
+            <div class="ws-table-wrap">
+              <table class="ws-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Ativo</th>
+                    <th scope="col" class="is-num d-none d-md-table-cell">Qtd.</th>
+                    <th scope="col" class="is-num d-none d-lg-table-cell">Preço médio</th>
+                    <th scope="col" class="is-num d-none d-md-table-cell">Cotação</th>
+                    <th scope="col" class="is-num">Valor atual</th>
+                    <th scope="col" class="is-num">Resultado</th>
+                    <th scope="col" class="is-num d-none d-lg-table-cell">Proventos</th>
+                  </tr>
+                </thead>
+                <tbody id="positions"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-xl-6">
+              <section class="ws-card h-100" aria-labelledby="td-title">
+                <div class="ws-card-head">
+                  <div>
+                    <h2 id="td-title">Tesouro Direto</h2>
+                    <div class="ws-card-sub">Mesmo fluxo das ações. Valor = quantidade de títulos (pode ser fracionada) × preço do dia (PU) do Tesouro Transparente. Custódia da B3 calculada todo dia e descontada na venda, no vencimento ou nos juros. "Ajustar saldo" fica de reserva</div>
+                  </div>
+                </div>
+                <ul class="ws-tx-list" id="treasury"></ul>
+              </section>
+            </div>
+            <div class="col-12 col-xl-6">
+              <section class="ws-card h-100" aria-labelledby="bx-title">
+                <div class="ws-card-head">
+                  <div>
+                    <h2 id="bx-title">Caixinhas</h2>
+                    <div class="ws-card-sub">Pessoais e as da casa em que você é o titular</div>
+                  </div>
+                </div>
+                <ul class="ws-tx-list" id="boxes"></ul>
+              </section>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-xl-7">
+              <section class="ws-card h-100" aria-labelledby="inc-title">
+                <div class="ws-card-head"><h2 id="inc-title">Proventos</h2></div>
+                <ul class="ws-tx-list" id="incomes"></ul>
+              </section>
+            </div>
+            <div class="col-12 col-xl-5">
+              <section class="ws-card h-100" aria-labelledby="br-title">
+                <div class="ws-card-head">
+                  <div>
+                    <h2 id="br-title">Corretoras</h2>
+                    <div class="ws-card-sub">Saldo disponível para investir e a corretagem que você cadastrou; taxas da B3 vêm da configuração geral</div>
+                  </div>
+                  <button type="button" class="btn btn-soft btn-sm" id="add-broker">Nova</button>
+                </div>
+                <ul class="ws-tx-list" id="brokers"></ul>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <nav id="ws-bottomnav"></nav>
+
+    <!-- Operation -->
+    <div class="modal fade" id="op-modal" tabindex="-1" aria-labelledby="op-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <form class="modal-content" id="op-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="op-title">Nova operação</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-3" style="grid-template-columns: minmax(0, 1fr)">
+            <div class="ws-segmented" role="radiogroup" aria-label="Tipo de operação">
+              <input type="radio" name="op-kind" id="op-buy" value="buy" checked />
+              <label for="op-buy"><i data-icon="arrowDown"></i>Compra</label>
+              <input type="radio" name="op-kind" id="op-sell" value="sell" />
+              <label for="op-sell"><i data-icon="arrowUp"></i>Venda</label>
+            </div>
+            <div class="row g-3">
+              <div class="col-7">
+                <label class="form-label" for="op-ticker">Ativo (código)</label>
+                <input id="op-ticker" class="form-control text-uppercase" list="tickers" placeholder="Ex.: ITSA4" aria-describedby="op-ticker-error" />
+                <datalist id="tickers"></datalist>
+                <div class="invalid-feedback" id="op-ticker-error">Informe o código.</div>
+                <button type="button" class="btn btn-soft btn-sm mt-2" id="op-request" hidden>Pedir cadastro</button>
+              </div>
+              <div class="col-5">
+                <label class="form-label" for="op-class">Tipo</label>
+                <select id="op-class" class="form-select">
+                  <option value="acao">Ação</option>
+                  <option value="fii">FII</option>
+                  <option value="tesouro">Tesouro Direto</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="op-qty">Quantidade</label>
+                <input id="op-qty" type="number" min="0.01" step="any" class="form-control" value="100" aria-describedby="op-qty-error" />
+                <div class="invalid-feedback" id="op-qty-error">Quantidade inválida.</div>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="op-price">Preço unitário</label>
+                <div class="ws-money-sm" style="width: 100%"><span aria-hidden="true">R$</span><input id="op-price" class="form-control" inputmode="numeric" /></div>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="op-date">Data</label>
+                <input id="op-date" type="date" class="form-control" value="2026-10-30" />
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="op-broker">Corretora</label>
+                <select id="op-broker" class="form-select"></select>
+              </div>
+            </div>
+            <fieldset id="op-pay-wrap">
+              <legend class="form-label fs-6">Pagar com</legend>
+              <div class="ws-segmented">
+                <input type="radio" name="op-pay" id="op-pay-cash" value="cash" />
+                <label for="op-pay-cash"><i data-icon="briefcase"></i>Saldo na corretora</label>
+                <input type="radio" name="op-pay" id="op-pay-account" value="account" checked />
+                <label for="op-pay-account"><i data-icon="wallet"></i>Conta normal</label>
+              </div>
+              <div class="invalid-feedback" id="op-pay-error">Saldo insuficiente na corretora.</div>
+            </fieldset>
+            <table class="ws-settle"><tbody id="op-summary"></tbody></table>
+            <div class="small text-muted">Em breve: importar a nota de corretagem em PDF e preencher tudo sozinho.</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Registrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Income (dividends) -->
+    <div class="modal fade" id="pv-modal" tabindex="-1" aria-labelledby="pv-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="pv-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="pv-title">Novo provento</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-3" style="grid-template-columns: minmax(0, 1fr)">
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label" for="pv-ticker">Ativo</label>
+                <select id="pv-ticker" class="form-select"></select>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="pv-kind">Tipo</label>
+                <select id="pv-kind" class="form-select">
+                  <option>Dividendo</option>
+                  <option>JCP</option>
+                  <option>Rendimento</option>
+                </select>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="pv-date">Data</label>
+                <input id="pv-date" type="date" class="form-control" value="2026-10-30" />
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="pv-broker">Caiu no saldo da corretora</label>
+                <select id="pv-broker" class="form-select"></select>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="pv-value">Valor recebido</label>
+                <div class="ws-money-sm" style="width: 100%"><span aria-hidden="true">R$</span><input id="pv-value" class="form-control" inputmode="numeric" /></div>
+              </div>
+            </div>
+            <div class="small text-muted">Por enquanto o provento é lançado à mão. Depois, buscar de uma API pública.</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Registrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Broker -->
+    <div class="modal fade" id="br-modal" tabindex="-1" aria-labelledby="br-modal-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="br-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="br-modal-title">Corretora</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-3" style="grid-template-columns: minmax(0, 1fr)">
+            <div>
+              <label class="form-label" for="br-name">Nome</label>
+              <input id="br-name" class="form-control" aria-describedby="br-name-error" />
+              <div class="invalid-feedback" id="br-name-error">Informe o nome.</div>
+            </div>
+            <div class="row g-3">
+              <div class="col-6">
+                <label class="form-label" for="br-fee">Corretagem fixa por ordem</label>
+                <div class="ws-money-sm" style="width: 100%"><span aria-hidden="true">R$</span><input id="br-fee" class="form-control" inputmode="numeric" /></div>
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="br-pct">Corretagem (% da ordem)</label>
+                <input id="br-pct" type="number" step="0.01" min="0" class="form-control" value="0" />
+              </div>
+            </div>
+            <div class="form-text">Cada corretora cobra de um jeito: cadastre como a sua cobra. As taxas da B3 são somadas automaticamente.</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Withdraw from a broker to the normal account -->
+    <div class="modal fade" id="wd-modal" tabindex="-1" aria-labelledby="wd-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="wd-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="wd-title"></h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-2" style="grid-template-columns: minmax(0, 1fr)">
+            <p class="text-muted mb-1" id="wd-text"></p>
+            <label class="form-label" for="wd-value" id="wd-label"></label>
+            <div class="ws-money"><span>R$</span><input id="wd-value" inputmode="numeric" aria-describedby="wd-error" /></div>
+            <div class="invalid-feedback" id="wd-error">Valor maior que o saldo disponível.</div>
+            <div class="small text-muted" id="wd-hint"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="wd-submit"></button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <script src="assets/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const W = window.WS;
+        const $ = (id) => document.getElementById(id);
+        const brl = W.formatBrl;
+        const esc = W.escapeHtml;
+        const brlPlain = (c) => brl(c).replace(/^R\$\s?/, '');
+        const pctText = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x * 100).toFixed(1).replace('.', ',') + '%';
+        const signed = (c) => (c > 0 ? '+' : c < 0 ? '−' : '') + brl(Math.abs(c));
+
+        // B3 fees come from the system settings (admin); sample values.
+        const B3_FEE_RATE = 0.0003;
+
+        // Sample data (amounts in cents). Positions keep the average price including fees.
+        const brokers = [
+          // Fees are registered by the user (each broker charges differently); cash = balance available to invest.
+          { id: 1, name: 'Corretora A', fee: 0, pct: 0, cash: 31240 },
+          { id: 2, name: 'Corretora B', fee: 490, pct: 0, cash: 0 },
+        ];
+        const positions = [
+          { ticker: 'ITSA4', cls: 'acao', qty: 300, avg: 980, close: 1045 },
+          { ticker: 'BBAS3', cls: 'acao', qty: 100, avg: 2510, close: 2730 },
+          { ticker: 'WEGE3', cls: 'acao', qty: 40, avg: 3850, close: 3620 },
+          { ticker: 'MXRF11', cls: 'fii', qty: 500, avg: 995, close: 970 },
+          { ticker: 'HGLG11', cls: 'fii', qty: 20, avg: 15800, close: 16240 },
+          { ticker: 'KNRI11', cls: 'fii', qty: 15, avg: 14020, close: 14790 },
+        ];
+        // Tesouro Direto uses the same flow as stocks: fractional quantity of bonds × daily unit price (PU)
+        // from Tesouro Transparente. "close" is the PU of the day; "avg" the average PU paid, with fees.
+        positions.push(
+          { ticker: 'TESOURO SELIC 2029', name: 'Tesouro Selic 2029', cls: 'tesouro', rate: 'Selic + 0,07%', due: '01/03/2029', qty: 0.31, avg: 1612903, close: 1745903 },
+          { ticker: 'TESOURO IPCA+ 2035', name: 'Tesouro IPCA+ 2035', cls: 'tesouro', rate: 'IPCA + 6,85%', due: '15/05/2035', qty: 1.12, avg: 267857, close: 284723 },
+        );
+        const treasury = () => positions.filter((p) => p.cls === 'tesouro' && p.qty > 0);
+        const qtyText = (q) => String(Math.round(q * 100) / 100).replace('.', ',');
+        // An asset paused in the catalog (or not found by the job) keeps its last known price, with a warning.
+        function staleTag(p) {
+          const a = W.assetOf(p.ticker);
+          return a && (!a.active || a.error) ? ' <span class="ws-tag" style="color: var(--ws-warning); background: var(--ws-warning-soft); border-color: transparent">preço de ' + a.date + '</span>' : '';
+        }
+        // Prices come from the admin asset catalog (updated once a day by the job), never per user.
+        positions.forEach(function (p) {
+          const a = W.assetOf(p.ticker);
+          if (a) p.close = a.close;
+        });
+        const incomes = [
+          // Dividends fall into the broker's cash balance.
+          { ticker: 'MXRF11', kind: 'Rendimento', date: '2026-10-15', value: 5000, broker: 1 },
+          { ticker: 'HGLG11', kind: 'Rendimento', date: '2026-10-14', value: 2200, broker: 1 },
+          { ticker: 'KNRI11', kind: 'Rendimento', date: '2026-10-14', value: 1500, broker: 1 },
+          { ticker: 'ITSA4', kind: 'Dividendo', date: '2026-10-01', value: 2400, broker: 2 },
+          { ticker: 'BBAS3', kind: 'JCP', date: '2026-09-25', value: 4120, broker: 1 },
+        ];
+        const ops = [
+          { kind: 'buy', ticker: 'MXRF11', qty: 100, price: 982, date: '2026-10-08', broker: 1, fees: 29, pay: 'account' },
+          { kind: 'buy', ticker: 'ITSA4', qty: 50, price: 1010, date: '2026-10-21', broker: 2, fees: 505, pay: 'account' },
+        ];
+        const withdrawals = []; // { broker, value, date }: broker cash back to the normal account
+        const deposits = []; // { broker, value, date }: normal account to broker cash
+        // Personal boxes plus house boxes where the user is the holder (CASA/INV rules).
+        const boxes = [{ name: 'Reserva de emergência', bank: 'Nubank', cdi: 100, invested: 1500000, gross: 82000, irRate: 0.2, from: null }].concat(
+          W.HOUSE.boxes.filter((b) => b.owner === W.USER.name || b.owner === 'Conta conjunta').map((b) => Object.assign({ from: 'casa' }, b)),
+        );
+        const boxNet = (b) => b.invested + Math.round(b.gross * (1 - b.irRate));
+
+        // Tesouro has no B3 trading fees (it has a yearly B3 custody fee, set in the admin and charged on the balance).
+        function opFees(value, brokerId, cls) {
+          const br = brokers.find((b) => b.id === brokerId);
+          return (br ? br.fee + Math.round((value * br.pct) / 100) : 0) + (cls === 'tesouro' ? 0 : Math.round(value * B3_FEE_RATE));
+        }
+
+        function render() {
+          const stocks = positions.filter((p) => p.qty > 0 && p.cls !== 'tesouro');
+          const val = (p) => Math.round(p.qty * p.close);
+          const cost = (p) => Math.round(p.qty * p.avg);
+          const incomeOf = (t) => incomes.filter((i) => i.ticker === t).reduce((a, i) => a + i.value, 0);
+          const classes = [
+            ['Ações', stocks.filter((p) => p.cls === 'acao').reduce((a, p) => a + val(p), 0), 'var(--ws-primary)'],
+            ['FIIs', stocks.filter((p) => p.cls === 'fii').reduce((a, p) => a + val(p), 0), 'var(--ws-cat-home)'],
+            ['Tesouro Direto', treasury().reduce((a, t) => a + val(t), 0), 'var(--ws-cat-education)'],
+            ['Caixinhas', boxes.reduce((a, b) => a + boxNet(b), 0), 'var(--ws-success)'],
+            ['Saldo nas corretoras', brokers.reduce((a, b) => a + b.cash, 0), 'var(--ws-muted)'],
+          ];
+          const total = classes.reduce((a, c) => a + c[1], 0);
+          const applied =
+            stocks.reduce((a, p) => a + cost(p), 0) + treasury().reduce((a, t) => a + cost(t), 0) + boxes.reduce((a, b) => a + b.invested, 0) +
+            brokers.reduce((a, b) => a + b.cash, 0);
+          $('k-total').textContent = brl(total);
+          $('k-cost').textContent = brl(applied);
+          $('k-result').textContent = signed(total - applied);
+          $('k-result').className = 'ws-kpi-value ws-tabular ' + (total >= applied ? 'text-success-ws' : 'text-danger-ws');
+          $('k-result-pct').textContent = pctText((total - applied) / applied) + ' sobre o aplicado';
+          $('k-income').textContent = brl(incomes.filter((i) => i.date.startsWith('2026')).reduce((a, i) => a + i.value, 0));
+
+          $('dist').innerHTML = classes
+            .map(
+              (c) =>
+                '<div class="ws-meter"><div class="ws-meter-row"><span><span class="ws-person-dot" style="background:' + c[2] + '"></span> ' + c[0] +
+                ' <span class="text-muted small">' + Math.round((c[1] / total) * 100) + '%</span></span><strong>' + brl(c[1]) + '</strong></div>' +
+                '<div class="progress" role="progressbar" aria-label="' + c[0] + '" aria-valuenow="' + Math.round((c[1] / total) * 100) +
+                '" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:' + (c[1] / total) * 100 + '%;background:' + c[2] + '"></div></div></div>',
+            )
+            .join('');
+
+          // Month: what left the normal account (purchases paid by it) minus withdrawals back to it becomes
+          // the month's "Investimento" entry. Sales and purchases paid with broker cash stay inside the broker.
+          const inMonth = (d) => d.startsWith('2026-10');
+          const brokerName = (id) => esc(brokers.find((b) => b.id === id).name);
+          const month = ops.filter((o) => inMonth(o.date));
+          const fromAccount = month.filter((o) => o.kind === 'buy' && o.pay === 'account').reduce((a, o) => a + Math.round(o.qty * o.price) + o.fees, 0);
+          const back = withdrawals.filter((w) => inMonth(w.date)).reduce((a, w) => a + w.value, 0);
+          const sent = deposits.filter((w) => inMonth(w.date)).reduce((a, w) => a + w.value, 0);
+          const net = fromAccount + sent - back;
+          $('month-net').textContent = (net < 0 ? '−' : '') + brl(Math.abs(net));
+          const opRow = (o) => {
+            const total = Math.round(o.qty * o.price) + (o.kind === 'buy' ? o.fees : -o.fees);
+            const where = o.kind === 'sell' ? 'caiu no saldo da ' + brokerName(o.broker) : o.pay === 'cash' ? 'pago com o saldo da ' + brokerName(o.broker) : 'pago pela conta normal';
+            return (
+              '<li class="ws-tx"><span class="ws-cat" style="--cat:' + (o.kind === 'buy' ? 'var(--ws-primary)' : 'var(--ws-warning)') + '">' +
+              W.icon(o.kind === 'buy' ? 'arrowDown' : 'arrowUp') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' +
+              (o.kind === 'buy' ? 'Compra' : 'Venda') + ' · ' + esc(o.ticker) + '</div><div class="ws-tx-meta">' + W.formatDayMonth(o.date) + ' · ' + qtyText(o.qty) +
+              ' × ' + brl(o.price) + ' · taxas ' + brl(o.fees) + ' · ' + where + '</div></div><span class="ws-tx-amount">' + brl(total) + '</span></li>'
+            );
+          };
+          const wdRow = (w) =>
+            '<li class="ws-tx"><span class="ws-cat" style="--cat: var(--ws-success)">' + W.icon('wallet') + '</span><div class="ws-tx-main"><div class="ws-tx-title">Saque · ' +
+            brokerName(w.broker) + '</div><div class="ws-tx-meta">' + W.formatDayMonth(w.date) + ' · voltou para a conta normal</div></div><span class="ws-tx-amount text-success-ws">+' +
+            brl(w.value) + '</span></li>';
+          const depRow = (w) =>
+            '<li class="ws-tx"><span class="ws-cat" style="--cat: var(--ws-primary)">' + W.icon('briefcase') + '</span><div class="ws-tx-main"><div class="ws-tx-title">Depósito · ' +
+            brokerName(w.broker) + '</div><div class="ws-tx-meta">' + W.formatDayMonth(w.date) + ' · saiu da conta normal para o saldo da corretora</div></div><span class="ws-tx-amount">' +
+            brl(w.value) + '</span></li>';
+          $('ops').innerHTML =
+            month.map(opRow).concat(deposits.filter((w) => inMonth(w.date)).map(depRow), withdrawals.filter((w) => inMonth(w.date)).map(wdRow)).join('') ||
+            '<li class="ws-empty">Nenhuma operação neste mês.</li>';
+
+          $('positions').innerHTML = stocks
+            .map(function (p) {
+              const r = val(p) - cost(p);
+              return (
+                '<tr><td><div class="fw-bold">' + esc(p.ticker) + staleTag(p) + '</div><div class="small text-muted">' + (p.cls === 'fii' ? 'FII' : 'Ação') +
+                '<span class="d-md-none"> · ' + p.qty + ' cotas</span></div></td>' +
+                '<td class="is-num d-none d-md-table-cell">' + p.qty + '</td>' +
+                '<td class="is-num d-none d-lg-table-cell">' + brl(p.avg) + '</td>' +
+                '<td class="is-num d-none d-md-table-cell">' + brl(p.close) + '</td>' +
+                '<td class="is-num fw-bold">' + brl(val(p)) + '</td>' +
+                '<td class="is-num ' + (r >= 0 ? 'text-success-ws' : 'text-danger-ws') + '">' + signed(r) + '<div class="small">' + pctText(r / cost(p)) + '</div></td>' +
+                '<td class="is-num d-none d-lg-table-cell">' + brl(incomeOf(p.ticker)) + '</td></tr>'
+              );
+            })
+            .join('');
+
+          $('treasury').innerHTML = treasury()
+            .map(
+              (t) =>
+                '<li class="ws-tx is-wrap"><span class="ws-cat" style="--cat: var(--ws-cat-education)">' + W.icon('shield') + '</span>' +
+                '<div class="ws-tx-main"><div class="ws-tx-title">' + esc(t.name) + staleTag(t) + '</div><div class="ws-tx-meta">' + (t.rate ? t.rate + ' · vence ' + t.due + ' · ' : '') +
+                qtyText(t.qty) + ' título × PU ' + brl(t.close) + '</div><div class="ws-tx-meta">aplicado ' + brl(cost(t)) + '</div></div>' +
+                '<div class="text-end"><div class="ws-tx-amount">' + brl(val(t)) + '</div>' +
+                '<div class="ws-tx-meta ' + (val(t) >= cost(t) ? 'text-success-ws' : 'text-danger-ws') + '">' + signed(val(t) - cost(t)) + '</div></div>' +
+                '<div class="ws-tx-actions"><button type="button" class="btn btn-ghost btn-sm" data-adjust>Ajustar saldo</button></div></li>',
+            )
+            .join('');
+
+          $('boxes').innerHTML = boxes
+            .map(
+              (b) =>
+                '<li class="ws-tx"><span class="ws-cat" style="--cat: var(--ws-success)">' + W.icon('piggy') + '</span>' +
+                '<div class="ws-tx-main"><div class="ws-tx-title">' + esc(b.name) + (b.from ? ' <span class="ws-tag is-primary">da casa</span>' : '') + '</div>' +
+                '<div class="ws-tx-meta">' + esc(b.bank) + ' · ' + b.cdi + '% do CDI · aplicado ' + brl(b.invested) + '</div></div>' +
+                '<div class="text-end"><div class="ws-tx-amount">' + brl(boxNet(b)) + '</div><div class="ws-tx-meta">líquido</div></div></li>',
+            )
+            .join('');
+
+          $('incomes').innerHTML = incomes
+            .slice()
+            .sort((a, b) => (a.date < b.date ? 1 : -1))
+            .map(
+              (i) =>
+                '<li class="ws-tx"><span class="ws-cat" style="--cat: var(--ws-warning)">' + W.icon('gift') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' +
+                esc(i.ticker) + ' · ' + i.kind + '</div><div class="ws-tx-meta">' + W.formatDate(i.date) + ' · caiu na ' + esc(brokers.find((b) => b.id === i.broker).name) + '</div></div><span class="ws-tx-amount text-success-ws">+' +
+                brl(i.value) + '</span></li>',
+            )
+            .join('');
+
+          $('brokers').innerHTML = brokers
+            .map(
+              (b) =>
+                '<li class="ws-tx is-wrap"><span class="ws-cat" style="--cat: var(--ws-primary)">' + W.icon('briefcase') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' +
+                esc(b.name) + '</div><div class="ws-tx-meta">Corretagem ' + brl(b.fee) + (b.pct ? ' + ' + String(b.pct).replace('.', ',') + '%' : '') +
+                ' por ordem + B3 (' + (B3_FEE_RATE * 100).toFixed(3).replace('.', ',') + '%)</div></div>' +
+                '<div class="text-end"><div class="ws-tx-amount">' + brl(b.cash) + '</div><div class="ws-tx-meta">disponível</div></div>' +
+                '<div class="ws-tx-actions"><button type="button" class="btn btn-ghost btn-sm" data-deposit="' + b.id + '">Depositar</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-withdraw="' + b.id + '"' + (b.cash > 0 ? '' : ' disabled') + '>Sacar</button></div></li>',
+            )
+            .join('');
+
+          $('tickers').innerHTML = W.ASSETS.filter((a) => a.active).map((a) => '<option value="' + a.ticker + '">' + esc(a.name) + '</option>').join('');
+        }
+
+        function bindMoney(input) {
+          let cents = 0;
+          input.addEventListener('input', function () {
+            cents = Number(input.value.replace(/\D/g, '').slice(0, 11)) || 0;
+            input.value = brlPlain(cents);
+          });
+          input.addEventListener('focus', () => input.select());
+          return { get: () => cents, set: (v) => ((cents = v), (input.value = brlPlain(v))) };
+        }
+
+        // ---------- New operation ----------
+        const opModal = new bootstrap.Modal($('op-modal'));
+        const opPrice = bindMoney($('op-price'));
+        function opSummary() {
+          const q = Number($('op-qty').value) || 0;
+          const value = Math.round(q * opPrice.get());
+          const fees = opFees(value, Number($('op-broker').value), $('op-class').value);
+          const buy = document.querySelector('[name=op-kind]:checked').value === 'buy';
+          const row = (l, v, b) => '<tr><td' + (b ? ' class="fw-bold"' : '') + '>' + l + '</td><td class="is-num' + (b ? ' fw-bold' : '') + '">' + v + '</td></tr>';
+          const br = brokers.find((b) => b.id === Number($('op-broker').value));
+          $('op-pay-wrap').hidden = !buy;
+          $('op-pay-cash').nextElementSibling.lastChild.textContent = 'Saldo na corretora (' + brl(br ? br.cash : 0) + ')';
+          let html = row('Valor bruto', brl(value)) + row('Taxas (corretagem + B3)', brl(fees)) + row(buy ? 'Total pago' : 'Total recebido', brl(buy ? value + fees : value - fees), true);
+          if (!buy) html += row('Vai para', 'saldo da ' + esc(br ? br.name : ''));
+          const pos = positions.find((p) => p.ticker === $('op-ticker').value.trim().toUpperCase());
+          if (pos && q > 0) {
+            if (buy) html += row('Novo preço médio', brl(Math.round((pos.qty * pos.avg + value + fees) / (pos.qty + q))));
+            else html += row('Resultado da venda', signed(value - fees - q * pos.avg));
+          }
+          $('op-summary').innerHTML = html;
+        }
+        $('add-op').addEventListener('click', function () {
+          $('op-broker').innerHTML = brokers.map((b) => '<option value="' + b.id + '">' + esc(b.name) + '</option>').join('');
+          $('op-form').reset();
+          $('op-pay-wrap').classList.remove('is-invalid');
+          $('op-pay-error').style.display = '';
+          opPrice.set(0);
+          opSummary();
+          opModal.show();
+        });
+        $('op-form').addEventListener('input', opSummary);
+        $('op-form').addEventListener('change', function () {
+          const pos = positions.find((p) => p.ticker === $('op-ticker').value.trim().toUpperCase());
+          const asset = W.assetOf($('op-ticker').value.trim().toUpperCase());
+          if (asset) $('op-class').value = asset.cls;
+          else if (pos) $('op-class').value = pos.cls;
+          opSummary();
+        });
+        $('op-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const ticker = $('op-ticker').value.trim().toUpperCase();
+          const q = Number($('op-qty').value);
+          const buy = document.querySelector('[name=op-kind]:checked').value === 'buy';
+          let pos = positions.find((p) => p.ticker === ticker);
+          const asset = W.assetOf(ticker);
+          const cls = asset ? asset.cls : pos ? pos.cls : $('op-class').value;
+          // Buying needs an active asset of the admin catalog; selling needs a position.
+          const okTicker = ticker !== '' && (buy ? !!(asset && asset.active) : !!pos);
+          const canRequest = buy && ticker !== '' && !asset;
+          $('op-request').hidden = !canRequest;
+          $('op-request').textContent = 'Pedir cadastro de ' + ticker;
+          $('op-request').dataset.ticker = ticker;
+          $('op-ticker-error').textContent =
+            ticker === '' ? 'Informe o código.' : buy ? 'Ativo fora do catálogo. Peça ao administrador para cadastrar.' : 'Você não tem esse ativo.';
+          // Stocks and FIIs trade whole units; Tesouro accepts fractions (e.g. 0.1 bond).
+          const okQty = (cls === 'tesouro' ? q >= 0.01 : Number.isInteger(q)) && q > 0 && (buy || (pos && q <= pos.qty));
+          $('op-ticker').classList.toggle('is-invalid', !okTicker);
+          $('op-qty').classList.toggle('is-invalid', !okQty);
+          $('op-qty-error').textContent = !buy && pos && q > pos.qty ? 'Você tem só ' + pos.qty + '.' : 'Quantidade inválida.';
+          if (!okTicker || !okQty || opPrice.get() <= 0) return;
+          const value = Math.round(q * opPrice.get());
+          const broker = Number($('op-broker').value);
+          const br = brokers.find((b) => b.id === broker);
+          const fees = opFees(value, broker, cls);
+          const pay = buy ? document.querySelector('[name=op-pay]:checked').value : null;
+          const noCash = buy && pay === 'cash' && br.cash < value + fees;
+          $('op-pay-error').style.display = noCash ? 'block' : '';
+          if (noCash) return;
+          if (buy && pay === 'cash') br.cash -= value + fees;
+          if (!buy) br.cash += value - fees;
+          if (buy) {
+            if (!pos) {
+              pos = { ticker: ticker, name: asset.name, cls: cls, qty: 0, avg: 0, close: asset.close };
+              positions.push(pos);
+            }
+            pos.avg = Math.round((pos.qty * pos.avg + value + fees) / (pos.qty + q));
+            pos.qty = Math.round((pos.qty + q) * 100) / 100;
+          } else {
+            pos.qty = Math.round((pos.qty - q) * 100) / 100;
+          }
+          ops.push({ kind: buy ? 'buy' : 'sell', ticker: ticker, qty: q, price: opPrice.get(), date: $('op-date').value, broker: broker, fees: fees, pay: pay });
+          opModal.hide();
+          render();
+          W.toast(buy ? 'Compra registrada' : 'Venda registrada: o valor ficou no saldo da ' + br.name);
+        });
+
+        $('op-request').addEventListener('click', function () {
+          const code = this.dataset.ticker;
+          const list = W.assetRequests();
+          if (!list.some((r) => r.ticker === code)) list.push({ ticker: code, by: W.USER.email, date: '31/10/2026' });
+          W.saveAssetRequests(list);
+          this.hidden = true;
+          W.toast('Pedido enviado. Quando o analista aprovar, ' + code + ' entra no próximo job.');
+        });
+
+        // ---------- New income ----------
+        const pvModal = new bootstrap.Modal($('pv-modal'));
+        const pvValue = bindMoney($('pv-value'));
+        $('add-income').addEventListener('click', function () {
+          $('pv-ticker').innerHTML = positions.filter((p) => p.qty > 0).map((p) => '<option>' + p.ticker + '</option>').join('');
+          $('pv-broker').innerHTML = brokers.map((b) => '<option value="' + b.id + '">' + esc(b.name) + '</option>').join('');
+          pvValue.set(0);
+          pvModal.show();
+        });
+        $('pv-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          if (pvValue.get() <= 0) return;
+          const pvBroker = brokers.find((b) => b.id === Number($('pv-broker').value));
+          pvBroker.cash += pvValue.get();
+          incomes.push({ ticker: $('pv-ticker').value, kind: $('pv-kind').value, date: $('pv-date').value, value: pvValue.get(), broker: pvBroker.id });
+          pvModal.hide();
+          render();
+          W.toast('Provento registrado no saldo da ' + pvBroker.name);
+        });
+
+        // ---------- Brokers ----------
+        const brModal = new bootstrap.Modal($('br-modal'));
+        const brFee = bindMoney($('br-fee'));
+        $('add-broker').addEventListener('click', function () {
+          $('br-name').value = '';
+          $('br-pct').value = '0';
+          brFee.set(0);
+          brModal.show();
+        });
+        $('br-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const ok = $('br-name').value.trim() !== '';
+          $('br-name').classList.toggle('is-invalid', !ok);
+          if (!ok) return;
+          brokers.push({ id: Date.now(), name: $('br-name').value.trim(), fee: brFee.get(), pct: Number($('br-pct').value) || 0, cash: 0 });
+          brModal.hide();
+          render();
+          W.toast('Corretora salva');
+        });
+
+        const wdModal = new bootstrap.Modal($('wd-modal'));
+        const wdValue = bindMoney($('wd-value'));
+        let wdBroker = null;
+        let wdMode = 'withdraw';
+        function openCash(mode, broker) {
+          wdMode = mode;
+          wdBroker = broker;
+          const dep = mode === 'deposit';
+          $('wd-title').textContent = dep ? 'Depositar na corretora' : 'Sacar para a conta normal';
+          $('wd-label').textContent = dep ? 'Valor do depósito' : 'Valor do saque';
+          $('wd-submit').textContent = dep ? 'Depositar' : 'Sacar';
+          $('wd-text').textContent = 'Disponível na ' + broker.name + ': ' + brl(broker.cash) + '.';
+          $('wd-hint').textContent = dep
+            ? 'Sai da conta normal e entra no lançamento "Investimento" do mês, mesmo sem comprar nada ainda.'
+            : 'O saque volta para a conta normal e abate o lançamento "Investimento" do mês (não é renda e não entra na divisão da casa).';
+          wdValue.set(dep ? 0 : broker.cash);
+          $('wd-value').parentElement.classList.remove('is-invalid');
+          $('wd-error').style.display = '';
+          wdModal.show();
+        }
+        document.body.addEventListener('click', (e) => {
+          if (e.target.closest('[data-adjust]')) W.toast('No app: informar o valor do extrato, como na caixinha');
+          const wd = e.target.closest('[data-withdraw]');
+          if (wd) openCash('withdraw', brokers.find((b) => b.id === Number(wd.dataset.withdraw)));
+          const dp = e.target.closest('[data-deposit]');
+          if (dp) openCash('deposit', brokers.find((b) => b.id === Number(dp.dataset.deposit)));
+        });
+        $('wd-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const v = wdValue.get();
+          const dep = wdMode === 'deposit';
+          const ok = v > 0 && (dep || v <= wdBroker.cash);
+          $('wd-error').textContent = dep ? 'Informe um valor.' : 'Valor maior que o saldo disponível.';
+          $('wd-value').parentElement.classList.toggle('is-invalid', !ok);
+          $('wd-error').style.display = ok ? '' : 'block';
+          if (!ok) return;
+          if (dep) {
+            wdBroker.cash += v;
+            deposits.push({ broker: wdBroker.id, value: v, date: '2026-10-31' });
+          } else {
+            wdBroker.cash -= v;
+            withdrawals.push({ broker: wdBroker.id, value: v, date: '2026-10-31' });
+          }
+          wdModal.hide();
+          render();
+          W.toast(dep ? 'Depósito registrado: ' + brl(v) + ' no saldo da ' + wdBroker.name : 'Saque registrado: ' + brl(v) + ' voltou para a conta normal');
+        });
+
+        render();
+      });
+    </script>
+  </body>
+</html>

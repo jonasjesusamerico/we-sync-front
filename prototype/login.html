@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entrar · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body data-page="login">
+    <button type="button" class="btn btn-ghost btn-icon ws-auth-theme" data-theme-toggle></button>
+    <div class="ws-auth">
+      <section class="ws-auth-art" aria-hidden="true">
+        <span class="ws-brand"><span class="ws-brand-mark"><i data-icon="sync"></i></span>we-sync</span>
+        <div class="ws-auth-preview">
+          <div class="small text-muted fw-semibold">Gasto em outubro</div>
+          <div class="fs-3 fw-bold mb-3">R$ 3.925,42</div>
+          <div class="ws-tx">
+            <span class="ws-cat" style="--cat: var(--ws-cat-food)"><i data-icon="food"></i></span>
+            <div class="ws-tx-main"><div class="ws-tx-title">Supermercado</div><div class="ws-tx-meta">23 out · Cartão</div></div>
+            <span class="ws-tx-amount">R$ 412,30</span>
+          </div>
+          <div class="ws-tx">
+            <span class="ws-cat" style="--cat: var(--ws-cat-leisure)"><i data-icon="smile"></i></span>
+            <div class="ws-tx-main"><div class="ws-tx-title">Cinema</div><div class="ws-tx-meta">12 out · Cartão</div></div>
+            <span class="ws-tx-amount">R$ 64,00</span>
+          </div>
+        </div>
+        <div class="mb-2">
+          <h2>Suas finanças em sincronia, sem complicação.</h2>
+          <p>Registre compras em segundos, acompanhe o mês e descubra para onde vai o seu dinheiro.</p>
+        </div>
+      </section>
+
+      <main class="ws-auth-form">
+        <div class="d-lg-none mb-4">
+          <span class="ws-brand"><span class="ws-brand-mark"><i data-icon="sync"></i></span>we-sync</span>
+        </div>
+        <h1 class="mb-1">Que bom te ver de novo</h1>
+        <p class="text-muted mb-4">Entre para ver como está o seu mês.</p>
+
+        <div class="alert alert-danger d-none" role="alert" id="error">E-mail ou senha incorretos.</div>
+
+        <form id="form" novalidate class="d-grid gap-3">
+          <div>
+            <label class="form-label" for="email">E-mail</label>
+            <div class="input-icon">
+              <i data-icon="mail"></i>
+              <input id="email" type="email" class="form-control" autocomplete="email" placeholder="voce@email.com" required />
+            </div>
+          </div>
+          <div>
+            <div class="d-flex justify-content-between">
+              <label class="form-label" for="password">Senha</label>
+              <a class="small fw-semibold text-decoration-none" aria-disabled="true">Esqueci a senha</a>
+            </div>
+            <div class="input-icon position-relative">
+              <i data-icon="lock"></i>
+              <input id="password" type="password" class="form-control pe-5" autocomplete="current-password" required />
+              <button
+                type="button"
+                class="btn btn-icon position-absolute top-50 end-0 translate-middle-y border-0"
+                id="toggle-pass"
+                aria-label="Mostrar senha"
+              ></button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg mt-2">Entrar</button>
+        </form>
+
+        <div class="ws-divider my-4">ou</div>
+        <p class="text-center mb-0">Ainda não tem conta? <a class="fw-semibold text-decoration-none" href="cadastro.html">Criar conta grátis</a></p>
+      </main>
+    </div>
+
+    <script src="assets/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const W = window.WS;
+        const pass = document.getElementById('password');
+        const toggle = document.getElementById('toggle-pass');
+        function paint() {
+          const shown = pass.type === 'text';
+          toggle.innerHTML = W.icon(shown ? 'eyeOff' : 'eye');
+          toggle.setAttribute('aria-label', shown ? 'Ocultar senha' : 'Mostrar senha');
+        }
+        toggle.addEventListener('click', function () {
+          pass.type = pass.type === 'password' ? 'text' : 'password';
+          paint();
+        });
+        paint();
+
+        document.getElementById('form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const ok = document.getElementById('email').value.includes('@') && pass.value.length > 0;
+          document.getElementById('error').classList.toggle('d-none', ok);
+          if (ok) location.href = 'dashboard.html';
+        });
+      });
+    </script>
+  </body>
+</html>

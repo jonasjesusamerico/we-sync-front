@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compras · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body data-page="compras">
+    <div class="ws-app">
+      <aside id="ws-sidebar"></aside>
+      <div class="ws-main">
+        <header id="ws-topbar"></header>
+        <main class="ws-content">
+          <div class="ws-page-head">
+            <div>
+              <h1>Compras</h1>
+              <p id="summary"></p>
+            </div>
+            <div class="ws-month" role="group" aria-label="Mês">
+              <button type="button" class="btn btn-icon" aria-label="Mês anterior"><i data-icon="chevL"></i></button>
+              <span class="ws-month-label">outubro 2026</span>
+              <button type="button" class="btn btn-icon" aria-label="Próximo mês"><i data-icon="chevR"></i></button>
+            </div>
+          </div>
+
+          <section class="ws-card mb-3" aria-label="Filtros">
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-md-5">
+                <label class="form-label" for="f-search">Buscar</label>
+                <div class="input-icon">
+                  <i data-icon="search"></i>
+                  <input id="f-search" type="search" class="form-control" placeholder="Descrição da compra" />
+                </div>
+              </div>
+              <div class="col-12 col-md-3">
+                <label class="form-label" for="f-category">Categoria</label>
+                <select id="f-category" class="form-select">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-4">
+                <span class="form-label d-block" id="f-status-label">Situação</span>
+                <div class="ws-chips" role="group" aria-labelledby="f-status-label" id="f-status"></div>
+              </div>
+            </div>
+          </section>
+
+          <a class="ws-card d-flex align-items-center gap-3 mb-3 text-reset text-decoration-none" href="investimentos.html">
+            <span class="ws-cat" style="--cat: var(--ws-success)"><i data-icon="trendUp"></i></span>
+            <span class="flex-grow-1 min-w-0">
+              <span class="d-block fw-semibold">Investimento de outubro <span class="ws-tag">tipo Investimento</span></span>
+              <span class="small text-muted">2 operações · não entra nos gastos nem nas metas, mas desconta do disponível</span>
+            </span>
+            <strong class="ws-tabular">R$ 1.492,34</strong>
+          </a>
+
+          <section class="ws-card" aria-label="Lista de compras">
+            <!-- Desktop: table -->
+            <div class="ws-table-wrap d-none d-md-block">
+              <table class="ws-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Descrição</th>
+                    <th scope="col">Data</th>
+                    <th scope="col">Pagamento</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col" class="is-num">Valor</th>
+                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                  </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+              </table>
+            </div>
+            <!-- Phone: list -->
+            <ul class="ws-tx-list d-md-none" id="cards"></ul>
+
+            <div class="ws-empty d-none" id="empty">
+              <span class="ws-kpi-icon"><i data-icon="search"></i></span>
+              <div class="fw-bold text-body">Nenhuma compra encontrada</div>
+              <div>Tente mudar os filtros ou o mês.</div>
+            </div>
+
+            <div class="ws-pager" id="pager">
+              <span id="pager-info"></span>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-ghost btn-sm" id="prev"><i data-icon="chevL"></i> Anterior</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="next">Próxima <i data-icon="chevR"></i></button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <nav id="ws-bottomnav"></nav>
+
+    <!-- Editing one item of a series -->
+    <div class="modal fade" id="series-modal" tabindex="-1" aria-labelledby="series-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+          <div class="modal-body p-4">
+            <h2 class="fs-5 fw-bold" id="series-title">Atualizar as próximas também?</h2>
+            <p class="text-muted">Este lançamento faz parte de uma série (<span id="series-name"></span>).</p>
+            <div class="d-grid gap-2">
+              <a class="btn btn-primary" href="nova-compra.html?editar=proximas">Esta e as próximas</a>
+              <a class="btn btn-ghost" href="nova-compra.html?editar=esta">Só esta</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <script src="assets/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const W = window.WS;
+        const PAGE_SIZE = 8;
+        const state = { q: '', category: '', status: '', page: 1 };
+
+        const sel = document.getElementById('f-category');
+        W.CATEGORIES.forEach((c) => sel.insertAdjacentHTML('beforeend', '<option value="' + c.id + '">' + c.name + '</option>'));
+
+        const statusOptions = [['', 'Todas']].concat(Object.keys(W.STATUS).map((k) => [k, W.STATUS[k].label]));
+        document.getElementById('f-status').innerHTML = statusOptions
+          .map(
+            (o, i) =>
+              '<div class="ws-chip"><input type="radio" name="status" id="st-' + i + '" value="' + o[0] + '"' +
+              (i === 0 ? ' checked' : '') + '><label for="st-' + i + '">' + o[1] + '</label></div>',
+          )
+          .join('');
+
+        function filtered() {
+          const q = state.q.trim().toLowerCase();
+          return W.PURCHASES.filter(
+            (p) =>
+              (!q || p.description.toLowerCase().includes(q)) &&
+              (!state.category || String(p.category.id) === state.category) &&
+              (!state.status || p.status === state.status),
+          ).sort((a, b) => (a.date < b.date ? 1 : -1));
+        }
+
+        function actions(p) {
+          return (
+            '<div class="d-flex gap-1 justify-content-end">' +
+            '<a class="btn btn-ghost btn-icon btn-sm" href="nova-compra.html"' + (p.recurrence ? ' data-series="' + p.recurrence + '"' : '') + ' aria-label="Editar ' + W.escapeHtml(p.description) + '">' + W.icon('edit') + '</a>' +
+            '<button type="button" class="btn btn-ghost btn-icon btn-sm" aria-label="Excluir ' + W.escapeHtml(p.description) + '">' + W.icon('trash') + '</button>' +
+            '</div>'
+          );
+        }
+
+        function render() {
+          const list = filtered();
+          const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+          state.page = Math.min(state.page, pages);
+          const slice = list.slice((state.page - 1) * PAGE_SIZE, state.page * PAGE_SIZE);
+          const total = list.filter((p) => p.status !== 'CANCELED').reduce((a, p) => a + p.amount, 0);
+
+          document.getElementById('summary').textContent =
+            list.length + (list.length === 1 ? ' compra' : ' compras') + ' · ' + W.formatBrl(total) + ' no total';
+
+          document.getElementById('rows').innerHTML = slice
+            .map(
+              (p) =>
+                '<tr><td><div class="d-flex align-items-center gap-3">' + W.catBubble(p.category) +
+                '<div><div class="fw-semibold">' + W.escapeHtml(p.description) + (p.shared ? ' <span class="ws-tag is-primary">casa</span>' : '') +
+                (p.recurrence ? ' <span class="ws-tag">' + p.recurrence + '</span>' : '') +
+                '</div><div class="small text-muted">' + p.category.name + '</div></div></div></td>' +
+                '<td class="ws-tabular">' + W.formatDate(p.date) + '</td>' +
+                '<td>' + p.paymentMethod.name + '</td>' +
+                '<td>' + W.statusPill(p.status) + '</td>' +
+                '<td class="is-num fw-bold' + (p.status === 'CANCELED' ? ' text-muted text-decoration-line-through' : '') + '">' +
+                W.formatBrl(p.amount) + '</td>' +
+                '<td>' + actions(p) + '</td></tr>',
+            )
+            .join('');
+
+          document.getElementById('cards').innerHTML = slice
+            .map(
+              (p) =>
+                '<li class="ws-tx' + (p.status === 'CANCELED' ? ' is-canceled' : '') + '">' + W.catBubble(p.category) +
+                '<a class="ws-tx-main text-reset text-decoration-none" href="nova-compra.html"' + (p.recurrence ? ' data-series="' + p.recurrence + '"' : '') + '><div class="ws-tx-title">' +
+                W.escapeHtml(p.description) + '</div><div class="ws-tx-meta">' + W.formatDayMonth(p.date) + ' · ' +
+                p.paymentMethod.name + (p.shared ? ' · casa' : '') + '</div></a>' +
+                '<div class="d-flex flex-column align-items-end gap-1"><span class="ws-tx-amount">' + W.formatBrl(p.amount) +
+                '</span>' + W.statusPill(p.status) + '</div></li>',
+            )
+            .join('');
+
+          const empty = list.length === 0;
+          document.getElementById('empty').classList.toggle('d-none', !empty);
+          document.getElementById('pager').classList.toggle('d-none', empty);
+          document.getElementById('pager-info').textContent = 'Página ' + state.page + ' de ' + pages;
+          document.getElementById('prev').disabled = state.page <= 1;
+          document.getElementById('next').disabled = state.page >= pages;
+        }
+
+        document.getElementById('f-search').addEventListener('input', (e) => {
+          state.q = e.target.value;
+          state.page = 1;
+          render();
+        });
+        sel.addEventListener('change', (e) => {
+          state.category = e.target.value;
+          state.page = 1;
+          render();
+        });
+        document.getElementById('f-status').addEventListener('change', (e) => {
+          state.status = e.target.value;
+          state.page = 1;
+          render();
+        });
+        document.getElementById('prev').addEventListener('click', () => {
+          state.page--;
+          render();
+        });
+        document.getElementById('next').addEventListener('click', () => {
+          state.page++;
+          render();
+        });
+
+        // Items of a series (fixed bill or installment) ask whether the next ones change too.
+        document.body.addEventListener('click', function (e) {
+          const link = e.target.closest('[data-series]');
+          if (!link) return;
+          e.preventDefault();
+          document.getElementById('series-name').textContent = link.dataset.series;
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('series-modal')).show();
+        });
+
+        render();
+        if (new URLSearchParams(location.search).get('saved') === '1') {
+          W.toast('Compra salva com sucesso');
+          history.replaceState(null, '', 'compras.html');
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Convite · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body>
+    <button type="button" class="btn btn-ghost btn-icon ws-auth-theme" data-theme-toggle></button>
+    <main class="ws-auth-form" style="max-width: 520px; min-height: 100vh">
+      <span class="ws-brand mb-4"><span class="ws-brand-mark"><i data-icon="sync"></i></span>we-sync</span>
+
+      <section class="ws-card">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="ws-avatar">JS</span>
+          <span class="ws-avatar is-partner" style="margin-left: -14px">AM</span>
+        </div>
+        <h1 class="fs-3 mb-1">Jonas convidou você para a casa “Nossa casa”</h1>
+        <p class="text-muted mb-2">Vocês vão dividir as contas da casa na proporção da renda de cada um.</p>
+        <p class="small text-muted mb-4">Este convite vale por 48 horas e só pode ser usado uma vez.</p>
+
+        <ul class="list-unstyled d-grid gap-3 mb-4">
+          <li class="d-flex gap-3"><span class="ws-kpi-icon"><i data-icon="shield"></i></span><div><strong>Seus gastos pessoais continuam só seus.</strong><div class="small text-muted">Só aparece para os dois o que for marcado como compartilhado.</div></div></li>
+          <li class="d-flex gap-3"><span class="ws-kpi-icon"><i data-icon="wallet"></i></span><div><strong>As rendas ficam visíveis para os dois.</strong><div class="small text-muted">É com elas que o we-sync calcula a parte de cada um.</div></div></li>
+          <li class="d-flex gap-3"><span class="ws-kpi-icon"><i data-icon="piggy"></i></span><div><strong>Caixinhas da casa.</strong><div class="small text-muted">Quem pagou menos que a sua parte deposita a diferença na caixinha.</div></div></li>
+        </ul>
+
+        <div class="d-grid gap-2">
+          <a class="btn btn-primary btn-lg" href="casa.html">Aceitar convite</a>
+          <a class="btn btn-ghost" href="dashboard.html">Recusar</a>
+        </div>
+        <p class="small text-muted text-center mt-3 mb-0">
+          Ainda não tem conta? <a class="fw-semibold text-decoration-none" href="cadastro.html">Crie a sua</a> e o convite continua valendo.
+        </p>
+      </section>
+    </main>
+    <script src="assets/app.js"></script>
+  </body>
+</html>

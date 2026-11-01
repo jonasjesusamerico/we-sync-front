@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nova compra · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body data-page="compras">
+    <div class="ws-app">
+      <aside id="ws-sidebar"></aside>
+      <div class="ws-main">
+        <header id="ws-topbar"></header>
+        <main class="ws-content">
+          <div class="ws-page-head">
+            <div>
+              <a class="small fw-semibold text-decoration-none d-inline-flex align-items-center gap-1 mb-1" href="compras.html"
+                ><i data-icon="chevL"></i>Compras</a
+              >
+              <h1>Nova compra</h1>
+              <p>Registre o que você gastou. Leva menos de um minuto.</p>
+            </div>
+          </div>
+
+          <form id="form" class="row g-3" novalidate>
+            <div class="col-12 col-lg-8">
+              <section class="ws-card mb-3">
+                <label class="form-label" for="amount">Quanto foi?</label>
+                <div class="ws-money" id="amount-box">
+                  <span>R$</span>
+                  <input id="amount" inputmode="numeric" autocomplete="off" value="0,00" aria-describedby="amount-error" />
+                </div>
+                <div class="invalid-feedback" id="amount-error">Informe um valor maior que zero.</div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-12 col-md-7">
+                    <label class="form-label" for="description">Descrição</label>
+                    <input
+                      id="description"
+                      class="form-control"
+                      maxlength="120"
+                      placeholder="Ex.: Supermercado"
+                      required
+                      aria-describedby="description-error"
+                    />
+                    <div class="invalid-feedback" id="description-error">Informe a descrição.</div>
+                  </div>
+                  <div class="col-12 col-md-5">
+                    <label class="form-label" for="date">Data</label>
+                    <input id="date" type="date" class="form-control" required />
+                  </div>
+                </div>
+              </section>
+
+              <section class="ws-card mb-3">
+                <fieldset>
+                  <legend class="form-label fs-6">Categoria</legend>
+                  <div class="ws-cat-grid" id="categories"></div>
+                  <div class="invalid-feedback" id="category-error">Escolha uma categoria.</div>
+                  <div id="topic-wrap" class="mt-3" hidden>
+                    <span class="form-label d-block" id="topic-label"
+                      >Tópico <span class="text-muted fw-normal">(opcional)</span>
+                      <span class="ws-tag is-primary ms-1" id="topic-auto" hidden>sugerido pela descrição</span></span
+                    >
+                    <div class="ws-chips" role="radiogroup" aria-labelledby="topic-label" id="topics"></div>
+                  </div>
+                </fieldset>
+              </section>
+
+              <section class="ws-card">
+                <fieldset class="mb-4">
+                  <legend class="form-label fs-6">Forma de pagamento</legend>
+                  <div class="ws-chips" id="payments"></div>
+                </fieldset>
+                <fieldset>
+                  <legend class="form-label fs-6">Situação</legend>
+                  <div class="ws-segmented">
+                    <input type="radio" name="status" id="s-paid" value="PAID" checked />
+                    <label for="s-paid"><i data-icon="check"></i>Paga</label>
+                    <input type="radio" name="status" id="s-pending" value="PENDING" />
+                    <label for="s-pending"><i data-icon="clock"></i>Pendente</label>
+                  </div>
+                </fieldset>
+                <!-- Only shown when the account is linked to a house. -->
+                <fieldset class="mt-4">
+                  <legend class="form-label fs-6">De quem é o gasto?</legend>
+                  <div class="ws-segmented">
+                    <input type="radio" name="scope" id="sc-personal" value="personal" checked />
+                    <label for="sc-personal"><i data-icon="user"></i>Pessoal</label>
+                    <input type="radio" name="scope" id="sc-shared" value="shared" />
+                    <label for="sc-shared"><i data-icon="users"></i>Compartilhada</label>
+                  </div>
+                  <div class="form-text" id="scope-hint"></div>
+                </fieldset>
+                <fieldset class="mt-4">
+                  <legend class="form-label fs-6">Repetir</legend>
+                  <div class="ws-segmented">
+                    <input type="radio" name="repeat" id="rp-none" value="none" checked />
+                    <label for="rp-none">Não repete</label>
+                    <input type="radio" name="repeat" id="rp-fixed" value="fixed" />
+                    <label for="rp-fixed"><i data-icon="calendar"></i>Conta fixa</label>
+                    <input type="radio" name="repeat" id="rp-inst" value="installments" />
+                    <label for="rp-inst"><i data-icon="card"></i>Parcelada</label>
+                  </div>
+                  <div class="row g-2 mt-2" id="rp-fixed-box" hidden>
+                    <div class="col-6 col-sm-4">
+                      <label class="form-label" for="rp-months">Por quantos meses</label>
+                      <input id="rp-months" type="number" min="2" max="120" value="12" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="row g-2 mt-2" id="rp-inst-box" hidden>
+                    <div class="col-12">
+                      <span class="form-label d-block" id="rp-value-label">O valor informado é</span>
+                      <div class="ws-segmented" role="radiogroup" aria-labelledby="rp-value-label">
+                        <input type="radio" name="rp-value" id="rv-part" value="installment" checked />
+                        <label for="rv-part">Da parcela</label>
+                        <input type="radio" name="rp-value" id="rv-total" value="total" />
+                        <label for="rv-total">O total</label>
+                      </div>
+                    </div>
+                    <div class="col-6 col-sm-4">
+                      <label class="form-label" for="rp-count">Nº de parcelas</label>
+                      <input id="rp-count" type="number" min="2" max="480" value="12" class="form-control" />
+                    </div>
+                    <div class="col-6 col-sm-5">
+                      <label class="form-label" for="rp-last">Última parcela</label>
+                      <input id="rp-last" type="month" class="form-control" />
+                    </div>
+                  </div>
+                  <div class="form-text" id="rp-hint"></div>
+                </fieldset>
+              </section>
+            </div>
+
+            <div class="col-12 col-lg-4">
+              <aside class="ws-card position-sticky" style="top: 88px">
+                <h2 class="fs-6 fw-bold mb-3">Resumo</h2>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <span id="preview-cat"></span>
+                  <div class="min-w-0">
+                    <div class="fw-semibold text-truncate" id="preview-desc">Sem descrição</div>
+                    <div class="small text-muted" id="preview-meta"></div>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-baseline border-top pt-3 mb-3">
+                  <span class="text-muted">Valor</span>
+                  <strong class="fs-4 ws-tabular" id="preview-amount">R$ 0,00</strong>
+                </div>
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary btn-lg">Salvar compra</button>
+                  <a class="btn btn-ghost" href="compras.html">Cancelar</a>
+                </div>
+              </aside>
+            </div>
+          </form>
+        </main>
+      </div>
+    </div>
+    <nav id="ws-bottomnav"></nav>
+
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <script src="assets/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const W = window.WS;
+        let cents = 0;
+
+        document.getElementById('categories').innerHTML = W.CATEGORIES.map(
+          (c) =>
+            '<div class="ws-chip" style="--cat:' + c.color + '"><input type="radio" name="category" id="c-' + c.id + '" value="' +
+            c.id + '"><label for="c-' + c.id + '">' + W.catBubble(c) + c.name + '</label></div>',
+        ).join('');
+
+        document.getElementById('payments').innerHTML = W.PAYMENT_METHODS.map(
+          (m) =>
+            '<div class="ws-chip"><input type="radio" name="payment" id="p-' + m.id + '" value="' + m.id + '"' +
+            (m.id === 4 ? ' checked' : '') + '><label for="p-' + m.id + '">' + m.name + '</label></div>',
+        ).join('');
+
+        // Today as YYYY-MM-DD in local time.
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        document.getElementById('date').value = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+
+        // Money mask: digits fill from the right as cents.
+        const amount = document.getElementById('amount');
+        amount.addEventListener('input', function () {
+          cents = Number(amount.value.replace(/\D/g, '').slice(0, 11)) || 0;
+          amount.value = W.formatBrl(cents).replace(/^R\$\s?/, '');
+          updatePreview();
+        });
+        amount.addEventListener('focus', () => amount.select());
+
+        const form = document.getElementById('form');
+        form.addEventListener('input', updatePreview);
+        form.addEventListener('change', updatePreview);
+
+        function updatePreview() {
+          const catId = (form.querySelector('[name=category]:checked') || {}).value;
+          const cat = W.CATEGORIES.find((c) => String(c.id) === catId);
+          const pay = W.PAYMENT_METHODS.find((m) => String(m.id) === form.querySelector('[name=payment]:checked').value);
+          const date = document.getElementById('date').value;
+          document.getElementById('preview-cat').innerHTML = cat
+            ? W.catBubble(cat)
+            : '<span class="ws-cat" style="--cat: var(--ws-muted)">' + W.icon('tag') + '</span>';
+          document.getElementById('preview-desc').textContent =
+            document.getElementById('description').value.trim() || 'Sem descrição';
+          document.getElementById('preview-meta').textContent =
+            (cat ? cat.name + ' · ' : '') + (date ? W.formatDate(date) + ' · ' : '') + pay.name;
+          document.getElementById('preview-amount').textContent = W.formatBrl(cents);
+          const shared = form.querySelector('[name=scope]:checked').value === 'shared';
+          const m = W.houseMonth(null);
+          const myPart = Math.round(cents * m.shareMe);
+          document.getElementById('scope-hint').textContent = shared
+            ? 'Aparece para Amanda em Nossa casa. Divisão de outubro: você ' + Math.round(m.shareMe * 100) + '% (' + W.formatBrl(myPart) +
+              ') · Amanda ' + Math.round(m.shareP * 100) + '% (' + W.formatBrl(cents - myPart) + '). Na sua conta, conta 100% porque saiu do seu bolso.'
+            : 'Só você vê este gasto.';
+        }
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          const desc = document.getElementById('description');
+          const catChecked = form.querySelector('[name=category]:checked');
+          const errors = [
+            [cents > 0, document.getElementById('amount-box'), 'amount-error'],
+            [desc.value.trim() !== '', desc, 'description-error'],
+            [!!catChecked, document.getElementById('categories'), 'category-error'],
+          ];
+          let first = null;
+          errors.forEach(function (x) {
+            x[1].classList.toggle('is-invalid', !x[0]);
+            document.getElementById(x[2]).style.display = x[0] ? '' : 'block';
+            if (!x[0] && !first) first = x[1];
+          });
+          if (first) {
+            (first.querySelector('input') || first).focus();
+            return;
+          }
+          location.href = 'compras.html?saved=1';
+        });
+
+        // ---------- Topic (subcategory), suggested from the description ----------
+        const TOPICS = {
+          1: ['Mercado', 'Delivery', 'Restaurante', 'Padaria'],
+          2: ['Combustível', 'Corridas de aplicativo', 'Transporte público', 'Estacionamento', 'Financiamento'],
+          3: ['Aluguel/Condomínio', 'Contas da casa', 'Manutenção', 'Limpeza'],
+          4: ['Farmácia', 'Consultas', 'Plano de saúde'],
+          5: ['Cursos', 'Livros', 'Material'],
+          6: ['Passeios', 'Streaming', 'Viagens'],
+        };
+        // In the real app this also learns from the user's own history (same description → same topic).
+        const KEYWORDS = [
+          [/ifood|pizza|hamb[uú]rguer|burger|lanche|delivery/i, 1, 'Delivery'],
+          [/mercado|supermercado|feira|atacad/i, 1, 'Mercado'],
+          [/restaurante|almo[cç]o|jantar/i, 1, 'Restaurante'],
+          [/padaria/i, 1, 'Padaria'],
+          [/uber|99|corrida|t[aá]xi/i, 2, 'Corridas de aplicativo'],
+          [/combust[ií]vel|gasolina|posto|etanol/i, 2, 'Combustível'],
+          [/estacionamento/i, 2, 'Estacionamento'],
+          [/financiamento|presta[cç][aã]o do carro/i, 2, 'Financiamento'],
+          [/aluguel|condom[ií]nio/i, 3, 'Aluguel/Condomínio'],
+          [/luz|energia|[aá]gua|g[aá]s|internet/i, 3, 'Contas da casa'],
+          [/limpeza/i, 3, 'Limpeza'],
+          [/farm[aá]cia|drogaria|rem[eé]dio/i, 4, 'Farmácia'],
+          [/consulta|dentista|m[eé]dico/i, 4, 'Consultas'],
+          [/curso|faculdade|escola/i, 5, 'Cursos'],
+          [/livro/i, 5, 'Livros'],
+          [/netflix|spotify|streaming/i, 6, 'Streaming'],
+          [/cinema|show|passeio/i, 6, 'Passeios'],
+        ];
+        let manualCategory = false;
+        let autoApplied = false;
+
+        function renderTopics(catId, selected) {
+          const list = TOPICS[catId] || [];
+          document.getElementById('topic-wrap').hidden = list.length === 0;
+          document.getElementById('topics').innerHTML = list
+            .map(
+              (t, i) =>
+                '<div class="ws-chip"><input type="radio" name="topic" id="tp-' + i + '" value="' + t + '"' + (t === selected ? ' checked' : '') +
+                '><label for="tp-' + i + '">' + t + '</label></div>',
+            )
+            .join('');
+        }
+        document.getElementById('categories').addEventListener('change', function (e) {
+          manualCategory = true;
+          document.getElementById('topic-auto').hidden = true;
+          renderTopics(Number(e.target.value), null);
+        });
+        document.getElementById('topics').addEventListener('change', () => (document.getElementById('topic-auto').hidden = true));
+        document.getElementById('description').addEventListener('input', function (e) {
+          if (manualCategory) return;
+          const hit = KEYWORDS.find((k) => k[0].test(e.target.value));
+          if (!hit) {
+            // A suggestion that no longer matches the description is withdrawn.
+            if (autoApplied) {
+              form.querySelectorAll('[name=category]').forEach((r) => (r.checked = false));
+              renderTopics(null, null);
+              document.getElementById('topic-auto').hidden = true;
+              autoApplied = false;
+              updatePreview();
+            }
+            return;
+          }
+          autoApplied = true;
+          document.getElementById('c-' + hit[1]).checked = true;
+          renderTopics(hit[1], hit[2]);
+          document.getElementById('topic-auto').hidden = false;
+          updatePreview();
+        });
+
+        // ---------- Repetition: fixed bill or installments ----------
+        const MON = W.MONTHS.map((m) => m.slice(0, 3));
+        const startYm = () => {
+          const v = document.getElementById('date').value || '2026-10-31';
+          return { y: Number(v.slice(0, 4)), m: Number(v.slice(5, 7)) };
+        };
+        const addMonths = (ym, n) => {
+          const t = ym.y * 12 + (ym.m - 1) + n;
+          return { y: Math.floor(t / 12), m: (t % 12) + 1 };
+        };
+        const label = (ym) => MON[ym.m - 1] + '/' + ym.y;
+        const toInput = (ym) => ym.y + '-' + String(ym.m).padStart(2, '0');
+        const count = document.getElementById('rp-count');
+        const last = document.getElementById('rp-last');
+
+        function renderRepeat() {
+          const mode = form.querySelector('[name=repeat]:checked').value;
+          document.getElementById('rp-fixed-box').hidden = mode !== 'fixed';
+          document.getElementById('rp-inst-box').hidden = mode !== 'installments';
+          const start = startYm();
+          const day = (document.getElementById('date').value || '').slice(8) || '31';
+          let hint = '';
+          if (mode === 'fixed') {
+            const n = Math.max(2, Number(document.getElementById('rp-months').value) || 2);
+            hint = 'Lançada todo mês de ' + label(start) + ' a ' + label(addMonths(start, n - 1)) + ' (' + n + ' meses), no dia ' + day +
+              ' ou no último dia do mês. As futuras entram como Pendente. Se o valor mudar (ex.: reajuste do aluguel), edite a do mês e escolha “esta e as próximas”.';
+          } else if (mode === 'installments') {
+            const n = Math.max(2, Number(count.value) || 2);
+            if (!last.value) last.value = toInput(addMonths(start, n - 1));
+            const range = ' · de ' + label(start) + ' a ' + label(addMonths(start, n - 1)) + '. Aparece como “parcela 1/' + n + '”.';
+            if (form.querySelector('[name=rp-value]:checked').value === 'total') {
+              // Leftover cents go to the last installment.
+              const part = Math.floor(cents / n);
+              const lastPart = cents - part * (n - 1);
+              hint = 'Total ' + W.formatBrl(cents) + ' em ' + n + ' parcelas: ' + (n - 1) + ' × ' + W.formatBrl(part) +
+                (lastPart !== part ? ' + última de ' + W.formatBrl(lastPart) : ' + 1 × ' + W.formatBrl(part)) + range;
+            } else {
+              hint = n + ' parcelas de ' + W.formatBrl(cents) + ' · total ' + W.formatBrl(cents * n) + range;
+            }
+          }
+          document.getElementById('rp-hint').textContent = hint;
+        }
+        count.addEventListener('input', () => {
+          const n = Math.max(2, Number(count.value) || 2);
+          last.value = toInput(addMonths(startYm(), n - 1));
+          renderRepeat();
+        });
+        last.addEventListener('input', () => {
+          if (!last.value) return;
+          const s = startYm();
+          const n = Number(last.value.slice(0, 4)) * 12 + Number(last.value.slice(5, 7)) - (s.y * 12 + s.m) + 1;
+          if (n >= 2) count.value = n;
+          renderRepeat();
+        });
+        form.addEventListener('change', renderRepeat);
+        form.addEventListener('input', renderRepeat);
+        renderRepeat();
+
+        // ---------- Editing one item of a series (from compras.html) ----------
+        const editMode = new URLSearchParams(location.search).get('editar');
+        if (editMode) {
+          document.title = 'Editar compra · we-sync';
+          document.querySelector('.ws-page-head h1').textContent = 'Editar compra';
+          document.querySelector('.ws-page-head p').innerHTML =
+            '<span class="ws-tag">fixa · 10/12</span> ' +
+            (editMode === 'proximas' ? 'Alterando <strong>esta e as próximas</strong> da série.' : 'Alterando <strong>só esta</strong> da série.');
+          document.querySelector('#form [type=submit]').textContent = 'Salvar alterações';
+          cents = 145000;
+          amount.value = W.formatBrl(cents).replace(/^R\$\s?/, '');
+          document.getElementById('description').value = 'Aluguel';
+          document.getElementById('c-3').checked = true;
+          manualCategory = true;
+          renderTopics(3, 'Aluguel/Condomínio');
+          document.getElementById('p-6').checked = true;
+          document.getElementById('rp-fixed').checked = true;
+          renderRepeat();
+        }
+
+        updatePreview();
+      });
+    </script>
+  </body>
+</html>

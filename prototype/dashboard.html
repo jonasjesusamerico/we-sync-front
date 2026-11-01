@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Início · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body data-page="dashboard">
+    <div class="ws-app">
+      <aside id="ws-sidebar"></aside>
+      <div class="ws-main">
+        <header id="ws-topbar"></header>
+        <main class="ws-content">
+          <div class="ws-page-head">
+            <div>
+              <h1>Olá, Jonas</h1>
+              <p>Veja como está o seu mês.</p>
+            </div>
+            <div class="ws-month" role="group" aria-label="Mês">
+              <button type="button" class="btn btn-icon" aria-label="Mês anterior"><i data-icon="chevL"></i></button>
+              <span class="ws-month-label">outubro 2026</span>
+              <button type="button" class="btn btn-icon" aria-label="Próximo mês"><i data-icon="chevR"></i></button>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-xl-5">
+              <section class="ws-hero h-100" aria-labelledby="hero-label">
+                <div class="position-relative" style="z-index: 1">
+                  <div id="hero-label" class="ws-hero-label">Gasto em outubro</div>
+                  <div class="ws-hero-value ws-tabular" id="kpi-total"></div>
+                  <span class="ws-hero-chip"><i data-icon="arrowDown"></i><span id="kpi-compare"></span></span>
+                </div>
+                <div class="ws-hero-progress">
+                  <div class="d-flex justify-content-between mb-2">
+                    <a class="small text-white" href="metas.html#pessoal">Meta do mês</a>
+                    <small class="ws-tabular" id="kpi-budget"></small>
+                  </div>
+                  <div class="progress" role="progressbar" aria-label="Meta usada" id="kpi-budget-bar">
+                    <div class="progress-bar"></div>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <div class="col-12 col-xl-7">
+              <div class="row g-3 h-100">
+                <div class="col-6">
+                  <div class="ws-card ws-kpi">
+                    <span class="ws-kpi-icon is-success"><i data-icon="check"></i></span>
+                    <div class="min-w-0">
+                      <div class="ws-kpi-label">Já pago</div>
+                      <div class="ws-kpi-value ws-tabular" id="kpi-paid"></div>
+                      <div class="ws-kpi-foot" id="kpi-paid-n"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="ws-card ws-kpi">
+                    <span class="ws-kpi-icon is-warning"><i data-icon="clock"></i></span>
+                    <div>
+                      <div class="ws-kpi-label">A pagar</div>
+                      <div class="ws-kpi-value ws-tabular" id="kpi-pending"></div>
+                      <div class="ws-kpi-foot" id="kpi-pending-n"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="ws-card ws-kpi">
+                    <span class="ws-kpi-icon"><i data-icon="receipt"></i></span>
+                    <div>
+                      <div class="ws-kpi-label">Compras</div>
+                      <div class="ws-kpi-value ws-tabular" id="kpi-count"></div>
+                      <div class="ws-kpi-foot">neste mês</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="ws-card ws-kpi">
+                    <span class="ws-kpi-icon"><i data-icon="calendar"></i></span>
+                    <div>
+                      <div class="ws-kpi-label">Média por dia</div>
+                      <div class="ws-kpi-value ws-tabular" id="kpi-avg"></div>
+                      <div class="ws-kpi-foot">em 31 dias</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <section class="ws-card h-100" aria-labelledby="avail-title">
+                <div class="ws-card-head">
+                  <h2 id="avail-title">Disponível na conta</h2>
+                  <span class="ws-kpi-icon is-success"><i data-icon="wallet"></i></span>
+                </div>
+                <div class="ws-kpi-value ws-tabular fs-3 mb-2" id="avail-value"></div>
+                <table class="ws-settle"><tbody id="avail-rows"></tbody></table>
+              </section>
+            </div>
+            <div class="col-12 col-md-6">
+              <section class="ws-card h-100" aria-labelledby="house-title">
+                <div class="ws-card-head">
+                  <h2 id="house-title">Nossa casa</h2>
+                  <a class="btn btn-soft btn-sm" href="casa.html">Abrir</a>
+                </div>
+                <div class="ws-split mb-2" id="house-split" role="img"></div>
+                <div class="d-flex justify-content-between small mb-3">
+                  <span><span class="ws-person-dot" style="background: var(--ws-primary)"></span> Você <strong id="house-me"></strong></span>
+                  <span><span class="ws-person-dot" style="background: var(--ws-cat-health)"></span> Amanda <strong id="house-p"></strong></span>
+                </div>
+                <table class="ws-settle"><tbody id="house-rows"></tbody></table>
+              </section>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-lg-8">
+              <section class="ws-card h-100" aria-labelledby="daily-title">
+                <div class="ws-card-head">
+                  <div>
+                    <h2 id="daily-title">Gastos por dia</h2>
+                    <div class="ws-card-sub">Passe o mouse sobre a barra para ver o valor</div>
+                  </div>
+                  <span class="ws-status is-paid" id="daily-peak"></span>
+                </div>
+                <div class="ws-bars" id="daily-bars" role="img" aria-label="Gráfico de gastos por dia de outubro"></div>
+                <div class="ws-bars-axis"><span>1</span><span>8</span><span>15</span><span>22</span><span>31</span></div>
+              </section>
+            </div>
+            <div class="col-12 col-lg-4">
+              <section class="ws-card h-100" aria-labelledby="cat-title">
+                <div class="ws-card-head">
+                  <h2 id="cat-title">Por categoria</h2>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-4">
+                  <div class="ws-donut" id="cat-donut" role="img">
+                    <div class="ws-donut-center"><strong id="cat-top"></strong><small>maior gasto</small></div>
+                  </div>
+                  <ul class="ws-legend" id="cat-legend"></ul>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-lg-8">
+              <section class="ws-card h-100" aria-labelledby="last-title">
+                <div class="ws-card-head">
+                  <h2 id="last-title">Últimas compras</h2>
+                  <a class="btn btn-soft btn-sm" href="compras.html">Ver todas</a>
+                </div>
+                <ul class="ws-tx-list" id="last-list"></ul>
+              </section>
+            </div>
+            <div class="col-12 col-lg-4">
+              <section class="ws-card h-100" aria-labelledby="pay-title">
+                <div class="ws-card-head">
+                  <h2 id="pay-title">Formas de pagamento</h2>
+                </div>
+                <div id="pay-meters"></div>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <nav id="ws-bottomnav"></nav>
+
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <script src="assets/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const W = window.WS;
+        const DAYS = 31;
+        const PREVIOUS_MONTH = 412000; // sample: September total
+        const BUDGET = 450000; // sample: monthly budget
+
+        const active = W.PURCHASES.filter((p) => p.status !== 'CANCELED');
+        const sum = (list) => list.reduce((acc, p) => acc + p.amount, 0);
+        const total = sum(active);
+        const paid = active.filter((p) => p.status === 'PAID');
+        const pending = active.filter((p) => p.status === 'PENDING');
+        const set = (id, text) => (document.getElementById(id).textContent = text);
+
+        set('kpi-total', W.formatBrl(total));
+        set('kpi-compare', Math.round((1 - total / PREVIOUS_MONTH) * 100) + '% a menos que setembro');
+        set('kpi-budget', W.formatBrl(total) + ' de ' + W.formatBrl(BUDGET));
+        const used = Math.min(100, Math.round((total / BUDGET) * 100));
+        const bar = document.getElementById('kpi-budget-bar');
+        bar.setAttribute('aria-valuenow', used);
+        bar.setAttribute('aria-valuemin', 0);
+        bar.setAttribute('aria-valuemax', 100);
+        bar.firstElementChild.style.width = used + '%';
+
+        set('kpi-paid', W.formatBrl(sum(paid)));
+        set('kpi-paid-n', paid.length + ' compras');
+        set('kpi-pending', W.formatBrl(sum(pending)));
+        set('kpi-pending-n', pending.length + ' compras');
+        set('kpi-count', String(W.PURCHASES.length));
+        set('kpi-avg', W.formatBrl(Math.round(total / DAYS)));
+
+        // Available in the bank account: the whole purchase counts for whoever paid it.
+        const income = W.HOUSE.me.incomes.reduce((a, i) => a + i[1], 0);
+        const paidTotal = sum(paid);
+        const pendingTotal = sum(pending);
+        // Investment purchases of the month (one "Investimento" entry, sample from investimentos.html).
+        const invested = 149234;
+        set('avail-value', W.formatBrl(income - paidTotal - invested));
+        const row = (label, value, strong) =>
+          '<tr><td' + (strong ? ' class="fw-bold"' : '') + '>' + label + '</td><td class="is-num' + (strong ? ' fw-bold' : '') + '">' + value + '</td></tr>';
+        document.getElementById('avail-rows').innerHTML =
+          row('Renda do mês', W.formatBrl(income)) +
+          row('Já pago (pessoal + casa)', '− ' + W.formatBrl(paidTotal)) +
+          row('Investido no mês', '− ' + W.formatBrl(invested)) +
+          row('Ainda a pagar', '− ' + W.formatBrl(pendingTotal)) +
+          row('Sobra prevista no fim do mês', W.formatBrl(income - paidTotal - invested - pendingTotal), true);
+
+        // House summary
+        const hm = W.houseMonth(null);
+        const shouldMe = Math.round(hm.total * hm.shareMe);
+        document.getElementById('house-split').innerHTML =
+          '<span style="width:' + hm.shareMe * 100 + '%"></span><span style="width:' + hm.shareP * 100 + '%"></span>';
+        document.getElementById('house-split').setAttribute('aria-label', 'Você ' + Math.round(hm.shareMe * 100) + '%, Amanda ' + Math.round(hm.shareP * 100) + '%');
+        set('house-me', Math.round(hm.shareMe * 100) + '%');
+        set('house-p', Math.round(hm.shareP * 100) + '%');
+        document.getElementById('house-rows').innerHTML =
+          row('Gastos da casa', W.formatBrl(hm.total)) +
+          row('Sua parte', W.formatBrl(shouldMe)) +
+          row('Você pagou', W.formatBrl(hm.paidMe)) +
+          row(hm.deposit.from + ' deposita na caixinha', W.formatBrl(hm.deposit.amount), true);
+
+        // Daily bars
+        const perDay = Array.from({ length: DAYS }, () => 0);
+        active.forEach((p) => (perDay[Number(p.date.slice(8)) - 1] += p.amount));
+        const max = Math.max.apply(null, perDay);
+        const peakDay = perDay.indexOf(max) + 1;
+        set('daily-peak', 'Pico dia ' + peakDay);
+        document.getElementById('daily-bars').innerHTML = perDay
+          .map(function (v, i) {
+            const h = v ? Math.max(4, Math.round((v / max) * 100)) : 2;
+            const cls = 'ws-bar' + (v === max ? ' is-peak' : '') + (v ? '' : ' is-empty');
+            return (
+              '<div class="' + cls + '" title="Dia ' + (i + 1) + ': ' + W.formatBrl(v) + '"><span style="height:' + h + '%"></span></div>'
+            );
+          })
+          .join('');
+
+        // Categories donut + legend
+        const byCat = W.CATEGORIES.map((c) => ({
+          cat: c,
+          total: sum(active.filter((p) => p.category.id === c.id)),
+        }))
+          .filter((x) => x.total > 0)
+          .sort((a, b) => b.total - a.total);
+        let acc = 0;
+        const stops = byCat
+          .map(function (x) {
+            const from = (acc / total) * 100;
+            acc += x.total;
+            return x.cat.color + ' ' + from.toFixed(2) + '% ' + ((acc / total) * 100).toFixed(2) + '%';
+          })
+          .join(', ');
+        const donut = document.getElementById('cat-donut');
+        donut.style.background = 'conic-gradient(' + stops + ')';
+        donut.setAttribute(
+          'aria-label',
+          'Gastos por categoria: ' + byCat.map((x) => x.cat.name + ' ' + W.formatBrl(x.total)).join(', '),
+        );
+        set('cat-top', byCat[0].cat.name);
+        document.getElementById('cat-legend').innerHTML = byCat
+          .map(
+            (x) =>
+              '<li><span class="ws-dot" style="background:' + x.cat.color + '"></span><span>' + x.cat.name +
+              '<span class="ws-legend-pct">' + Math.round((x.total / total) * 100) + '%</span></span>' +
+              '<span class="ws-legend-value">' + W.formatBrl(x.total) + '</span></li>',
+          )
+          .join('');
+
+        // Latest purchases
+        const latest = W.PURCHASES.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 6);
+        document.getElementById('last-list').innerHTML = latest
+          .map(
+            (p) =>
+              '<li class="ws-tx' + (p.status === 'CANCELED' ? ' is-canceled' : '') + '">' + W.catBubble(p.category) +
+              '<div class="ws-tx-main"><div class="ws-tx-title">' + W.escapeHtml(p.description) + '</div>' +
+              '<div class="ws-tx-meta">' + W.formatDayMonth(p.date) + ' · ' + p.paymentMethod.name + '</div></div>' +
+              '<div class="d-flex flex-column align-items-end gap-1"><span class="ws-tx-amount">' + W.formatBrl(p.amount) +
+              '</span>' + W.statusPill(p.status) + '</div></li>',
+          )
+          .join('');
+
+        // Payment methods
+        const byPay = W.PAYMENT_METHODS.map((m) => ({
+          m: m,
+          total: sum(active.filter((p) => p.paymentMethod.id === m.id)),
+        }))
+          .filter((x) => x.total > 0)
+          .sort((a, b) => b.total - a.total);
+        document.getElementById('pay-meters').innerHTML = byPay
+          .map(function (x) {
+            const pct = Math.round((x.total / total) * 100);
+            return (
+              '<div class="ws-meter"><div class="ws-meter-row"><span>' + x.m.name + '</span><strong>' + W.formatBrl(x.total) +
+              '</strong></div><div class="progress" role="progressbar" aria-label="' + x.m.name + '" aria-valuenow="' + pct +
+              '" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:' + pct + '%"></div></div></div>'
+            );
+          })
+          .join('');
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nossa casa · we-sync</title>
+    <script>
+      try {
+        document.documentElement.setAttribute(
+          'data-bs-theme',
+          localStorage.getItem('ws-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+        );
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="vendor/bootstrap.min.css" />
+    <link rel="stylesheet" href="assets/we-sync.css" />
+  </head>
+  <body data-page="casa">
+    <div class="ws-app">
+      <aside id="ws-sidebar"></aside>
+      <div class="ws-main">
+        <header id="ws-topbar"></header>
+        <main class="ws-content">
+          <!-- No house yet -->
+          <div id="no-house" hidden>
+            <div class="ws-page-head">
+              <div>
+                <h1>Nossa casa</h1>
+                <p>Divida as contas da casa com quem mora com você.</p>
+              </div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-lg-7">
+                <section class="ws-card">
+                  <h2 class="ws-section-title">Crie a sua casa</h2>
+                  <p class="ws-section-sub mb-3">Convide seu par. Cada um continua com a própria conta e só as compras marcadas como compartilhadas aparecem para os dois.</p>
+                  <form id="create-form" class="d-grid gap-3" novalidate>
+                    <div>
+                      <label class="form-label" for="house-name">Nome da casa</label>
+                      <input id="house-name" class="form-control" value="Nossa casa" maxlength="40" />
+                    </div>
+                    <div><button type="submit" class="btn btn-primary">Criar casa e gerar convite</button></div>
+                  </form>
+                  <div id="invite-box" class="mt-4" hidden>
+                    <label class="form-label" for="invite-link">Link do convite</label>
+                    <div class="d-flex gap-2">
+                      <input id="invite-link" class="form-control" readonly value="https://we-sync.app/convite/K7F3-9QX2" />
+                      <button type="button" class="btn btn-soft d-inline-flex align-items-center gap-2" id="copy-invite"><i data-icon="link"></i>Copiar</button>
+                    </div>
+                    <div class="form-text" id="invite-exp"></div>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                      <button type="button" class="btn btn-ghost" id="resend-invite">Reenviar convite</button>
+                      <a class="btn btn-ghost" href="convite.html">Ver como a outra pessoa recebe o convite</a>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="col-12 col-lg-5">
+                <section class="ws-card">
+                  <h2 class="ws-section-title mb-3">Como funciona</h2>
+                  <ol class="d-grid gap-3 ps-3 mb-0">
+                    <li>Cada um cadastra as próprias rendas nas Configurações.</li>
+                    <li>Ao lançar uma compra da casa, marque <strong>Compartilhada</strong>.</li>
+                    <li>No fim do mês, o we-sync divide os gastos na proporção da renda: quem ganha mais paga mais.</li>
+                    <li>Quem pagou menos que a sua parte deposita a diferença na caixinha da casa.</li>
+                  </ol>
+                </section>
+              </div>
+            </div>
+          </div>
+
+          <!-- House -->
+          <div id="house">
+            <div class="ws-page-head">
+              <div>
+                <h1 id="title">Nossa casa</h1>
+                <p>Você e Amanda · divisão proporcional à renda</p>
+              </div>
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <div class="ws-month" role="group" aria-label="Mês">
+                  <button type="button" class="btn btn-icon" aria-label="Mês anterior"><i data-icon="chevL"></i></button>
+                  <span class="ws-month-label">outubro 2026</span>
+                  <button type="button" class="btn btn-icon" aria-label="Próximo mês"><i data-icon="chevR"></i></button>
+                </div>
+                <button type="button" class="btn btn-ghost btn-icon" id="open-config" aria-label="Configurar casa"><i data-icon="sliders"></i></button>
+              </div>
+            </div>
+
+            <div id="pending" class="d-grid gap-2 mb-3"></div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-xl-5">
+                <section class="ws-card h-100" aria-labelledby="split-title">
+                  <div class="ws-card-head">
+                    <h2 id="split-title">Divisão de outubro</h2>
+                  </div>
+                  <div class="ws-split mb-2" id="split-bar" role="img"></div>
+                  <ul class="ws-tx-list" id="members"></ul>
+                  <div id="members-note"></div>
+                  <p class="small text-muted mt-2 mb-0">
+                    Rendas vindas das Configurações de cada um. Uma mudança vale a partir do mês em que foi feita.
+                  </p>
+                </section>
+              </div>
+              <div class="col-12 col-xl-7">
+                <section class="ws-card h-100" aria-labelledby="settle-title">
+                  <div class="ws-card-head">
+                    <div>
+                      <h2 id="settle-title">Acerto do mês</h2>
+                      <div class="ws-card-sub" id="settle-sub"></div>
+                    </div>
+                    <span id="settle-status"></span>
+                  </div>
+                  <div class="ws-table-wrap">
+                    <table class="ws-settle">
+                      <thead>
+                        <tr>
+                          <th scope="col">Quem</th>
+                          <th scope="col" class="is-num">Parte</th>
+                          <th scope="col" class="is-num">Deveria pagar</th>
+                          <th scope="col" class="is-num">Pagou</th>
+                          <th scope="col" class="is-num">Diferença</th>
+                        </tr>
+                      </thead>
+                      <tbody id="settle-rows"></tbody>
+                    </table>
+                  </div>
+                  <div id="settle-result" class="mt-3"></div>
+                </section>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-xl-5">
+                <section class="ws-card h-100" aria-labelledby="std-title" id="padrao">
+                  <div class="ws-card-head">
+                    <div>
+                      <h2 id="std-title">Padrão de gastos</h2>
+                      <div class="ws-card-sub" id="std-rule"></div>
+                    </div>
+                    <a class="btn btn-soft btn-sm text-nowrap" href="metas.html#casa">Metas</a>
+                  </div>
+                  <div class="ws-hist mb-3" id="hist" role="img"></div>
+                  <div id="std-result"></div>
+                </section>
+              </div>
+              <div class="col-12 col-xl-7">
+                <section class="ws-card h-100" aria-labelledby="boxes-title">
+                  <div class="ws-card-head">
+                    <div>
+                      <h2 id="boxes-title">Caixinhas da casa</h2>
+                      <div class="ws-card-sub" id="boxes-total"></div>
+                    </div>
+                    <button type="button" class="btn btn-soft btn-sm d-inline-flex align-items-center gap-1" id="new-box"><i data-icon="plus"></i>Nova caixinha</button>
+                  </div>
+                  <ul class="ws-tx-list" id="boxes"></ul>
+                  <p class="small text-muted mt-2 mb-0">
+                    Rendimento estimado pelo CDI, já descontado o IR regressivo. Se não bater com o banco, use <strong>Ajustar saldo</strong>.
+                  </p>
+                </section>
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12 col-xl-7">
+                <section class="ws-card h-100" aria-labelledby="shared-title">
+                  <div class="ws-card-head">
+                    <h2 id="shared-title">Compras compartilhadas</h2>
+                    <span class="ws-card-sub" id="shared-sum"></span>
+                  </div>
+                  <ul class="ws-tx-list" id="shared"></ul>
+                </section>
+              </div>
+              <div class="col-12 col-xl-5">
+                <section class="ws-card h-100" aria-labelledby="mov-title">
+                  <div class="ws-card-head">
+                    <h2 id="mov-title">Movimentações das caixinhas</h2>
+                  </div>
+                  <ul class="ws-tx-list" id="movements"></ul>
+                </section>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+    <nav id="ws-bottomnav"></nav>
+
+    <!-- House settings -->
+    <div class="modal fade" id="config-modal" tabindex="-1" aria-labelledby="config-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="config-title">Configurar casa</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-4" style="grid-template-columns: minmax(0, 1fr)">
+            <div>
+              <label class="form-label" for="cfg-name">Nome da casa</label>
+              <input id="cfg-name" class="form-control" value="Nossa casa" />
+            </div>
+            <fieldset>
+              <legend class="form-label fs-6">Como acertar a diferença</legend>
+              <div class="ws-segmented">
+                <input type="radio" name="mode" id="mode-box" value="box" checked />
+                <label for="mode-box"><i data-icon="piggy"></i>Depósito na caixinha</label>
+                <input type="radio" name="mode" id="mode-transfer" value="transfer" />
+                <label for="mode-transfer"><i data-icon="arrowUp"></i>Transferência</label>
+              </div>
+            </fieldset>
+            <div>
+              <label class="form-label" for="cfg-ceiling">Meta mensal da casa</label>
+              <div class="ws-money-sm" style="width: 200px">
+                <span aria-hidden="true">R$</span><input id="cfg-ceiling" class="form-control" inputmode="numeric" aria-describedby="cfg-ceiling-hint" />
+              </div>
+              <div class="form-text" id="cfg-ceiling-hint">Usada nos alertas e em Metas. Enquanto a casa tiver menos de 3 meses de histórico, também serve de padrão para a sugestão de resgate.</div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-sm-6">
+                <label class="form-label" for="cfg-start">Mês da casa começa no dia</label>
+                <select id="cfg-start" class="form-select" aria-describedby="cfg-start-hint"></select>
+                <div class="form-text" id="cfg-start-hint">Vale para divisão, acerto, padrão e metas da casa.</div>
+              </div>
+              <div class="col-12 col-sm-6">
+                <label class="form-label" for="cfg-min">Renda mínima considerada</label>
+                <div class="ws-money-sm" style="width: 100%">
+                  <span aria-hidden="true">R$</span><input id="cfg-min" class="form-control" inputmode="numeric" aria-describedby="cfg-min-hint" />
+                </div>
+                <div class="form-text" id="cfg-min-hint">Para quem estiver sem renda no mês. Em zero, vale o salário mínimo do sistema (<span id="cfg-min-default"></span>).</div>
+              </div>
+            </div>
+            <div>
+              <span class="form-label d-block">Membros</span>
+              <ul class="ws-tx-list" id="cfg-members"></ul>
+            </div>
+          </div>
+          <div class="modal-footer justify-content-between">
+            <button type="button" class="btn btn-outline-danger" id="leave">Sair da casa</button>
+            <button type="button" class="btn btn-primary" id="save-config">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leave house -->
+    <div class="modal fade" id="leave-modal" tabindex="-1" aria-labelledby="leave-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body p-4">
+            <h2 class="fs-5 fw-bold" id="leave-title">Sair da casa?</h2>
+            <ul class="text-muted d-grid gap-2 ps-3 my-3">
+              <li>A casa fica <strong>arquivada</strong>, só para leitura, para os dois.</li>
+              <li>As compras continuam com quem registrou.</li>
+              <li>Os valores ficam <strong>pausados</strong> e as caixinhas passam para o <strong>pessoal</strong> de cada titular.</li>
+            </ul>
+            <div class="d-grid gap-2">
+              <button type="button" class="btn btn-danger" id="leave-ok">Sair da casa</button>
+              <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New box -->
+    <div class="modal fade" id="box-modal" tabindex="-1" aria-labelledby="box-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <form class="modal-content" id="box-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="box-title">Nova caixinha</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-3" style="grid-template-columns: minmax(0, 1fr)">
+            <div>
+              <label class="form-label" for="box-name">Nome</label>
+              <input id="box-name" class="form-control" placeholder="Ex.: Reserva da casa" aria-describedby="box-name-error" />
+              <div class="invalid-feedback" id="box-name-error">Informe o nome.</div>
+            </div>
+            <div>
+              <label class="form-label" for="box-bank">Instituição</label>
+              <input id="box-bank" class="form-control" placeholder="Ex.: banco onde a caixinha fica" aria-describedby="box-bank-error" />
+              <div class="invalid-feedback" id="box-bank-error">Informe a instituição.</div>
+            </div>
+            <div class="row g-3">
+              <div class="col-12 col-sm-7">
+                <label class="form-label" for="box-owner">Em nome de</label>
+                <select id="box-owner" class="form-select">
+                  <option>Jonas</option>
+                  <option>Amanda</option>
+                  <option>Conta conjunta</option>
+                </select>
+              </div>
+              <div class="col-12 col-sm-5">
+                <label class="form-label" for="box-cdi">% do CDI</label>
+                <input id="box-cdi" type="number" min="1" max="300" class="form-control" value="100" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Criar caixinha</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Adjust balance -->
+    <div class="modal fade" id="adjust-modal" tabindex="-1" aria-labelledby="adjust-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <form class="modal-content" id="adjust-form" novalidate>
+          <div class="modal-header">
+            <h2 class="modal-title fs-5" id="adjust-title">Ajustar saldo</h2>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body d-grid gap-2" style="grid-template-columns: minmax(0, 1fr)">
+            <p class="text-muted mb-1" id="adjust-text"></p>
+            <label class="form-label" for="adjust-value">Saldo líquido no extrato do banco</label>
+            <div class="ws-money"><span>R$</span><input id="adjust-value" inputmode="numeric" /></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar saldo</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="vendor/bootstrap.bundle.min.js"></script>
+    <script src="assets/app.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const W = window.WS;
+        const H = W.HOUSE;
+        const $ = (id) => document.getElementById(id);
+        const brl = W.formatBrl;
+        const pct = (x) => Math.round(x * 100) + '%';
+        const brlPlain = (c) => brl(c).replace(/^R\$\s?/, '');
+
+        function bindMoney(input, initial) {
+          let cents = initial;
+          input.value = brlPlain(cents);
+          input.addEventListener('input', function () {
+            cents = Number(input.value.replace(/\D/g, '').slice(0, 11)) || 0;
+            input.value = brlPlain(cents);
+          });
+          input.addEventListener('focus', () => input.select());
+          return { get: () => cents, set: (v) => ((cents = v), (input.value = brlPlain(v))) };
+        }
+
+        // ---------- Empty state ----------
+        if (new URLSearchParams(location.search).get('vazio') === '1') {
+          $('house').hidden = true;
+          $('no-house').hidden = false;
+          // Invites last 48h and are single use; resending replaces the previous link.
+          function newInvite() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const pick = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            $('invite-link').value = 'https://we-sync.app/convite/' + pick() + '-' + pick();
+            const exp = new Date(Date.now() + 48 * 3600 * 1000);
+            const two = (n) => String(n).padStart(2, '0');
+            $('invite-exp').textContent = 'Vale por 48 horas (até ' + two(exp.getDate()) + '/' + two(exp.getMonth() + 1) + ' às ' + two(exp.getHours()) + ':' +
+              two(exp.getMinutes()) + ') e só uma pessoa pode usar. Mande pelo WhatsApp.';
+          }
+          $('create-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            newInvite();
+            $('invite-box').hidden = false;
+            W.toast('Casa criada. Agora envie o convite.');
+          });
+          $('resend-invite').addEventListener('click', function () {
+            newInvite();
+            W.toast('Novo convite gerado. O anterior deixou de valer.');
+          });
+          $('copy-invite').addEventListener('click', function () {
+            try {
+              navigator.clipboard.writeText($('invite-link').value);
+            } catch (err) {
+              /* clipboard unavailable on file:// in some browsers */
+            }
+            W.toast('Link copiado');
+          });
+          return;
+        }
+
+        // ---------- State ----------
+        const state = {
+          mode: 'box',
+          rescue: null, // { parts: [{ boxId, to, amount }], status: 'provisional' | 'confirmed' }
+          rescueSel: null,
+          archived: new URLSearchParams(location.search).get('arquivada') === '1',
+          deposit: null, // { amount, from, boxId, status: 'provisional' | 'confirmed' }
+          dismissed: false,
+          boxes: H.boxes.map((b) => Object.assign({}, b)),
+          movements: [
+            { id: 'm2', date: '30/09/2026', kind: 'in', boxId: 2, who: 'Amanda', amount: 38000, note: 'Acerto de setembro', status: 'confirmed' },
+            { id: 'm1', date: '31/08/2026', kind: 'in', boxId: 1, who: 'Jonas', amount: 12500, note: 'Acerto de agosto', status: 'confirmed' },
+          ],
+        };
+        const boxById = (id) => state.boxes.find((b) => b.id === id);
+        const net = (b) => b.invested + Math.round(b.gross * (1 - b.irRate));
+        const irOf = (b) => Math.round(b.gross * b.irRate);
+        const ceilReal = (c) => Math.ceil(c / 100) * 100;
+        const irCost = (b, amount) => Math.round(amount * (b.gross / (b.invested + b.gross || 1)) * b.irRate);
+        const rescueTotal = (r) => r.parts.reduce((a, p) => a + p.amount, 0);
+        const rescueText = (r) => r.parts.map((p) => brl(p.amount) + ' da ' + W.escapeHtml(boxById(p.boxId).name)).join(' e ');
+
+        function month() {
+          const r = state.rescue;
+          return W.houseMonth(r ? r.parts.map((p) => ({ amount: p.amount, to: p.to })) : null);
+        }
+
+        // Rescue options: everything from one box, or proportional to the month's split. Each part is
+        // rounded up to whole reais; a part that does not fit in its owner's boxes is completed from the others.
+        let rescueOptions = [];
+        function buildRescueOptions(excess, m) {
+          const total = ceilReal(excess);
+          const byIr = (list) => list.slice().sort((a, b) => a.irRate - b.irRate || net(b) - net(a));
+          const opts = state.boxes
+            .filter((b) => net(b) >= total)
+            .map((b) => ({ key: 'box-' + b.id, label: 'Tudo da ' + b.name, sub: b.bank + ' · em nome de ' + b.owner, parts: [{ boxId: b.id, to: b.owner, amount: total }] }));
+          const avail = new Map(state.boxes.map((b) => [b.id, net(b)]));
+          const parts = [];
+          const take = function (amount, to, order) {
+            let left = amount;
+            order.forEach(function (b) {
+              const t = Math.min(left, avail.get(b.id));
+              if (t > 0) {
+                avail.set(b.id, avail.get(b.id) - t);
+                parts.push({ boxId: b.id, to: to, amount: t });
+                left -= t;
+              }
+            });
+            return left;
+          };
+          const mine = byIr(state.boxes.filter((b) => b.owner === H.me.name));
+          const theirs = byIr(state.boxes.filter((b) => b.owner === H.partner.name));
+          const joint = byIr(state.boxes.filter((b) => b.owner !== H.me.name && b.owner !== H.partner.name));
+          const aMe = ceilReal(excess * m.shareMe);
+          const aP = ceilReal(excess * m.shareP);
+          if (take(aMe, H.me.name, mine.concat(joint, theirs)) === 0 && take(aP, H.partner.name, theirs.concat(joint, mine)) === 0) {
+            const completed = parts.some((p) => boxById(p.boxId).owner !== p.to);
+            opts.push({
+              key: 'prop',
+              label: 'Proporcional aos dois (' + pct(m.shareMe) + ' / ' + pct(m.shareP) + ')',
+              sub: parts.map((p) => p.to + ' ' + brl(p.amount) + ' da ' + boxById(p.boxId).name).join(' · ') + (completed ? ' · completado com a caixinha do outro' : ''),
+              parts: parts,
+            });
+          }
+          opts.forEach((o) => (o.ir = o.parts.reduce((a, p) => a + irCost(boxById(p.boxId), p.amount), 0)));
+          return opts;
+        }
+
+        // ---------- Pending confirmations ----------
+        function renderPending() {
+          const items = [];
+          const r = state.rescue;
+          if (r && r.status === 'provisional') {
+            items.push(
+              '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2"/></svg>' +
+                '<div class="flex-grow-1"><strong>O resgate de ' + rescueText(r) + ' foi sacado?</strong>' +
+                '<div class="small text-muted mb-2">Ele já entrou no acerto como provisório. No app real, este aviso chega no dia seguinte.</div>' +
+                '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="rescue-ok">Sim, foi sacado</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-act="rescue-no">Não resgatei</button></div></div></div>',
+            );
+          }
+          const d = state.deposit;
+          if (d && d.status === 'provisional') {
+            items.push(
+              '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2"/></svg>' +
+                '<div class="flex-grow-1"><strong>' + d.from + ' depositou ' + brl(d.amount) + ' na ' + W.escapeHtml(boxById(d.boxId).name) + '?</strong>' +
+                '<div class="small text-muted mb-2">No app real, ' + d.from + ' recebe este aviso no dia seguinte.</div>' +
+                '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="deposit-ok">Sim, depositado</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-act="deposit-no">Não depositei</button></div></div></div>',
+            );
+          }
+          if (state.archived) {
+            items.unshift(
+              '<div class="ws-callout is-warning">' + W.icon('lockSmall') + '<div class="flex-grow-1"><strong>Casa arquivada em ' + today + '</strong>' +
+                '<div class="small">Só leitura. Os valores ficaram pausados e as caixinhas passaram para o pessoal de cada titular.</div>' +
+                '<a class="btn btn-ghost btn-sm mt-2" href="casa.html?vazio=1">Criar uma nova casa</a></div></div>',
+            );
+          }
+          $('pending').innerHTML = items.join('');
+        }
+
+        // ---------- Members / split ----------
+        function renderMembers(m) {
+          $('split-bar').innerHTML =
+            '<span style="width:' + m.shareMe * 100 + '%"></span><span style="width:' + m.shareP * 100 + '%"></span>';
+          $('split-bar').setAttribute('aria-label', 'Jonas ' + pct(m.shareMe) + ', Amanda ' + pct(m.shareP));
+          const row = (p, inc, share, partner, usedMin) =>
+            '<li class="ws-tx"><span class="ws-avatar' + (partner ? ' is-partner' : '') + '">' + p.initials + '</span>' +
+            '<div class="ws-tx-main"><div class="ws-tx-title">' + p.name + (partner ? '' : ' (você)') + '</div>' +
+            '<div class="ws-tx-meta">' + (usedMin ? 'Sem renda no mês · considerada a renda mínima' : p.incomes.map((i) => i[0] + ' ' + brl(i[1])).join(' · ')) + '</div></div>' +
+            '<div class="text-end"><div class="ws-tx-amount">' + brl(inc) + '</div><div class="fw-bold" style="color:' +
+            (partner ? 'var(--ws-cat-health)' : 'var(--ws-primary)') + '">' + pct(share) + '</div></div></li>';
+          $('members').innerHTML = row(H.me, m.incMe, m.shareMe, false, m.usedMinMe) + row(H.partner, m.incP, m.shareP, true, m.usedMinP);
+          const without = [m.usedMinMe && H.me.name, m.usedMinP && H.partner.name].filter(Boolean);
+          $('members-note').innerHTML = without.length
+            ? '<div class="ws-callout is-warning mt-2">' + W.icon('alert') + '<div class="small"><strong>' + without.join(' e ') + ' sem renda em outubro.</strong> ' +
+              'Para a divisão foi considerada a renda mínima da casa: ' + brl(W.houseMinIncome()) +
+              (H.minIncome ? ' (definida em Configurar casa).' : ' (salário mínimo do sistema, valor de exemplo; dá para mudar em Configurar casa).') + '</div></div>'
+            : '';
+        }
+
+        // ---------- Settlement ----------
+        function renderSettle(m) {
+          const shouldMe = Math.round(m.total * m.shareMe);
+          const shouldP = m.total - shouldMe;
+          const diff = (v) => (v > 0 ? '+' : v < 0 ? '−' : '') + brl(Math.abs(v));
+          const line = (name, share, should, paid) =>
+            '<tr><td class="fw-semibold">' + name + '</td><td class="is-num">' + pct(share) + '</td><td class="is-num">' + brl(should) +
+            '</td><td class="is-num">' + brl(paid) + '</td><td class="is-num fw-bold ' + (paid - should >= 0 ? 'text-success-ws' : 'text-danger-ws') + '">' +
+            diff(paid - should) + '</td></tr>';
+          $('settle-rows').innerHTML =
+            line('Jonas', m.shareMe, shouldMe, m.paidMe) +
+            line('Amanda', m.shareP, shouldP, m.paidP) +
+            '<tr><td class="fw-bold">Total</td><td></td><td class="is-num fw-bold">' + brl(m.total) + '</td><td class="is-num fw-bold">' +
+            brl(m.paidMe + m.paidP) + '</td><td></td></tr>';
+
+          let sub = 'Compras compartilhadas pagas: ' + brl(m.grossTotal);
+          if (m.rescue) sub += ' − resgate ' + brl(m.rescue) + (state.rescue.status === 'provisional' ? ' (provisório)' : '');
+          $('settle-sub').textContent = sub;
+
+          const d = state.deposit;
+          $('settle-status').innerHTML = state.archived
+            ? '<span class="ws-status is-canceled">Pausado</span>'
+            : d && d.status === 'confirmed'
+              ? '<span class="ws-status is-paid">Acertado</span>'
+              : d
+                ? '<span class="ws-status is-provisional">Aguardando confirmação</span>'
+                : '<span class="ws-status is-pending">Em aberto</span>';
+
+          let html;
+          if (state.archived) {
+            html = '<div class="ws-callout is-warning"><strong>Acerto pausado: a casa está arquivada.</strong></div>';
+          } else if (state.mode === 'transfer') {
+            const owes = shouldP - m.paidP;
+            html =
+              '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg><div>' +
+              (owes > 0 ? '<strong>Amanda transfere ' + brl(owes) + ' para Jonas</strong>' : '<strong>Jonas transfere ' + brl(-owes) + ' para Amanda</strong>') +
+              '<div class="small text-muted">Modo transferência: a diferença volta para quem pagou a mais.</div></div></div>';
+          } else if (d && d.status === 'confirmed') {
+            html =
+              '<div class="ws-callout is-success"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg><div>' +
+              '<strong>Outubro acertado</strong><div class="small">' + d.from + ' depositou ' + brl(d.amount) + ' na ' + W.escapeHtml(boxById(d.boxId).name) +
+              '. O mês fica travado; para editar uma compra compartilhada dele, reabra o acerto.</div></div></div>';
+          } else if (m.deposit.amount <= 0) {
+            html = '<div class="ws-callout is-success"><strong>Tudo equilibrado este mês.</strong></div>';
+          } else {
+            const from = m.deposit.from;
+            const options = state.boxes
+              .map((b) => '<option value="' + b.id + '"' + (b.owner === from ? ' selected' : '') + '>' + W.escapeHtml(b.name) + ' (' + W.escapeHtml(b.bank) + ')</option>')
+              .join('');
+            html =
+              '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>' +
+              '<div class="flex-grow-1 min-w-0"><strong>' + from + ' deposita ' + brl(m.deposit.amount) + ' na caixinha</strong>' +
+              '<div class="small text-muted mb-2">Assim a contribuição de cada um fica exatamente ' + pct(m.shareMe) + ' / ' + pct(m.shareP) + '.</div>' +
+              (d
+                ? '<div class="small">Registrado como provisório na ' + W.escapeHtml(boxById(d.boxId).name) + '.</div>'
+                : '<div class="d-flex flex-wrap gap-2 align-items-center"><label class="visually-hidden" for="deposit-box">Caixinha</label>' +
+                  '<select id="deposit-box" class="form-select form-select-sm w-auto">' + options + '</select>' +
+                  '<button type="button" class="btn btn-primary btn-sm" data-act="deposit">Registrar depósito</button></div>') +
+              '<details class="small mt-2"><summary class="text-muted">Por que não é só a diferença simples?</summary>' +
+              '<p class="mt-2 mb-0">A caixinha é da casa, então o depósito também conta como contribuição. A diferença simples seria ' +
+              brl(Math.max(0, shouldP - m.paidP)) + ', mas aí a proporção final não fecharia ' + pct(m.shareMe) + ' / ' + pct(m.shareP) + '.</p></details>' +
+              '</div></div>';
+          }
+          $('settle-result').innerHTML = html;
+        }
+
+        // ---------- Standard / rescue suggestion ----------
+        function renderStandard(m) {
+          const std = W.houseStandard();
+          $('std-rule').textContent = 'Padrão: ' + brl(std.value) + ', ' + std.rule;
+          const bars = H.history.concat([['out', m.grossTotal]]);
+          const max = Math.max(std.value, ...bars.map((b) => b[1])) * 1.1;
+          $('hist').innerHTML =
+            bars
+              .map(
+                (b, i) =>
+                  '<div class="ws-hist-bar' + (i === bars.length - 1 ? ' is-current' : '') + '" title="' + b[0] + ': ' + brl(b[1]) + '">' +
+                  '<span style="height: calc((100% - 1.3rem) * ' + (b[1] / max).toFixed(3) + ')"></span>' + b[0] + '</div>',
+              )
+              .join('') +
+            '<div class="ws-hist-line" style="bottom: calc(1.3rem + (100% - 1.3rem) * ' + (std.value / max).toFixed(3) + ')"></div>';
+          $('hist').setAttribute('aria-label', 'Gastos da casa por mês: ' + bars.map((b) => b[0] + ' ' + brl(b[1])).join(', '));
+
+          const excess = m.grossTotal - std.value;
+          if (excess <= 0) {
+            $('std-result').innerHTML = '<div class="ws-callout is-success"><strong>Outubro está dentro do padrão.</strong></div>';
+            return;
+          }
+          let html =
+            '<div class="ws-callout is-warning mb-2"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5M12 18h.01"/></svg>' +
+            '<div><strong>Outubro passou ' + brl(excess) + ' do padrão</strong></div></div>';
+          if (state.rescue) {
+            html += '<p class="small text-muted mb-0">Resgate de ' + rescueText(state.rescue) + ' ' + (state.rescue.status === 'confirmed' ? 'confirmado.' : 'aguardando confirmação.') + '</p>';
+          } else if (!state.dismissed && !state.archived) {
+            rescueOptions = buildRescueOptions(excess, m);
+            if (rescueOptions.length) {
+              const cheapest = rescueOptions.slice().sort((a, b) => a.ir - b.ir)[0].key;
+              const sel = rescueOptions.some((o) => o.key === state.rescueSel) ? state.rescueSel : cheapest;
+              html +=
+                '<div class="border rounded-3 p-3"><div class="fw-semibold mb-1">Sugestão: resgatar ' + brl(ceilReal(excess)) + '</div>' +
+                '<div class="small text-muted mb-2">Valores arredondados para cima, ao real. É só uma sugestão: às vezes não compensa pagar IR/IOF.</div>' +
+                '<fieldset class="mb-3"><legend class="form-label fs-6 mb-2">De onde sai o resgate?</legend><div class="d-grid gap-2">' +
+                rescueOptions
+                  .map(
+                    (o) =>
+                      '<label class="ws-option"><input type="radio" name="rescue-opt" value="' + o.key + '"' + (o.key === sel ? ' checked' : '') + '>' +
+                      '<span><strong>' + W.escapeHtml(o.label) + '</strong>' + (o.key === cheapest ? ' <span class="ws-tag is-primary">menor custo</span>' : '') +
+                      '<small class="d-block text-muted">' + W.escapeHtml(o.sub) + ' · IR ≈ ' + brl(o.ir) + '</small></span></label>',
+                  )
+                  .join('') +
+                '</div></fieldset>' +
+                '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="rescue">Vou resgatar</button>' +
+                '<button type="button" class="btn btn-ghost btn-sm" data-act="dismiss">Agora não</button></div></div>';
+            }
+          }
+          $('std-result').innerHTML = html;
+        }
+
+        // ---------- Boxes ----------
+        function renderBoxes() {
+          $('boxes-total').textContent = 'Total líquido estimado: ' + brl(state.boxes.reduce((a, b) => a + net(b), 0));
+          $('boxes').innerHTML = state.boxes
+            .map(
+              (b) =>
+                '<li class="ws-tx is-wrap"><span class="ws-cat" style="--cat: var(--ws-success)">' + W.icon('piggy') + '</span>' +
+                '<div class="ws-tx-main"><div class="ws-tx-title">' + W.escapeHtml(b.name) +
+                (state.archived ? ' <span class="ws-tag">no pessoal de ' + W.escapeHtml(b.owner) + '</span>' : '') + '</div>' +
+                '<div class="ws-tx-meta">' + W.escapeHtml(b.bank) + ' · em nome de ' + W.escapeHtml(b.owner) + ' · ' + b.cdi + '% do CDI</div>' +
+                '<div class="ws-tx-meta">Aplicado ' + brl(b.invested) + ' · rendeu ' + brl(b.gross) + ' · IR ' + Math.round(b.irRate * 1000) / 10 + '% ≈ ' + brl(irOf(b)) + '</div></div>' +
+                '<div class="text-end"><div class="ws-tx-amount">' + brl(net(b)) + '</div><div class="ws-tx-meta">líquido</div></div>' +
+                '<div class="ws-tx-actions"><button type="button" class="btn btn-ghost btn-sm" data-act="adjust" data-box="' + b.id + '">Ajustar saldo</button></div></li>',
+            )
+            .join('');
+        }
+
+        // ---------- Movements ----------
+        function renderMovements() {
+          $('movements').innerHTML =
+            state.movements
+              .map(
+                (mv) =>
+                  '<li class="ws-tx"><span class="ws-cat" style="--cat:' + (mv.kind === 'in' ? 'var(--ws-success)' : 'var(--ws-warning)') + '">' +
+                  W.icon(mv.kind === 'in' ? 'arrowDown' : 'arrowUp') + '</span><div class="ws-tx-main"><div class="ws-tx-title">' +
+                  (mv.kind === 'in' ? 'Depósito' : 'Resgate') + ' · ' + W.escapeHtml(boxById(mv.boxId).name) + '</div><div class="ws-tx-meta">' +
+                  mv.date + ' · ' + mv.who + ' · ' + mv.note + '</div></div><div class="d-flex flex-column align-items-end gap-1"><span class="ws-tx-amount">' +
+                  (mv.kind === 'in' ? '+' : '−') + brl(mv.amount) + '</span>' +
+                  (mv.status === 'confirmed' ? '<span class="ws-status is-paid">Confirmado</span>' : '<span class="ws-status is-provisional">Provisório</span>') +
+                  '</div></li>',
+              )
+              .join('') || '<li class="ws-empty">Nenhuma movimentação.</li>';
+        }
+
+        // ---------- Shared purchases ----------
+        function renderShared(m) {
+          $('shared-sum').textContent = m.purchases.length + ' compras';
+          $('shared').innerHTML = m.purchases
+            .map(
+              (p) =>
+                '<li class="ws-tx' + (p.status === 'CANCELED' ? ' is-canceled' : '') + '">' + W.catBubble(p.category) +
+                '<div class="ws-tx-main"><div class="ws-tx-title">' + W.escapeHtml(p.description) + '</div>' +
+                '<div class="ws-tx-meta">' + W.formatDayMonth(p.date) + ' · pago por ' + p.by + '</div></div>' +
+                '<div class="d-flex flex-column align-items-end gap-1"><span class="ws-tx-amount">' + brl(p.amount) + '</span>' + W.statusPill(p.status) + '</div></li>',
+            )
+            .join('');
+        }
+
+        function render() {
+          const m = month();
+          renderPending();
+          renderMembers(m);
+          renderSettle(m);
+          renderStandard(m);
+          renderBoxes();
+          renderMovements();
+          renderShared(m);
+        }
+
+        // ---------- Actions ----------
+        const today = (() => {
+          const d = new Date();
+          return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+        })();
+        document.body.addEventListener('click', function (e) {
+          const btn = e.target.closest('[data-act]');
+          if (!btn) return;
+          const act = btn.dataset.act;
+          if (act === 'rescue') {
+            const checked = document.querySelector('[name=rescue-opt]:checked');
+            const opt = rescueOptions.find((o) => o.key === (checked && checked.value)) || rescueOptions[0];
+            state.rescue = { parts: opt.parts.map((p) => Object.assign({}, p)), status: 'provisional' };
+            state.rescue.parts.forEach(function (p, i) {
+              state.movements.unshift({ id: 'res' + i, date: today, kind: 'out', boxId: p.boxId, who: boxById(p.boxId).owner, amount: p.amount, note: 'Gasto acima do padrão', status: 'provisional' });
+            });
+            W.toast('Resgate registrado como provisório');
+          } else if (act === 'dismiss') {
+            state.dismissed = true;
+          } else if (act === 'rescue-ok') {
+            state.rescue.status = 'confirmed';
+            state.movements.filter((x) => x.id.startsWith('res')).forEach((x) => (x.status = 'confirmed'));
+            state.rescue.parts.forEach((p) => (boxById(p.boxId).invested -= p.amount));
+            W.toast('Resgate confirmado');
+          } else if (act === 'rescue-no') {
+            state.rescue = null;
+            state.movements = state.movements.filter((x) => !x.id.startsWith('res'));
+            W.toast('Resgate desfeito');
+          } else if (act === 'deposit') {
+            const m = month();
+            state.deposit = { amount: m.deposit.amount, from: m.deposit.from, boxId: Number($('deposit-box').value), status: 'provisional' };
+            state.movements.unshift({ id: 'd', date: today, kind: 'in', boxId: state.deposit.boxId, who: state.deposit.from, amount: state.deposit.amount, note: 'Acerto de outubro', status: 'provisional' });
+            W.toast('Depósito registrado como provisório');
+          } else if (act === 'deposit-ok') {
+            state.deposit.status = 'confirmed';
+            state.movements.find((x) => x.id === 'd').status = 'confirmed';
+            boxById(state.deposit.boxId).invested += state.deposit.amount;
+            W.toast('Outubro acertado');
+          } else if (act === 'deposit-no') {
+            state.deposit = null;
+            state.movements = state.movements.filter((x) => x.id !== 'd');
+          } else if (act === 'adjust') {
+            openAdjust(boxById(Number(btn.dataset.box)));
+            return;
+          }
+          render();
+        });
+
+        document.body.addEventListener('change', (e) => {
+          if (e.target.name === 'rescue-opt') state.rescueSel = e.target.value;
+        });
+
+        // Settings
+        const cfgModal = new bootstrap.Modal($('config-modal'));
+        const ceiling = bindMoney($('cfg-ceiling'), H.ceiling);
+        const minIncome = bindMoney($('cfg-min'), H.minIncome || 0);
+        $('cfg-min-default').textContent = brl(W.SYSTEM_MIN_WAGE) + ', valor de exemplo';
+        $('cfg-start').innerHTML = Array.from({ length: 28 }, (_, i) => '<option value="' + (i + 1) + '">Dia ' + (i + 1) + '</option>').join('');
+        $('open-config').addEventListener('click', function () {
+          $('cfg-start').value = String(H.startDay);
+          $('cfg-members').innerHTML = [H.me, H.partner]
+            .map((p, i) => '<li class="ws-tx"><span class="ws-avatar' + (i ? ' is-partner' : '') + '">' + p.initials + '</span><div class="ws-tx-main"><div class="ws-tx-title">' + p.name + (i ? '' : ' (você)') + '</div><div class="ws-tx-meta">' + (i ? 'Entrou em 12/02/2026' : 'Criou a casa') + '</div></div></li>')
+            .join('');
+          cfgModal.show();
+        });
+        $('save-config').addEventListener('click', function () {
+          state.mode = document.querySelector('[name=mode]:checked').value;
+          H.ceiling = ceiling.get();
+          H.startDay = Number($('cfg-start').value);
+          H.minIncome = minIncome.get() || null;
+          H.name = $('cfg-name').value.trim() || 'Nossa casa';
+          $('title').textContent = H.name;
+          cfgModal.hide();
+          render();
+          W.toast('Casa atualizada');
+        });
+        const leaveModal = new bootstrap.Modal($('leave-modal'));
+        $('leave').addEventListener('click', function () {
+          cfgModal.hide();
+          leaveModal.show();
+        });
+        $('leave-ok').addEventListener('click', () => (location.href = 'casa.html?arquivada=1'));
+        if (state.archived) document.body.classList.add('ws-archived');
+
+        // New box
+        const boxModal = new bootstrap.Modal($('box-modal'));
+        $('new-box').addEventListener('click', () => boxModal.show());
+        $('box-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          let ok = true;
+          [['box-name', 'box-name-error'], ['box-bank', 'box-bank-error']].forEach(function (x) {
+            const filled = $(x[0]).value.trim() !== '';
+            $(x[0]).classList.toggle('is-invalid', !filled);
+            ok = ok && filled;
+          });
+          if (!ok) return;
+          state.boxes.push({
+            id: Date.now(), name: $('box-name').value.trim(), bank: $('box-bank').value.trim(), owner: $('box-owner').value,
+            cdi: Number($('box-cdi').value) || 100, invested: 0, gross: 0, irRate: 0.225,
+          });
+          $('box-form').reset();
+          boxModal.hide();
+          render();
+          W.toast('Caixinha criada');
+        });
+
+        // Adjust balance: keep what was invested, put the rest in the yield (net of IR).
+        const adjModal = new bootstrap.Modal($('adjust-modal'));
+        const adjValue = bindMoney($('adjust-value'), 0);
+        let adjusting = null;
+        function openAdjust(box) {
+          adjusting = box;
+          $('adjust-text').textContent = 'O app estima ' + brl(net(box)) + ' na ' + box.name + '. Informe o valor que aparece no banco.';
+          adjValue.set(net(box));
+          adjModal.show();
+        }
+        $('adjust-form').addEventListener('submit', function (e) {
+          e.preventDefault();
+          const v = adjValue.get();
+          if (v >= adjusting.invested) {
+            adjusting.gross = Math.round((v - adjusting.invested) / (1 - adjusting.irRate));
+          } else {
+            adjusting.invested = v;
+            adjusting.gross = 0;
+          }
+          adjModal.hide();
+          render();
+          W.toast('Saldo ajustado');
+        });
+
+        render();
+      });
+    </script>
+  </body>
+</html>
