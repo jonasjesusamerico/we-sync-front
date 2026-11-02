@@ -35,6 +35,8 @@
 
           <!-- Novidade: offered only to accounts created before the feature (TOUR-04). -->
           <div id="ws-news" class="mb-3"></div>
+          <!-- Pague-se primeiro (PAG-*): shown on the day an income arrives. -->
+          <div id="pay-first" class="mb-3"></div>
 
           <div class="row g-3 mb-3">
             <div class="col-12 col-xl-5">
@@ -188,6 +190,29 @@
       document.addEventListener('DOMContentLoaded', function () {
         const W = window.WS;
         const DAYS = 31;
+
+        // Pay yourself first (PAG-01): on the day an income arrives, suggest saving the month's part of the
+        // reserve and of each dream before spending. Only a suggestion; nothing moves by itself.
+        (function payFirst() {
+          const el = document.getElementById('pay-first');
+          const H = W.HOUSE;
+          const shareMe = W.houseMonth(null).shareMe;
+          H.reserve.target = W.reserveTarget(H.history, H.reserve.months, H.ceiling).target;
+          const items = [H.reserve].concat(H.dreams)
+            .map((d) => ({ name: d.name, part: W.dreamPlan(d, shareMe).needMe }))
+            .filter((x) => x.part > 0);
+          if (!items.length) return;
+          const total = items.reduce((a, x) => a + x.part, 0);
+          el.innerHTML =
+            '<div class="ws-callout is-success">' + W.icon('wallet') + '<div class="flex-grow-1"><strong>Seu salário caiu hoje. Guarde primeiro: ' + W.formatBrl(total) + '</strong>' +
+            '<div class="small mb-2">' + items.map((x) => W.escapeHtml(x.name) + ' ' + W.formatBrl(x.part)).join(' · ') + '. É a sua parte deste mês, pela renda.</div>' +
+            '<div class="d-flex flex-wrap gap-2"><a class="btn btn-primary btn-sm" href="casa.html?semtour=1#sonhos">Guardar agora</a>' +
+            '<button type="button" class="btn btn-ghost btn-sm" id="pay-first-later">Depois</button></div></div></div>';
+          document.getElementById('pay-first-later').addEventListener('click', function () {
+            el.innerHTML = '';
+            W.toast('Lembramos de novo no próximo recebimento');
+          });
+        })();
         const PREVIOUS_MONTH = 412000; // sample: September total
         const BUDGET = 450000; // sample: monthly budget
 

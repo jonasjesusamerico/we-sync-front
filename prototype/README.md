@@ -22,3 +22,4 @@ Dados de exemplo, nada é salvo. É a referência visual para o front Angular no
 - `assets/app.js` — layout compartilhado, ícones, dados de exemplo, cálculos da casa
 - Telas: `login`, `cadastro`, `dashboard`, `compras`, `nova-compra`, `configuracoes`, `casa`, `convite`, `metas`, `investimentos`, `admin`
 - `vendor/` — Bootstrap copiado do `node_modules` (sem CDN)
+- `tests/` — testes Playwright do protótipo: `npx playwright test -c prototype/tests` (ver `tests/README.md`)

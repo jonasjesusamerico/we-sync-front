@@ -120,6 +120,21 @@
             </div>
             <ul class="ws-tx-list" id="topic-goals"></ul>
           </section>
+
+          <!-- Subscriptions (ASS-*): personal scope only. -->
+          <section class="ws-card mt-3" aria-labelledby="subs-title" id="assinaturas">
+            <div class="ws-card-head">
+              <div>
+                <h2 id="subs-title">Assinaturas</h2>
+                <div class="ws-card-sub" id="subs-sum"></div>
+              </div>
+            </div>
+            <ul class="ws-tx-list" id="subs"></ul>
+            <p class="small text-muted mt-2 mb-0">
+              Contas fixas entram sozinhas. Uma compra com a mesma descrição por 3 meses seguidos aparece como sugestão para você confirmar.
+              Pequenos valores todo mês somam muito no ano.
+            </p>
+          </section>
         </main>
       </div>
     </div>
@@ -283,7 +298,51 @@
         let scopeKey = 'pessoal';
         const open = new Set();
 
+        // Subscriptions: recurring charges found in the fixed bills and in repeated purchases (ASS-01, ASS-02).
+        const SUBS = [
+          { name: 'Netflix', amount: 4490, source: 'fixed', state: 'active' },
+          { name: 'Spotify', amount: 2190, source: 'fixed', state: 'active' },
+          { name: 'Academia Corpo Ativo', amount: 8990, source: 'fixed', state: 'active' },
+          { name: 'iCloud 200 GB', amount: 1490, source: 'repeated', state: 'suggested' },
+          { name: 'App de meditação', amount: 2790, source: 'repeated', state: 'suggested' },
+        ];
+        function renderSubs() {
+          $('assinaturas').hidden = scopeKey !== 'pessoal';
+          const active = SUBS.filter((x) => x.state === 'active');
+          const month = active.reduce((a, x) => a + x.amount, 0);
+          $('subs-sum').textContent = active.length + ' assinaturas · ' + brl(month) + ' por mês = ' + brl(month * 12) + ' por ano';
+          $('subs').innerHTML = SUBS.filter((x) => x.state !== 'dismissed')
+            .map(
+              (x, i) =>
+                '<li class="ws-tx is-wrap"><span class="ws-cat" style="--cat: var(--ws-primary)">' + W.icon(x.state === 'canceled' ? 'x' : 'receipt') + '</span>' +
+                '<div class="ws-tx-main"><div class="ws-tx-title">' + W.escapeHtml(x.name) + '</div><div class="ws-tx-meta">' +
+                (x.state === 'suggested'
+                  ? 'Repetiu nos últimos 3 meses · é uma assinatura?'
+                  : x.state === 'canceled'
+                    ? 'Marcada como cancelada · sai da conta a partir do próximo mês'
+                    : (x.source === 'fixed' ? 'Conta fixa' : 'Confirmada por você') + ' · ' + brl(x.amount * 12) + ' por ano') +
+                '</div></div><span class="ws-tx-amount">' + brl(x.amount) + '</span><div class="ws-tx-actions">' +
+                (x.state === 'suggested'
+                  ? '<button type="button" class="btn btn-soft btn-sm" data-sub="yes" data-i="' + SUBS.indexOf(x) + '">É assinatura</button>' +
+                    '<button type="button" class="btn btn-ghost btn-sm" data-sub="no" data-i="' + SUBS.indexOf(x) + '">Não é</button>'
+                  : x.state === 'active'
+                    ? '<button type="button" class="btn btn-ghost btn-sm" data-sub="cancel" data-i="' + SUBS.indexOf(x) + '">Cancelei</button>'
+                    : '') +
+                '</div></li>',
+            )
+            .join('');
+        }
+        document.getElementById('subs').addEventListener('click', function (e) {
+          const b = e.target.closest('[data-sub]');
+          if (!b) return;
+          const x = SUBS[Number(b.dataset.i)];
+          x.state = { yes: 'active', no: 'dismissed', cancel: 'canceled' }[b.dataset.sub];
+          renderSubs();
+          W.toast({ yes: 'Entrou nas assinaturas', no: 'Não vamos sugerir de novo', cancel: 'Boa! Economia de ' + brl(x.amount * 12) + ' por ano' }[b.dataset.sub]);
+        });
+
         function render() {
+          renderSubs();
           const s = SCOPES[scopeKey];
           const r = analyzeScope(s);
 

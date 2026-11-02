@@ -84,6 +84,16 @@ Amanda (IR ≈ R$ 3,29, **menor custo**, vem marcada) ou proporcional: Jonas R$ 
 > depósito do acerto** (R$ 631,77 → R$ 632,42 no exemplo). Já o resgate **de um só** reduz o "pago" daquela pessoa e
 > muda o acerto. A escolha entre as opções é, na prática, sobre **IR** e **de qual conta sai o dinheiro**.
 
+### 2e. Compra lançada num mês já acertado (ACE-09)
+
+O mês de origem é recalculado, mas o acerto travado não muda. A diferença que a compra causaria no acerto dele vai
+para o acerto do mês atual como "Ajuste de <mês>". No modo caixinha, uma compra de valor C paga por X diminui em C o
+depósito que X faria (ou aumenta em C o do outro).
+
+Exemplo (protótipo): Amanda lança em outubro uma Farmácia de **R$ 60,00** de 24/09. Setembro passa de R$ 2.700 para
+R$ 2.760 e é recalculado (padrão, metas, Encontro). O acerto de outubro, que era "Amanda deposita R$ 631,77", vira
+**R$ 571,77** (631,77 − 60,00).
+
 ## 3. Padrão de gastos da casa
 
 ```
@@ -229,3 +239,30 @@ Exemplo (protótipo, outubro): compras da casa R$ 3.229,42, resgate do sonho de 
 R$ 1.729,42 (dentro do padrão) e o acerto passa a ser "Jonas deposita R$ 425,99". No exemplo, a viagem não tem
 compras lançadas em outubro, por isso o acerto se inverte; numa viagem real, as compras do cartão e o resgate se
 compensam.
+
+## 12. Reserva de emergência (RSV-02..RSV-04)
+
+```
+N      = meses de cobertura (padrão 6, de 3 a 12)
+meses  = gastos dos meses fechados dos últimos 12, do mais caro para o mais barato
+alvo   = soma dos N primeiros;  com menos de N meses, o mais caro se repete até completar N;  sem histórico: meta × N
+cobre  = saldo ÷ (alvo ÷ N) meses
+guardar por mês = fórmula dos sonhos (seção 11), com o prazo da reserva (padrão 12 meses)
+```
+
+Exemplo (protótipo): a casa tem 5 meses fechados — mai R$ 2.480, jun R$ 2.550, jul R$ 2.600, ago R$ 2.750, set
+R$ 2.700. N = 6 → os 5 meses + agosto (o mais caro) de novo:
+2.750 + 2.700 + 2.600 + 2.550 + 2.480 + 2.750 = **R$ 15.830**. Com R$ 9.000 guardados, a reserva cobre
+9.000 ÷ 2.638,33 = **3,4 meses**. A média simples daria 6 × 2.616 = R$ 15.696 e, com mais histórico, esconderia os
+meses caros.
+
+## 13. Número da liberdade (LIB-02)
+
+```
+número   = padrão de gastos pessoal × 12 ÷ taxa de retirada        (4% → gasto do mês × 300)
+investido = patrimônio de Investimentos − reserva de emergência
+atingido = investido ÷ número
+proventos pagam = média mensal dos proventos dos últimos 12 meses ÷ padrão de gastos pessoal
+```
+
+Exemplo (protótipo): padrão R$ 3.800/mês → R$ 45.600/ano ÷ 4% = **R$ 1.140.000**.

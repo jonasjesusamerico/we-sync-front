@@ -213,6 +213,7 @@
   ];
 
   const NOTIFICATIONS = [
+    { icon: 'wallet', text: 'Seu salário caiu. Guarde primeiro nos sonhos e na reserva', when: 'hoje', href: 'dashboard.html' },
     { icon: 'users', text: 'Amanda registrou uma compra da casa: Produtos de limpeza, R$ 98,40', when: 'há 5 dias', href: 'casa.html' },
     { icon: 'alert', text: 'Os gastos da casa em outubro passaram do padrão', when: 'ontem', href: 'casa.html#padrao' },
   ];
@@ -244,7 +245,27 @@
       { id: 1, name: 'Viagem para o Chile', target: 1200000, due: '2027-07', bank: 'Nubank', owner: 'Conta conjunta', cdi: 100, balance: 380000, last3: [90000, 90000, 80000] },
       { id: 2, name: 'Sofá novo', target: 450000, due: '2027-01', bank: 'Banco Inter', owner: 'Amanda', cdi: 102, balance: 260000, last3: [40000, 40000, 30000] },
     ],
+    // Emergency reserve of the house (RSV-*): a special dream whose target comes from the spending history.
+    reserve: { id: 'reserva', kind: 'reserve', name: 'Reserva de emergência', months: 6, due: '2027-10', bank: 'Nubank', owner: 'Conta conjunta', cdi: 100, balance: 900000, last3: [50000, 50000, 50000] },
+    // Purchase of a settled month registered later (ACE-09): the difference goes to the next settlement.
+    lateAdjust: { month: 'setembro', description: 'Farmácia', date: '2026-09-24', by: 'Amanda', amount: 6000 },
   };
+
+  // Emergency reserve target (RSV-02): the sum of the N most expensive closed months of the last 12. With fewer
+  // than N months, the most expensive one repeats; with no history, the house goal × N. Returns the months used
+  // so the screen can explain where the value comes from.
+  function reserveTarget(history, months, goal) {
+    const last = history.slice(-12);
+    if (!last.length) return { target: goal * months, used: [], repeated: months, rule: 'meta da casa × ' + months + ' (ainda sem histórico)' };
+    const sorted = last.slice().sort((a, b) => b[1] - a[1]);
+    const used = sorted.slice(0, months);
+    const repeated = Math.max(0, months - used.length);
+    for (let i = 0; i < repeated; i++) used.push(sorted[0]);
+    return {
+      target: used.reduce((a, x) => a + x[1], 0), used: used, repeated: repeated,
+      rule: 'soma dos ' + months + ' meses mais caros dos últimos 12' + (repeated ? ' (com ' + last.length + ' meses de histórico, o mais caro conta ' + (repeated + 1) + ' vezes)' : ''),
+    };
+  }
 
   // Month the prototype treats as the current one (the sample data is October 2026).
   const NOW = { year: 2026, month: 10 };
@@ -594,7 +615,7 @@
         { t: '#settle-title', box: '.ws-card', title: 'Acerto do mês', text: 'Mostra quanto falta para cada um ficar na sua proporção, e como acertar.' },
         { t: '#padrao', title: 'Padrão de gastos', text: 'A média real da casa. Quando o mês passa do padrão, o app sugere um resgate.' },
         { t: '#boxes-title', box: '.ws-card', title: 'Caixinhas', text: 'O dinheiro guardado da casa, rendendo pelo CDI.' },
-        { t: '#dreams-title', box: '.ws-card', title: 'Sonhos do casal', text: 'Objetivos com valor e data. O app calcula quanto cada um guarda por mês.' },
+        { t: '#dreams-title', box: '.ws-card', title: 'Reserva e sonhos', text: 'A reserva de emergência e os objetivos do casal. O app calcula quanto cada um guarda por mês.' },
         { t: '.ws-month', title: 'Meses fechados', text: 'Ao voltar para um mês que já fechou, aparece o Encontro do mês: um roteiro para conversarem sobre ele.' },
       ],
     },
@@ -615,6 +636,7 @@
         { t: '#goal-title', box: '.ws-card', title: 'Meta do mês', text: 'A projeção diz como o mês fecha no ritmo atual e quanto dá para gastar por dia.' },
         { t: '#insights', box: '.ws-card', title: 'Padrões identificados', text: 'O app avisa quando um tópico cresce todo mês ou foge do normal.' },
         { t: '#report', box: '.ws-card', title: 'Relatório por tópico', text: 'Até hoje, projeção, média, tendência e ticket médio de cada tópico.' },
+        { t: '#subs-title', box: '.ws-card', title: 'Assinaturas', text: 'Quanto as cobranças de todo mês somam no ano. Confirme as sugeridas e marque o que cancelou.' },
       ],
     },
     investimentos: {
@@ -622,6 +644,7 @@
       steps: [
         { t: '#k-total', box: '.ws-card, .ws-hero', title: 'Seu patrimônio', text: 'Total investido, custo e lucro ou prejuízo.' },
         { t: '#add-op', title: 'Nova operação', text: 'Registre compras e vendas de ações, FIIs e Tesouro Direto.' },
+        { t: '#free-title', box: '.ws-card', title: 'Número da liberdade', text: 'Quanto investir para os rendimentos pagarem os seus gastos de todo mês, e quanto você já tem.' },
         { t: '#boxes', box: '.ws-card', title: 'Caixinhas pessoais', text: 'As suas caixinhas e as da casa em que você é o titular.' },
         { t: '#brokers', box: '.ws-card', title: 'Corretoras', text: 'Saldo de cada corretora, depósitos e saques.' },
       ],
@@ -903,6 +926,7 @@
     CDI_YEAR: CDI_YEAR,
     NOW: NOW,
     dreamPlan: dreamPlan,
+    reserveTarget: reserveTarget,
     startTour: startTour,
     tourDone: tourDone,
     setTourDone: setTourDone,

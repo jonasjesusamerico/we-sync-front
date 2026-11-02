@@ -3,6 +3,21 @@
 Pesquisa feita em **01/11/2026** para os jobs e cálculos que dependem de dados de fora: CDI, salário mínimo,
 Tesouro Direto, cotações de ações/FIIs e proventos. Termos e limites mudam: **reconfirmar antes de implementar**.
 
+## Valores que mudam: verificar periodicamente
+
+Fatos externos, não decisões do produto. Ficam na Configuração geral (admin) **com vigência, fonte e data da última
+verificação** (ADM-10); um valor novo cria uma vigência nova, sem apagar o histórico.
+
+| Valor | Onde é usado | Fonte | Verificado em | Revisar |
+|---|---|---|---|---|
+| Salário mínimo (R$ 1.621,00 em 2026) | Renda mínima da casa (DIV-06), isenções do Educa+/Renda+ | Banco Central, SGS 1619 | 01/11/2026 | todo janeiro |
+| Custódia do Tesouro (0,20% a.a.; Selic isento até R$ 10 mil; Educa+/Renda+) | INV-16 | Tesouro Direto (regulamento) | 01/11/2026 | a cada 6 meses |
+| Taxas da B3 (emolumentos, liquidação) | INV-04 | B3 | **não verificado** (exemplo) | antes da feature 024 e a cada 6 meses |
+| Tabela do IR regressivo (22,5% a 15%) e IOF dos primeiros 30 dias | CX-06, SON-02, `05` | Receita Federal | 31/10/2026 | quando houver mudança na lei |
+| Limites da brapi (plano grátis) e da Alpha Vantage (25/dia) | INV-03, INV-13 | sites dos provedores | 01/11/2026 | antes da feature 024 e a cada 6 meses |
+| Termos de uso e licenças (B3, brapi, Tesouro Transparente ODbL, CVM) | jobs e telas com atribuição | sites das fontes | 01/11/2026 | antes de cada feature que usa a fonte |
+| CDI de exemplo do protótipo (14,9% a.a.) | só o protótipo | — | — | o app usa a série diária do job |
+
 ## Resumo
 
 | Dado | Fonte recomendada | Oficial | Custo / acesso | Automação | Situação |

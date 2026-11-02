@@ -4,7 +4,35 @@ Para retomar o refinamento. Cada pendência traz uma sugestão para facilitar a 
 
 ## Pendências em aberto
 
-Nenhuma pergunta de produto em aberto.
+Nenhuma pergunta de produto em aberto. Ficam como sugestão (a confirmar na feature de cada uma): LIB-02 (taxa na
+configuração geral, reserva fora da conta) e LIB-03.
+
+## Respostas da 18ª rodada (01/11/2026)
+
+| # | Decisão | Regra |
+|---|---|---|
+| L-05 | **Número da liberdade** entra (cartão em Investimentos, pessoal) | LIB-* |
+| L-07 | Reserva = soma dos 6 meses mais caros dos últimos 12 | RSV-02 |
+| L-08 | Prazo da reserva: **12 meses** | RSV-06 |
+| L-09 | Usar a reserva numa emergência fica fora da meta e do padrão | RSV-05 |
+| L-10 | Pague-se primeiro avisa na primeira renda do mês | PAG-03 |
+| — | **Testes do protótipo** ficam em `prototype/tests/` e rodam **inteiros** a cada mudança; quebra em algo não alterado é revista com o usuário | `tests/README.md` |
+
+## Respostas da 17ª rodada (01/11/2026)
+
+| # | Decisão | Regra |
+|---|---|---|
+| K-01 | Sem resposta, o aviso **insiste** (a cada 3 dias) | CX-05 |
+| K-02 | **Desfazer** uma movimentação confirmada, na lista de movimentações | CX-07 |
+| K-03 | Compra esquecida vai para o **mês de origem**; a diferença no acerto já travado vira um **ajuste** no acerto do mês atual (quebra de caixa) | ACE-09 |
+| K-04, K-05 | Excluir conta arquiva a casa; a casa arquivada guarda só totais e percentuais | PRIV-01, PRIV-02 |
+| K-06 | Ex-membro vê **só os valores que competem a ele** | PRIV-03 |
+| K-07 | Mudança que quebra algo: **uma tarefa de adequação para cada projeto** (API, front, app) na mesma feature | D-10 |
+| L-01 | Entram: reserva de emergência, pague-se primeiro, assinaturas; resto no backlog | RSV, PAG, ASS, BKL-08..13 |
+| L-02 | Reserva **sem média aritmética**: valor exato com a **origem explicada**, recalculado todo mês, sugere guardar mais e **nunca** sugere retirar; só sai em emergência | RSV-02..05 |
+| L-03 | Pague-se primeiro aprovado | PAG-01, PAG-02 |
+| L-04 | Assinaturas aprovadas | ASS-01, ASS-02 |
+| L-06 | Dívidas no backlog com prioridade alta | BKL-08 |
 
 ## Respostas da 15ª rodada (01/11/2026)
 
@@ -150,6 +178,23 @@ Nenhuma pergunta de produto em aberto.
 | P-13 | Compras pagas pelo outro não entram na visão pessoal | LAN-04 |
 | P-14 | Início usa a meta pessoal | LAN-05 |
 
+## O que o protótipo mostra desde a 18ª rodada
+
+- **Número da liberdade** em `investimentos.html`, com "Como calculamos?".
+- **Testes** em `prototype/tests/` (164 verificações: 41 cenários × computador/celular × claro/escuro):
+  `npx playwright test -c prototype/tests`.
+
+## O que o protótipo mostra desde a 17ª rodada
+
+- **Reserva de emergência** no topo de "Reserva e sonhos do casal" (`casa.html`): alvo de R$ 15.830 com "De onde vem?",
+  meses cobertos, guardar e **"Usar em emergência"** (motivo obrigatório).
+- **Desfazer** nas movimentações confirmadas de outubro; meses anteriores mostram "mês travado".
+- Aviso de confirmação que **se repete a cada 3 dias**.
+- **Ajuste de setembro** no acerto de outubro (Farmácia de R$ 60 lançada depois), também no Encontro (passo 4) e no
+  resumo de setembro.
+- **Pague-se primeiro** no Início: "Seu salário caiu hoje. Guarde primeiro: R$ 1.200,00".
+- **Assinaturas** em `metas.html` (pessoal): total por mês e por ano, sugestões para confirmar, "Cancelei".
+
 ## O que o protótipo mostra desde a 15ª rodada
 
 - Resgatar do sonho muda o **acerto** ("− resgate do sonho" no total a dividir) e o **padrão de gastos** da casa.
@@ -216,11 +261,9 @@ Nenhuma pergunta de produto em aberto.
 2. **Requisitos formais** em `../we-sync-requirements/docs/features/`, uma feature por vez, na ordem de
    `06-impacto-tecnico.md` (começa pela `004 Front novo: base e acesso`), com o fluxo do projeto
    (`requisitos` → `arquiteto` → `sdd-backend` / `sdd-frontend` → `dev-backend` / `dev-frontend`).
-3. Ao abrir a 004, registrar em `we-sync-requirements`:
-   - que ela **substitui o front** das features 001–003 (os documentos delas ficam como histórico);
-   - **DT-004** (login do front antigo) como `Descartado (front antigo substituído)`;
-   - que o design system de referência passa a ser `prototype/docs/02-design-system.md` (o `CLAUDE.md` de lá aponta
-     para `../we-sync-front/docs/design-system.md`, que é do front antigo).
+3. Feito em 01/11/2026 (16ª rodada): instruções do front (`CLAUDE.md`, `docs/design-system.md`) e agentes do
+   `we-sync-requirements` (fluxo, requisitos, arquiteto, sdd-frontend, dev-frontend) apontam para o protótipo e o
+   Bootstrap; DT-004 descartado. Na 004, o requisito diz que ela **substitui o front** das features 001–003.
 4. **Front novo** em Angular + Bootstrap na `master` do `we-sync-front` (o antigo está na branch `legacy`),
    coordenando o serviço `front` do `docker-compose.yml` da API.
 

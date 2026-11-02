@@ -187,7 +187,7 @@
               <section class="ws-card" aria-labelledby="dreams-title" id="sonhos">
                 <div class="ws-card-head">
                   <div>
-                    <h2 id="dreams-title">Sonhos do casal</h2>
+                    <h2 id="dreams-title">Reserva e sonhos do casal</h2>
                     <div class="ws-card-sub" id="dreams-sub"></div>
                   </div>
                   <button type="button" class="btn btn-soft btn-sm d-inline-flex align-items-center gap-1" id="new-dream"><i data-icon="plus"></i>Novo sonho</button>
@@ -444,6 +444,22 @@
       </div>
     </div>
 
+    <!-- Undo a confirmed movement -->
+    <div class="modal fade" id="undo-modal" tabindex="-1" aria-labelledby="undo-title" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-body">
+            <h2 class="fs-5 fw-bold" id="undo-title">Desfazer a movimentação?</h2>
+            <p class="text-muted mb-0" id="undo-text"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="undo-ok">Desfazer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Rescue from a dream -->
     <div class="modal fade" id="dream-rescue-modal" tabindex="-1" aria-labelledby="dr-rescue-title" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -467,8 +483,9 @@
               </select>
             </div>
             <div>
-              <label class="form-label" for="dr-rescue-note">Para quê? <span class="text-muted">(opcional)</span></label>
-              <input id="dr-rescue-note" class="form-control" maxlength="60" placeholder="Ex.: pagar a fatura da viagem" />
+              <label class="form-label" for="dr-rescue-note" id="dr-rescue-note-label">Para quê? <span class="text-muted">(opcional)</span></label>
+              <input id="dr-rescue-note" class="form-control" maxlength="60" placeholder="Ex.: pagar a fatura da viagem" aria-describedby="dr-rescue-note-error" />
+              <div class="invalid-feedback" id="dr-rescue-note-error">Conte qual é a emergência.</div>
             </div>
           </div>
           <div class="modal-footer">
@@ -572,6 +589,7 @@
           ],
         };
         const boxById = (id) => state.boxes.find((b) => b.id === id);
+        const dreamById = (id) => (id === H.reserve.id ? H.reserve : H.dreams.find((d) => d.id === id));
         const net = (b) => b.invested + Math.round(b.gross * (1 - b.irRate));
         const irOf = (b) => Math.round(b.gross * b.irRate);
         const ceilReal = (c) => Math.ceil(c / 100) * 100;
@@ -590,6 +608,16 @@
           const m = W.houseMonth(parts.length ? parts : null);
           m.dreamRescue = dr ? dr.amount : 0;
           m.spent = m.grossTotal - m.dreamRescue;
+          // ACE-09: a purchase registered in a settled month changes that month's numbers, not its settlement; the
+          // difference is carried to this settlement. Amanda paid R$ 60 more in September, so she deposits less.
+          const adj = H.lateAdjust;
+          if (adj) {
+            const favorP = adj.by === H.partner.name ? adj.amount : -adj.amount;
+            let signed = m.deposit.from === H.partner.name ? m.deposit.amount : -m.deposit.amount;
+            signed -= favorP;
+            m.deposit = signed >= 0 ? { from: H.partner.name, amount: signed } : { from: H.me.name, amount: -signed };
+            m.adjust = { label: 'Ajuste de ' + adj.month, favorP: favorP };
+          }
           return m;
         }
 
@@ -642,7 +670,7 @@
             items.push(
               '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2"/></svg>' +
                 '<div class="flex-grow-1"><strong>O resgate de ' + rescueText(r) + ' foi sacado?</strong>' +
-                '<div class="small text-muted mb-2">Ele já entrou no acerto como provisório. No app real, este aviso chega no dia seguinte.</div>' +
+                '<div class="small text-muted mb-2">Ele já entrou no acerto como provisório. No app real, o aviso chega no dia seguinte e se repete a cada 3 dias até alguém responder.</div>' +
                 '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="rescue-ok">Sim, foi sacado</button>' +
                 '<button type="button" class="btn btn-ghost btn-sm" data-act="rescue-no">Não resgatei</button></div></div></div>',
             );
@@ -652,7 +680,7 @@
             items.push(
               '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2"/></svg>' +
                 '<div class="flex-grow-1"><strong>' + d.from + ' depositou ' + brl(d.amount) + ' na ' + W.escapeHtml(boxById(d.boxId).name) + '?</strong>' +
-                '<div class="small text-muted mb-2">No app real, ' + d.from + ' recebe este aviso no dia seguinte.</div>' +
+                '<div class="small text-muted mb-2">No app real, ' + d.from + ' recebe este aviso no dia seguinte, e ele se repete a cada 3 dias até a resposta.</div>' +
                 '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="deposit-ok">Sim, depositado</button>' +
                 '<button type="button" class="btn btn-ghost btn-sm" data-act="deposit-no">Não depositei</button></div></div></div>',
             );
@@ -661,8 +689,8 @@
           if (ds) {
             items.push(
               '<div class="ws-callout">' + W.icon('clock') +
-                '<div class="flex-grow-1"><strong>' + ds.who + ' guardou ' + brl(ds.amount) + ' no sonho ' + W.escapeHtml(ds.dream.name) + '?</strong>' +
-                '<div class="small text-muted mb-2">Fica provisório até a confirmação. No app real, este aviso chega no dia seguinte.</div>' +
+                '<div class="flex-grow-1"><strong>' + ds.who + ' guardou ' + brl(ds.amount) + (ds.dream.kind === 'reserve' ? ' na reserva de emergência' : ' no sonho ' + W.escapeHtml(ds.dream.name)) + '?</strong>' +
+                '<div class="small text-muted mb-2">Fica provisório até a confirmação. No app real, o aviso chega no dia seguinte e se repete a cada 3 dias até alguém responder.</div>' +
                 '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="dream-ok">Sim, guardei</button>' +
                 '<button type="button" class="btn btn-ghost btn-sm" data-act="dream-no">Não guardei</button></div></div></div>',
             );
@@ -671,8 +699,8 @@
           if (dr && dr.status !== 'confirmed') {
             items.push(
               '<div class="ws-callout">' + W.icon('clock') +
-                '<div class="flex-grow-1"><strong>' + dr.to + ' resgatou ' + brl(dr.amount) + ' do sonho ' + W.escapeHtml(dr.dream.name) + '?</strong>' +
-                '<div class="small text-muted mb-2">Fica provisório até a confirmação. No app real, este aviso chega no dia seguinte.</div>' +
+                '<div class="flex-grow-1"><strong>' + dr.to + ' resgatou ' + brl(dr.amount) + (dr.dream.kind === 'reserve' ? ' da reserva de emergência' : ' do sonho ' + W.escapeHtml(dr.dream.name)) + '?</strong>' +
+                '<div class="small text-muted mb-2">Fica provisório até a confirmação. No app real, o aviso chega no dia seguinte e se repete a cada 3 dias até alguém responder.</div>' +
                 '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primary btn-sm" data-act="dream-rescue-ok">Sim, resgatei</button>' +
                 '<button type="button" class="btn btn-ghost btn-sm" data-act="dream-rescue-no">Não resgatei</button></div></div></div>',
             );
@@ -726,6 +754,7 @@
           const boxRescue = m.rescue - m.dreamRescue;
           if (boxRescue) sub += ' − resgate ' + brl(boxRescue) + (state.rescue.status === 'provisional' ? ' (provisório)' : '');
           if (m.dreamRescue) sub += ' − resgate do sonho ' + brl(m.dreamRescue) + (state.dreamRescue.status === 'confirmed' ? '' : ' (provisório)');
+          if (m.adjust) sub += ' · ' + m.adjust.label + ' (compra lançada depois do acerto)';
           $('settle-sub').textContent = sub;
 
           const d = state.deposit;
@@ -741,7 +770,7 @@
           if (state.archived) {
             html = '<div class="ws-callout is-warning"><strong>Acerto pausado: a casa está arquivada.</strong></div>';
           } else if (state.mode === 'transfer') {
-            const owes = shouldP - m.paidP;
+            const owes = shouldP - m.paidP - (m.adjust ? m.adjust.favorP : 0);
             html =
               '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg><div>' +
               (owes > 0 ? '<strong>Amanda transfere ' + brl(owes) + ' para Jonas</strong>' : '<strong>Jonas transfere ' + brl(-owes) + ' para Amanda</strong>') +
@@ -761,7 +790,11 @@
             html =
               '<div class="ws-callout"><svg class="ws-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>' +
               '<div class="flex-grow-1 min-w-0"><strong>' + from + ' deposita ' + brl(m.deposit.amount) + ' na caixinha</strong>' +
-              '<div class="small text-muted mb-2">Assim a contribuição de cada um fica exatamente ' + pct(m.shareMe) + ' / ' + pct(m.shareP) + '.</div>' +
+              '<div class="small text-muted mb-2">Assim a contribuição de cada um fica exatamente ' + pct(m.shareMe) + ' / ' + pct(m.shareP) + '.' +
+              (m.adjust
+                ? ' Inclui o <strong>' + m.adjust.label.toLowerCase() + '</strong>: ' + W.escapeHtml(H.lateAdjust.description) + ' de ' + brl(H.lateAdjust.amount) + ' paga por ' +
+                  H.lateAdjust.by + ' em ' + W.formatDate(H.lateAdjust.date) + ', lançada depois de setembro estar acertado.'
+                : '') + '</div>' +
               (d
                 ? '<div class="small">Registrado como provisório na ' + W.escapeHtml(boxById(d.boxId).name) + '.</div>'
                 : '<div class="d-flex flex-wrap gap-2 align-items-center"><label class="visually-hidden" for="deposit-box">Caixinha</label>' +
@@ -845,6 +878,8 @@
         }
 
         // ---------- Movements ----------
+        // Movements of the current month can be undone after confirmation (CX-08); older months are locked.
+        const UNDOABLE = /^(d|ds|dr|res\d+)$/;
         function renderMovements() {
           $('movements').innerHTML =
             state.movements
@@ -856,6 +891,9 @@
                   mv.date + ' · ' + mv.who + ' · ' + mv.note + '</div></div><div class="d-flex flex-column align-items-end gap-1"><span class="ws-tx-amount">' +
                   (mv.kind === 'in' ? '+' : '−') + brl(mv.amount) + '</span>' +
                   (mv.status === 'confirmed' ? '<span class="ws-status is-paid">Confirmado</span>' : '<span class="ws-status is-provisional">Provisório</span>') +
+                  (mv.status === 'confirmed' && UNDOABLE.test(mv.id)
+                    ? '<button type="button" class="btn btn-link btn-sm p-0" data-act="mv-undo" data-mv="' + mv.id + '">Desfazer</button>'
+                    : mv.status === 'confirmed' ? '<small class="text-muted">mês travado</small>' : '') +
                   '</div></li>',
               )
               .join('') || '<li class="ws-empty">Nenhuma movimentação.</li>';
@@ -888,13 +926,41 @@
         }
 
         // ---------- Dreams (SON-*) ----------
+        // Emergency reserve (RSV-*): target from the most expensive months, explained on screen; never suggests
+        // taking money out of it.
+        function reserveHtml(m) {
+          const r = H.reserve;
+          const t = W.reserveTarget(H.history, r.months, H.ceiling);
+          r.target = t.target;
+          const p = W.dreamPlan(r, m.shareMe);
+          const monthly = t.target / r.months;
+          const covers = (r.balance / monthly).toFixed(1).replace('.', ',');
+          const used = t.used.map((u, i) => (i >= t.used.length - t.repeated ? u[0] + ' (repetido)' : u[0]) + ' ' + brl(u[1])).join(' + ');
+          return '<div class="col-12"><div class="ws-dream ws-reserve">' +
+            '<div class="d-flex align-items-start gap-2 mb-2"><span class="ws-cat" style="--cat: var(--ws-success)">' + W.icon('shield') + '</span>' +
+            '<div class="flex-grow-1 min-w-0"><div class="ws-tx-title">Reserva de emergência</div>' +
+            '<div class="ws-tx-meta">' + W.escapeHtml(r.bank) + ' · conta conjunta · ' + r.cdi + '% do CDI · completar até ' + p.dueLabel + '</div></div>' +
+            '<span class="ws-dream-state is-' + p.status.key + '">' + (p.status.key === 'done' ? 'Completa' : p.status.label) + '</span></div>' +
+            '<div class="d-flex justify-content-between small mb-1"><span class="ws-tabular"><strong>' + brl(r.balance) + '</strong> de ' + brl(t.target) + '</span><span>cobre ' + covers + ' meses</span></div>' +
+            '<div class="progress mb-3" role="progressbar" aria-label="Reserva de emergência: ' + p.pct + '% completa" aria-valuenow="' + p.pct + '" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:' + p.pct + '%"></div></div>' +
+            (p.status.key === 'done'
+              ? '<p class="small mb-2">Reserva completa. Se os gastos subirem, o valor sobe junto e o app pede para guardar a diferença.</p>'
+              : '<div class="small mb-1">Guardar por mês: <strong class="ws-tabular">' + brl(p.need) + '</strong> · ' + H.me.name + ' ' + brl(p.needMe) + ' · ' + H.partner.name + ' ' + brl(p.needP) + '</div>') +
+            '<details class="small mb-3"><summary class="text-muted">De onde vem ' + brl(t.target) + '?</summary><p class="mt-2 mb-1">É quanto a casa gastaria em ' + r.months +
+            ' meses ruins seguidos: a ' + t.rule + '. Uma média esconderia os meses caros, e é neles que a reserva faz falta.</p><p class="mb-1 ws-tabular">' + used + ' = <strong>' + brl(t.target) + '</strong></p>' +
+            '<p class="mb-0 text-muted">Recalculado todo mês. Se o valor subir, o app sugere guardar a diferença; se cair, nada muda: dinheiro da reserva só sai numa emergência.</p></details>' +
+            '<div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-soft btn-sm d-inline-flex align-items-center gap-1" data-act="dream-save" data-dream="' + r.id + '">' + W.icon('plus') + 'Guardar</button>' +
+            '<button type="button" class="btn btn-ghost btn-sm d-inline-flex align-items-center gap-1" data-act="dream-rescue" data-dream="' + r.id + '">' + W.icon('alert') + 'Usar em emergência</button></div>' +
+            '</div></div>';
+        }
+
         function renderDreams(m) {
           const plans = H.dreams.map((d) => ({ d: d, p: W.dreamPlan(d, m.shareMe) }));
           const saved = H.dreams.reduce((a, d) => a + d.balance, 0);
           $('dreams-sub').textContent = H.dreams.length
             ? H.dreams.length + (H.dreams.length === 1 ? ' sonho' : ' sonhos') + ' · ' + brl(saved) + ' guardados'
             : 'Um objetivo em comum, com valor e data';
-          $('dreams').innerHTML =
+          $('dreams').innerHTML = reserveHtml(m) +
             plans
               .map(
                 ({ d, p }) =>
@@ -965,20 +1031,20 @@
             state.deposit = null;
             state.movements = state.movements.filter((x) => x.id !== 'd');
           } else if (act === 'dream-save') {
-            openSave(H.dreams.find((d) => d.id === Number(btn.dataset.dream)));
+            openSave(dreamById(btn.dataset.dream === H.reserve.id ? H.reserve.id : Number(btn.dataset.dream)));
             return;
           } else if (act === 'dream-ok') {
             const ds = state.dreamSave;
             ds.dream.balance += ds.amount;
             state.movements.find((x) => x.id === 'ds').status = 'confirmed';
             state.dreamSave = null;
-            W.toast('Guardado no sonho');
+            W.toast(ds.dream.kind === 'reserve' ? 'Guardado na reserva' : 'Guardado no sonho');
           } else if (act === 'dream-no') {
             state.dreamSave = null;
             state.movements = state.movements.filter((x) => x.id !== 'ds');
             W.toast('Lançamento desfeito');
           } else if (act === 'dream-rescue') {
-            openRescue(H.dreams.find((d) => d.id === Number(btn.dataset.dream)));
+            openRescue(dreamById(btn.dataset.dream === H.reserve.id ? H.reserve.id : Number(btn.dataset.dream)));
             return;
           } else if (act === 'dream-rescue-ok') {
             const dr = state.dreamRescue;
@@ -990,6 +1056,13 @@
             state.dreamRescue = null;
             state.movements = state.movements.filter((x) => x.id !== 'dr');
             W.toast('Resgate desfeito');
+          } else if (act === 'mv-undo') {
+            undoTarget = btn.dataset.mv;
+            const mv = state.movements.find((x) => x.id === undoTarget);
+            $('undo-text').textContent = (mv.kind === 'in' ? 'Depósito' : 'Resgate') + ' de ' + brl(mv.amount) + ' · ' + (mv.boxName || boxById(mv.boxId).name) + ' · ' + mv.date + '.' +
+              (undoTarget === 'd' ? ' O acerto de outubro volta a ficar em aberto e Amanda é avisada.' : ' O saldo volta a ser o de antes.');
+            undoModal.show();
+            return;
           } else if (act === 'adjust') {
             openAdjust(boxById(Number(btn.dataset.box)));
             return;
@@ -1079,6 +1152,31 @@
           W.toast('Saldo ajustado');
         });
 
+        // Undo a confirmed movement (CX-08): reverses its effect on the balances and on the settlement.
+        const undoModal = new bootstrap.Modal($('undo-modal'));
+        let undoTarget = null;
+        $('undo-ok').addEventListener('click', function () {
+          const id = undoTarget;
+          if (id === 'd') {
+            boxById(state.deposit.boxId).invested -= state.deposit.amount;
+            state.deposit = null;
+          } else if (id.startsWith('res')) {
+            state.rescue.parts.forEach((p) => (boxById(p.boxId).invested += p.amount));
+            state.rescue = null;
+            state.movements = state.movements.filter((x) => !x.id.startsWith('res'));
+          } else if (id === 'ds') {
+            const mv = state.movements.find((x) => x.id === 'ds');
+            dreamById(mv.dreamId).balance -= mv.amount;
+          } else if (id === 'dr') {
+            state.dreamRescue.dream.balance += state.dreamRescue.amount;
+            state.dreamRescue = null;
+          }
+          state.movements = state.movements.filter((x) => x.id !== id);
+          undoModal.hide();
+          render();
+          W.toast(id === 'd' ? 'Depósito desfeito. Outubro voltou para Em aberto.' : 'Movimentação desfeita');
+        });
+
         // New dream: each dream gets its own box (SON-01).
         const dreamModal = new bootstrap.Modal($('dream-modal'));
         const drTarget = bindMoney($('dr-target'), 0);
@@ -1128,7 +1226,7 @@
           if (amount <= 0) return;
           state.movements = state.movements.filter((x) => x.id !== 'ds');
           state.dreamSave = { dream: saving, who: $('save-who').value, amount: amount };
-          state.movements.unshift({ id: 'ds', date: today, kind: 'in', boxName: 'Sonho: ' + saving.name, who: state.dreamSave.who, amount: amount, note: 'Guardado para o sonho', status: 'provisional' });
+          state.movements.unshift({ id: 'ds', dreamId: saving.id, date: today, kind: 'in', boxName: (saving.kind === 'reserve' ? '' : 'Sonho: ') + saving.name, who: state.dreamSave.who, amount: amount, note: saving.kind === 'reserve' ? 'Guardado na reserva' : 'Guardado para o sonho', status: 'provisional' });
           saveModal.hide();
           render();
           W.toast('Registrado como provisório');
@@ -1141,8 +1239,15 @@
         let rescuing = null;
         function openRescue(dream) {
           rescuing = dream;
-          $('dr-rescue-text').textContent = dream.name + ' tem ' + brl(dream.balance) + ' guardados. O resgate abate do total do mês a dividir e do que ' +
-            'quem recebe pagou, e fica fora da meta e do padrão: as compras pagas com o sonho não contam duas vezes.';
+          const reserve = dream.kind === 'reserve';
+          $('dr-rescue-title').textContent = reserve ? 'Usar a reserva de emergência' : 'Resgatar do sonho';
+          $('dr-rescue-note-label').innerHTML = reserve ? 'Qual é a emergência?' : 'Para quê? <span class="text-muted">(opcional)</span>';
+          $('dr-rescue-note').placeholder = reserve ? 'Ex.: conserto do carro' : 'Ex.: pagar a fatura da viagem';
+          $('dr-rescue-text').textContent = reserve
+            ? 'A reserva tem ' + brl(dream.balance) + '. Ela é só para emergências: o app nunca sugere tirar dinheiro dela. O resgate abate do total do mês a dividir e fica fora da meta e do padrão.'
+            : dream.name + ' tem ' + brl(dream.balance) + ' guardados. O resgate abate do total do mês a dividir e do que ' +
+              'quem recebe pagou, e fica fora da meta e do padrão: as compras pagas com o sonho não contam duas vezes.';
+          $('dr-rescue-note').classList.remove('is-invalid');
           rescueValue.set(dream.balance);
           $('dr-rescue-error').hidden = true;
           rescueModal.show();
@@ -1155,9 +1260,12 @@
           $('dr-rescue-value').classList.toggle('is-invalid', !ok);
           if (!ok) return;
           const note = $('dr-rescue-note').value.trim();
+          const needsReason = rescuing.kind === 'reserve' && !note;
+          $('dr-rescue-note').classList.toggle('is-invalid', needsReason);
+          if (needsReason) return;
           state.movements = state.movements.filter((x) => x.id !== 'dr');
           state.dreamRescue = { dream: rescuing, to: $('dr-rescue-to').value, amount: amount };
-          state.movements.unshift({ id: 'dr', date: today, kind: 'out', boxName: 'Sonho: ' + rescuing.name, who: state.dreamRescue.to, amount: amount, note: note || 'Resgate do sonho', status: 'provisional' });
+          state.movements.unshift({ id: 'dr', date: today, kind: 'out', boxName: (rescuing.kind === 'reserve' ? '' : 'Sonho: ') + rescuing.name, who: state.dreamRescue.to, amount: amount, note: note || 'Resgate do sonho', status: 'provisional' });
           $('dream-rescue-form').reset();
           rescueModal.hide();
           render();
@@ -1168,16 +1276,16 @@
         // Sample of the closed month. In the app the meeting is built by the API with the same routine of goals
         // and patterns (D-05).
         const SEPT = {
-          label: 'setembro 2026', name: 'setembro', total: 270000, paidMe: 193930, paidP: 76070, goal: 300000, std: 263333, prev: 275000,
+          label: 'setembro 2026', name: 'setembro', total: 276000, paidMe: 193930, paidP: 82070, goal: 300000, std: 263333, prev: 275000,
           settle: { from: 'Amanda', amount: 38000, box: 'Caixinha da Amanda', date: '30/09/2026' },
           wins: [
-            ['check', 'Ficaram <strong>R$ 300,00 abaixo da meta</strong> da casa.'],
+            ['check', 'Ficaram <strong>R$ 240,00 abaixo da meta</strong> da casa.'],
             ['check', 'Mercado: R$ 610,00, <strong>8% abaixo</strong> da média dos últimos meses.'],
             ['check', 'O acerto foi feito e confirmado ainda dentro do mês.'],
           ],
           watch: [
             ['trendUp', '<strong>Delivery</strong> cresce há 3 meses seguidos, cerca de 12% ao mês.'],
-            ['alert', '<strong>Farmácia</strong> fora do normal: R$ 210,00 (o comum é perto de R$ 95,00).'],
+            ['alert', '<strong>Farmácia</strong> fora do normal: R$ 270,00 (o comum é perto de R$ 95,00).'],
           ],
         };
         const MEET_STEPS = ['Como foi', 'O que deu certo', 'Pontos de atenção', 'Acerto', 'Próximo mês'];
@@ -1194,7 +1302,7 @@
               '<ul class="ws-meet-list">' +
               '<li>' + W.icon('target') + '<span>' + brl(S.goal - S.total) + ' abaixo da meta da casa (' + brl(S.goal) + ')</span></li>' +
               '<li>' + W.icon('chart') + '<span>' + brl(Math.abs(vsStd)) + (vsStd > 0 ? ' acima' : ' abaixo') + ' do padrão (' + brl(S.std) + ', a média real da casa)</span></li>' +
-              '<li>' + W.icon('calendar') + '<span>' + brl(S.prev - S.total) + ' a menos que agosto</span></li></ul>' +
+              '<li>' + W.icon('calendar') + '<span>' + brl(Math.abs(S.prev - S.total)) + (S.prev >= S.total ? ' a menos' : ' a mais') + ' que agosto</span></li></ul>' +
               ask('o que pesou mais neste mês? Foi algo planejado?');
           }
           if (i === 1) return list(S.wins, 'var(--ws-success)') + ask('o que vocês querem repetir em outubro?');
@@ -1209,7 +1317,8 @@
               '<ul class="ws-meet-list">' +
               '<li>' + W.icon('users') + '<span>Divisão pela renda: ' + H.me.name + ' ' + pct(shareMe) + ' · ' + H.partner.name + ' ' + pct(1 - shareMe) + '</span></li>' +
               '<li>' + W.icon('receipt') + '<span>' + H.me.name + ' pagou ' + brl(S.paidMe) + ' · ' + H.partner.name + ' pagou ' + brl(S.paidP) + '</span></li>' +
-              '<li style="color:var(--ws-success)">' + W.icon('check') + '<span class="text-body">' + S.settle.from + ' depositou ' + brl(S.settle.amount) + ' na ' + S.settle.box + ' em ' + S.settle.date + ' · <strong>acertado</strong></span></li></ul>' +
+              '<li style="color:var(--ws-success)">' + W.icon('check') + '<span class="text-body">' + S.settle.from + ' depositou ' + brl(S.settle.amount) + ' na ' + S.settle.box + ' em ' + S.settle.date + ' · <strong>acertado</strong></span></li>' +
+              lateLine() + '</ul>' +
               ask('a divisão continua justa para os dois? Mudou alguma renda?');
           }
           const dreams = H.dreams
@@ -1253,6 +1362,14 @@
           W.toast('Bom encontro! Até o próximo mês.');
         });
 
+        // ACE-09: a purchase registered after the month was settled.
+        function lateLine() {
+          const a = H.lateAdjust;
+          if (!a) return '';
+          return '<li style="color:var(--ws-warning)">' + W.icon('alert') + '<span class="text-body">' + W.escapeHtml(a.description) + ' de ' + brl(a.amount) + ' (' + a.by + ', ' +
+            W.formatDate(a.date) + ') foi lançada depois do acerto. Setembro foi recalculado; a diferença entrou no acerto de outubro como <strong>ajuste de setembro</strong>.</span></li>';
+        }
+
         function renderClosed() {
           const S = SEPT;
           $('closed-title').textContent = S.name.charAt(0).toUpperCase() + S.name.slice(1) + ' está fechado e acertado';
@@ -1260,7 +1377,8 @@
           $('closed-cards').innerHTML =
             card('Gastos da casa', '<div class="ws-meet-big">' + brl(S.total) + '</div><div class="small text-muted">Meta ' + brl(S.goal) + ' · padrão ' + brl(S.std) + '</div>') +
             card('Quem pagou', '<div class="small">' + H.me.name + ' ' + brl(S.paidMe) + '</div><div class="small">' + H.partner.name + ' ' + brl(S.paidP) + '</div>') +
-            card('Acerto', '<div class="small">' + S.settle.from + ' depositou ' + brl(S.settle.amount) + ' na ' + S.settle.box + '</div><span class="ws-status is-paid mt-2">Confirmado em ' + S.settle.date + '</span>');
+            card('Acerto', '<div class="small">' + S.settle.from + ' depositou ' + brl(S.settle.amount) + ' na ' + S.settle.box + '</div><span class="ws-status is-paid mt-2">Confirmado em ' + S.settle.date + '</span>' +
+              (H.lateAdjust ? '<ul class="ws-meet-list small mt-3">' + lateLine() + '</ul>' : ''));
         }
 
         const views = { month: $('month-view'), meet: $('meet-view'), closed: $('closed-view') };

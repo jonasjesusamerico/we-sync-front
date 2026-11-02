@@ -59,6 +59,26 @@
             </div>
           </div>
 
+          <!-- Freedom number (LIB-*): personal only. -->
+          <section class="ws-card mb-3" aria-labelledby="free-title" id="liberdade">
+            <div class="ws-card-head">
+              <div>
+                <h2 id="free-title">Número da liberdade</h2>
+                <div class="ws-card-sub" id="free-sub"></div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between small mb-1"><span class="ws-tabular" id="free-have"></span><span id="free-pct"></span></div>
+            <div class="progress mb-3" role="progressbar" id="free-bar" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar"></div></div>
+            <div class="small mb-1" id="free-income"></div>
+            <details class="small">
+              <summary class="text-muted">Como calculamos?</summary>
+              <p class="mt-2 mb-1" id="free-how"></p>
+              <p class="mb-0 text-muted">
+                É um horizonte de longo prazo, não uma meta para cobrar. A taxa de retirada fica na configuração geral (4% é a referência dos
+                estudos; no Brasil há quem use 5%).
+              </p>
+            </details>
+          </section>
           <div class="row g-3 mb-3">
             <div class="col-12 col-xl-5">
               <section class="ws-card h-100" aria-labelledby="dist-title">
@@ -374,6 +394,9 @@
           const a = W.assetOf(p.ticker);
           if (a) p.close = a.close;
         });
+        // Freedom number inputs (sample): personal spending standard and the safe withdrawal rate from the admin.
+        const PERSONAL_STANDARD = 380000;
+        const WITHDRAWAL_RATE = 0.04;
         const incomes = [
           // Dividends fall into the broker's cash balance.
           { ticker: 'MXRF11', kind: 'Rendimento', date: '2026-10-15', value: 5000, broker: 1 },
@@ -422,6 +445,25 @@
           $('k-result').className = 'ws-kpi-value ws-tabular ' + (total >= applied ? 'text-success-ws' : 'text-danger-ws');
           $('k-result-pct').textContent = pctText((total - applied) / applied) + ' sobre o aplicado';
           $('k-income').textContent = brl(incomes.filter((i) => i.date.startsWith('2026')).reduce((a, i) => a + i.value, 0));
+
+          // Freedom number (LIB-01..LIB-03): invested money (without the emergency reserve, which is only for
+          // emergencies) whose yearly withdrawal at the safe rate pays the personal spending standard forever.
+          const reserveNet = boxes.filter((b) => b.name === 'Reserva de emergência').reduce((a, b) => a + boxNet(b), 0);
+          const invested = total - reserveNet;
+          const freedom = Math.round((PERSONAL_STANDARD * 12) / WITHDRAWAL_RATE);
+          const freePct = (invested / freedom) * 100;
+          const monthlyIncome = Math.round(incomes.reduce((a, i) => a + i.value, 0) / 12);
+          $('free-sub').textContent = 'Quanto investir para os rendimentos pagarem os seus gastos de todo mês: ' + brl(freedom);
+          $('free-have').innerHTML = '<strong>' + brl(invested) + '</strong> de ' + brl(freedom);
+          $('free-pct').textContent = freePct.toFixed(1).replace('.', ',') + '%';
+          $('free-bar').setAttribute('aria-label', 'Número da liberdade: ' + Math.round(freePct) + '% atingido');
+          $('free-bar').setAttribute('aria-valuenow', Math.round(freePct));
+          $('free-bar').firstElementChild.style.width = Math.max(1, Math.min(100, freePct)) + '%';
+          $('free-income').textContent = 'Os proventos (média de ' + brl(monthlyIncome) + ' por mês) já pagam ' +
+            ((monthlyIncome / PERSONAL_STANDARD) * 100).toFixed(1).replace('.', ',') + '% dos seus gastos do mês.';
+          $('free-how').textContent = 'Seu padrão de gastos é ' + brl(PERSONAL_STANDARD) + ' por mês (' + brl(PERSONAL_STANDARD * 12) + ' por ano). Retirando ' +
+            WITHDRAWAL_RATE * 100 + '% ao ano, o dinheiro tende a durar para sempre: ' + brl(PERSONAL_STANDARD * 12) + ' ÷ ' + WITHDRAWAL_RATE * 100 + '% = ' + brl(freedom) +
+            ' (o mesmo que o gasto do mês × ' + Math.round(12 / WITHDRAWAL_RATE) + '). Conta tudo o que você investiu, menos a reserva de emergência.';
 
           $('dist').innerHTML = classes
             .map(

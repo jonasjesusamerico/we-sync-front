@@ -38,6 +38,8 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
 ## Início (dashboard)
 - Saudação, seletor de mês.
 - Aviso **"Novidade: Sonhos do casal"** com "Fazer o tour" (abre a casa no tour da novidade) e "Agora não".
+- **Pague-se primeiro**: "Seu salário caiu hoje. Guarde primeiro: R$ X", com a sua parte da reserva e de cada sonho;
+  "Guardar agora" (vai para a casa) e "Depois".
 - Cartão azul: gasto do mês, comparação com o mês anterior, barra da **meta do mês** (link para Metas).
 - Indicadores: já pago, a pagar, nº de compras, média por dia.
 - **Disponível na conta**: renda − já pago (pessoal + casa, 100% do que a pessoa pagou); a pagar; sobra prevista.
@@ -88,6 +90,12 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
 - **Caixinhas**: nome, instituição, titular, % do CDI, aplicado, rendimento, IR estimado, líquido; "Ajustar saldo";
   "Nova caixinha" (nome, instituição, em nome de Jonas/Amanda/Conta conjunta, % CDI).
 - **Compras compartilhadas** do mês com "pago por".
+- **Reserva de emergência** (primeiro item de "Reserva e sonhos do casal"): alvo pela soma dos meses mais caros, "De
+  onde vem R$ X?" com a conta, meses de vida cobertos, guardar por mês, "Guardar" e "Usar em emergência" (pede o
+  motivo).
+- **Movimentações**: as confirmadas do mês atual têm **Desfazer** (com confirmação; desfazer o depósito reabre o
+  acerto); as de meses anteriores mostram "mês travado".
+- **Acerto** com o **ajuste de setembro** (compra lançada depois de setembro estar acertado).
 - **Sonhos do casal**: cada sonho com valor, mês alvo, caixinha (instituição, titular, % CDI), barra de progresso,
   situação (Adiantado / No ritmo / Atrasado / Concluído), **guardar por mês** com a parte de cada um pela renda e a
   previsão no ritmo atual. "Guardar" (quem e quanto, sugere a parte da pessoa) registra um depósito **provisório**
@@ -119,6 +127,9 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
   os meses, tendência e frequência.
 - **Metas por tópico**: barra da projeção contra o limite; criar/remover.
 
+- **Assinaturas** (só no escopo pessoal): total por mês e por ano; contas fixas, confirmadas e sugeridas ("É
+  assinatura" / "Não é"); "Cancelei" mostra a economia no ano.
+
 ## Investimentos
 - Indicadores: patrimônio, aplicado (com taxas), resultado (R$ e %), proventos do ano.
 - Distribuição: ações, FIIs, Tesouro Direto, caixinhas.
@@ -138,6 +149,9 @@ categorias, formas de pagamento e situações reais da API). Usuário de exemplo
 - **Novo provento** (modal): ativo, tipo (Dividendo, JCP, Rendimento), data, corretora onde caiu, valor.
 - No **Início**, "Disponível na conta" desconta o "Investido no mês"; em **Compras**, um cartão mostra o
   lançamento "Investimento de outubro".
+
+- **Número da liberdade** (Investimentos, pessoal): quanto investir para os rendimentos pagarem os gastos (gasto do
+  mês × 300), quanto já foi atingido (sem a reserva), quanto os proventos já pagam e "Como calculamos?".
 
 ## Configuração geral (admin)
 - Só aparece no menu (grupo **Sistema**) para contas admin; aviso de que não mostra dados de usuários.

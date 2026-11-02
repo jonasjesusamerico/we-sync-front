@@ -1,6 +1,6 @@
 # 01 — Visão geral e decisões
 
-Estado em **01/11/2026** (15ª rodada). Este documento resume o que foi decidido na conversa de refinamento do novo front-end do
+Estado em **01/11/2026** (18ª rodada). Este documento resume o que foi decidido na conversa de refinamento do novo front-end do
 we-sync, por que, e onde cada coisa está.
 
 ## Objetivo
@@ -45,8 +45,10 @@ Não precisa instalar nada nem subir servidor. Nada é salvo: ao recarregar a p�
 | D-05 | Regras de negócio e cálculos (divisão, acerto, metas, padrões) devem ficar **centralizados na API**, numa rotina única que recebe o **escopo** (pessoal ou casa). | Pedido do usuário ("código centralizado para evitar problemas"); também serve ao app Android (`we-sync-app`). |
 | D-06 | Features grandes passam pelo fluxo formal de requisitos (`we-sync-requirements`) antes de virar código. | Regra do projeto; "Nossa casa" mexe no isolamento de dados entre usuários. |
 | D-07 | **Tudo do front antigo é desconsiderado** (features 001–003 no front, débito DT-004). O front novo sai só do protótipo; o que essas features entregaram na API continua valendo. | Pedido do usuário (12ª rodada). |
-| D-08 | As features são implementadas **na ordem de `06-impacto-tecnico.md`** (hoje 004–027): pequenas, pessoal antes da casa, base antes do que depende dela. | Pedido do usuário: "a ordem mais correta, para não complicar a implementação". |
+| D-08 | As features são implementadas **na ordem de `06-impacto-tecnico.md`** (hoje 004–030): pequenas, pessoal antes da casa, base antes do que depende dela. | Pedido do usuário: "a ordem mais correta, para não complicar a implementação". |
 | D-09 | **Limite de escopo**: ideia nova vai para o backlog (BKL), salvo se simplificar algo ou fizer o casal usar mais o app. | 13ª rodada: 21+ features e nada em uso ainda. |
+| D-10 | Mudança que **quebra** algo em outro projeto (API, front ou app Android) traz, **na mesma feature**, uma tarefa de adequação para cada projeto afetado. | 17ª rodada (K-07). |
+| D-11 | O protótipo tem **testes Playwright permanentes** (`prototype/tests/`), rodados inteiros a cada mudança; se algo não alterado quebrar, a mudança é revista com o usuário. | 18ª rodada: pedido do usuário. |
 
 ## Decisões de produto (resumo — detalhes em `04-regras-de-negocio.md`)
 
@@ -125,6 +127,17 @@ Não precisa instalar nada nem subir servidor. Nada é salvo: ao recarregar a p�
     mês (J-07).
 22. 15ª rodada: o resgate do sonho funciona como o resgate da caixinha (RES-05) e fica fora da meta e do padrão
     (SON-10); o modo viagem, quando vier, automatiza isso. Sem perguntas de produto em aberto.
+23. 16ª rodada: revisão externa da documentação (outro agente) aproveitada: instruções do front e agentes passaram
+    a exigir Bootstrap e o protótipo, sem Angular Material; rascunho da tabela de permissões da casa (`06`); valores
+    externos com fonte e data de verificação (ADM-10, `08`); pendências de provisório, meses fechados, LGPD e app
+    Android (K-01..K-07). Ideias de livros de finanças aguardando resposta (L-01..L-06).
+24. 17ª rodada: aviso de confirmação insiste; desfazer movimentação confirmada; compra esquecida vai para o mês de
+    origem e a diferença vira ajuste no acerto atual; privacidade (excluir conta, casa arquivada, ex-membro só vê o
+    que é dele); D-10. Entraram **reserva de emergência** (soma dos meses mais caros, com a origem explicada, nunca
+    sugere retirar), **pague-se primeiro** e **assinaturas**; dívidas e outras ideias no backlog. Ordem: 004–029.
+25. 18ª rodada: número da liberdade aprovado (cartão em Investimentos); reserva confirmada (6 meses mais caros, 12
+    meses de prazo, uso fora da meta); pague-se primeiro na primeira renda. Testes do protótipo passam a ser
+    permanentes em `prototype/tests/` (D-11). Ordem: 004–030.
 
 Documentos seguintes:
 [02 Design system](02-design-system.md) ·

@@ -1,6 +1,6 @@
 # 04 — Regras de negócio
 
-Todas as regras combinadas até a 13ª rodada de refinamento (P, N, I, A, F, C, G, H, J) e a pesquisa de fontes (`08-fontes-de-dados.md`). Legenda: **(decidido)** = confirmado pelo usuário;
+Todas as regras combinadas até a 13ª rodada de refinamento (P, N, I, A, F, C, G, H, J, K, L) e a pesquisa de fontes (`08-fontes-de-dados.md`). Legenda: **(decidido)** = confirmado pelo usuário;
 **(sugestão)** = proposta ainda não confirmada (ver `07-pendencias-e-proximos-passos.md`).
 Fórmulas e exemplos numéricos em `05-calculos.md`.
 
@@ -110,6 +110,10 @@ Fórmulas e exemplos numéricos em `05-calculos.md`.
 - **ACE-07** Depois de acertado, o mês fica **travado**; editar compra compartilhada dele exige reabrir o acerto.
   *(decidido)*
 - **ACE-08** **Qualquer um dos dois** pode reabrir um mês acertado, e o outro recebe aviso. *(decidido)*
+- **ACE-09** **Compra lançada num mês já acertado** (ex.: esqueceu uma compra de setembro): é lançada **no mês de
+  origem**, que é recalculado (padrão, metas, Encontro); o acerto travado **não muda**, e a diferença que a compra
+  causaria nele vira um **"Ajuste de setembro"** no acerto do mês atual, como uma quebra de caixa. *(decidido)*
+  Exemplo em `05`, seção 2e.
 
 ## CX — Caixinhas da casa
 
@@ -120,9 +124,14 @@ Fórmulas e exemplos numéricos em `05-calculos.md`.
 - **CX-03** Depósitos e resgates são **movimentações**, não compras: não entram nos gastos nem nos gráficos.
 - **CX-04** Total da caixinha da casa = soma das caixinhas.
 - **CX-05** Depósito e resgate entram como **provisórios**; **no dia seguinte** a pessoa recebe um aviso para
-  confirmar ("foi depositado/sacado?"). "Sim" confirma; "Não" desfaz o lançamento. *(decidido)*
+  confirmar ("foi depositado/sacado?"). "Sim" confirma; "Não" desfaz o lançamento. Sem resposta, o valor continua
+  provisório (conta no acerto) e o aviso **se repete a cada 3 dias**; o mês só fica "Acertado" com a confirmação.
+  *(decidido)*
 - **CX-06** O rendimento é **estimado** pelo CDI diário com **IR regressivo** (e IOF nos primeiros 30 dias). Botão
   **"Ajustar saldo"** para igualar ao extrato do banco. *(decidido)*
+- **CX-07** **Desfazer** uma movimentação já confirmada: na lista de movimentações, enquanto o mês não estiver
+  travado; desfaz o efeito no saldo e no acerto. Desfazer o depósito do acerto **reabre o acerto** (ACE-08, com aviso
+  ao outro). Em mês travado, só reabrindo o mês. Vale para depósitos, resgates, sonhos e reserva. *(decidido)*
 
 ## RES — Padrão de gastos e resgate
 
@@ -255,6 +264,9 @@ Fórmulas e exemplos numéricos em `05-calculos.md`.
   consultas diárias contra o limite do plano; rodar o job manualmente; **pedidos de cadastro** dos usuários (aprovar /
   recusar). Os **títulos do Tesouro entram sozinhos** pelo arquivo oficial (o analista só pausa). Mudanças vão para o
   histórico. *(decidido)*
+- **ADM-10** **Valores externos** (salário mínimo, custódia do Tesouro, taxas da B3, limites dos provedores) são
+  guardados **com vigência, fonte e data da última verificação**; a tela mostra quando revisar. Mudar cria uma
+  vigência nova, sem sobrescrever o histórico. Lista em `08`, "Valores que mudam". *(decidido)*
 
 ## SON — Sonhos do casal
 
@@ -287,6 +299,70 @@ da casa (`06`).
   a dividir** e do **"pago" de quem recebeu** — e fica **fora da meta e do padrão** (gasto do mês = compras −
   resgates de sonho). Assim as compras pagas com o sonho não contam duas vezes: o sonho já foi enchido pelos dois
   na proporção da renda. *(decidido)*
+
+## RSV — Reserva de emergência
+
+Ideia de *Me Poupe!* (Nathalia Arcuri), Morgan Housel e Dave Ramsey: a reserva vem antes de tudo.
+
+- **RSV-01** A reserva é um **tipo especial de sonho** (mesma caixinha reservada, guardar por mês, previsão),
+  **uma da casa** e **uma pessoal** (em Investimentos). *(decidido)*
+- **RSV-02** **Valor alvo**: quanto se gastaria em **N meses ruins seguidos** = soma dos **N meses mais caros dos
+  últimos 12** (N padrão 6, ajustável de 3 a 12). Com menos de N meses de histórico, o mais caro se repete para
+  completar; sem histórico, meta × N. Não é média: a média esconde os meses caros, que são os que a reserva precisa
+  cobrir. *(decidido)*
+- **RSV-03** A tela **explica a origem** do valor ("De onde vem R$ X?"): a regra e os meses usados, com valores.
+  Mostra também quantos **meses de vida** a reserva cobre (saldo ÷ (alvo ÷ N)). *(decidido)*
+- **RSV-04** **Recalculada todo mês**. Se o alvo subir, o app sugere guardar a diferença; se cair, nada muda: o app
+  **nunca sugere tirar** dinheiro da reserva. *(decidido)*
+- **RSV-05** Dinheiro da reserva **só sai numa emergência**: "Usar em emergência" pede o motivo (obrigatório); fica
+  fora da sugestão de resgate (RES) e do acerto, como os sonhos (SON-07); o efeito no mês segue o SON-10 (fora da
+  meta e do padrão). *(decidido)*
+- **RSV-06** A reserva tem prazo para ficar completa: **12 meses** (ajustável), usado no "guardar por mês".
+  *(decidido)*
+
+## PAG — Pague-se primeiro
+
+Ideia de *O Homem Mais Rico da Babilônia* (George Clason) e Ramit Sethi.
+
+- **PAG-01** No dia em que uma renda cai na conta, o app avisa (Início e notificação): "Seu salário caiu. Guarde
+  primeiro: R$ X" com a **sua parte** do "guardar por mês" da reserva e de cada sonho. *(decidido)*
+- **PAG-02** É só uma sugestão: "Guardar agora" leva aos sonhos; "Depois" esconde até o próximo recebimento. Nada é
+  movido sozinho. *(decidido)*
+- **PAG-03** Com mais de uma renda no mês, o aviso vem na **primeira** que cair; as seguintes só lembram o que
+  faltar. *(decidido)*
+
+## ASS — Assinaturas
+
+Ideia de David Bach (o "fator cafezinho") e Ramit Sethi.
+
+- **ASS-01** Em Metas e relatórios (**só pessoal**), um cartão soma as **assinaturas**: total por mês e **por ano**.
+  *(decidido)*
+- **ASS-02** **Contas fixas** (REP) entram sozinhas; uma compra com a **mesma descrição por 3 meses seguidos**
+  aparece como **sugestão** ("É assinatura" / "Não é"; "Não é" não volta a sugerir). *(decidido)*
+- **ASS-03** "Cancelei" marca a assinatura como cancelada; ela sai do total a partir do mês seguinte e o app mostra a
+  economia no ano. *(sugestão)*
+
+## LIB — Número da liberdade
+
+Ideia de Gustavo Cerbasi (*Dinheiro: os segredos de quem tem*), Morgan Housel e do movimento FIRE.
+
+- **LIB-01** Cartão em **Investimentos**, só **pessoal**: quanto investir para que os rendimentos paguem os gastos de
+  todo mês, para sempre. *(decidido)*
+- **LIB-02** **Número da liberdade** = padrão de gastos pessoal × 12 ÷ **taxa de retirada** (padrão 4% ao ano, na
+  configuração geral) = gasto do mês × 300. Conta tudo o que foi investido, **menos a reserva de emergência**.
+  *(decidido o cartão; taxa na configuração geral e reserva fora = sugestão)*
+- **LIB-03** Mostra o quanto já foi atingido e quanto dos gastos do mês os **proventos** (média dos últimos 12
+  meses) já pagam, com "Como calculamos?". Horizonte de longo prazo, sem alertas nem cobrança. *(sugestão)*
+
+## PRIV — Privacidade (LGPD)
+
+- **PRIV-01** **Excluir a conta** estando numa casa: a casa é **arquivada** como em "sair"; as rendas da pessoa são
+  **apagadas**; as compras compartilhadas dela ficam para o outro só com data, valor e "ex-membro" (sem descrição).
+  *(decidido)*
+- **PRIV-02** A casa arquivada guarda, de cada mês, só os **totais e percentuais congelados** da divisão, não a
+  lista de rendas. *(decidido)*
+- **PRIV-03** O **ex-membro** vê **só os valores que competem a ele**: a parte dele em cada mês, o que pagou, as
+  próprias compras compartilhadas e o acerto dele. Não vê as rendas do outro. *(decidido)*
 
 ## ENC — Encontro do mês
 
@@ -344,3 +420,12 @@ Ideia inspirada no "money date" dos livros de finanças para casais: uma convers
   depois. O modo viagem **automatiza** o SON-10: as compras da viagem já ficam marcadas como pagas pelo sonho e o
   app sugere resgatar o total delas. O SON-10 continua sendo a base, porque vale também para sonhos que não são
   viagem (ex.: o sofá) e para quem não usar o modo viagem.
+- **BKL-08** **Dívidas**: cadastro (cartão, empréstimo, financiamento) com juros e plano de quitação por **bola de
+  neve** ou **avalanche** (Dave Ramsey). **Prioridade alta**: próxima candidata quando a ordem atual andar.
+- **BKL-09** **Patrimônio líquido** (investimentos + caixinhas + sonhos − dívidas), evolução mensal (*Pai Rico, Pai
+  Pobre*). Depende do BKL-08.
+- **BKL-10** **Potes / 50-30-20**: grupo Essencial, Estilo de vida ou Futuro em cada categoria e comparação com a
+  referência (T. Harv Eker, Elizabeth Warren).
+- **BKL-11** **Custo em horas de vida** na compra (Vicki Robin), opcional.
+- **BKL-12** **Lista de desejos com espera** (48 h / 30 dias); pode virar sonho.
+- **BKL-13** **Conquistas e sequências** (*Hábitos Atômicos*): "6 meses dentro da meta", "reserva completa".

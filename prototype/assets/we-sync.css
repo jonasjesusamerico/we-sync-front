@@ -1855,3 +1855,6 @@ section:has(> #daily-bars) {
   background: var(--ws-surface-2);
   border-radius: 0 var(--ws-radius-sm) var(--ws-radius-sm) 0;
 }
+.ws-dream .ws-tx-title {
+  white-space: normal;
+}

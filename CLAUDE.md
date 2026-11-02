@@ -1,8 +1,20 @@
 # we-sync-front
 
-Front-end do we-sync em Angular 22 + Angular Material. A API (Go) fica em `../we-sync-api`. Requisitos, ADRs e
-specs ficam em `../we-sync-requirements` (`docs/features/NNN-nome/`). O contrato da API de cada feature está em
-`2-contrato.md`: não divirja dele.
+Front-end do we-sync em **Angular 22 + Bootstrap 5.3**, com design system próprio. A API (Go) fica em
+`../we-sync-api`. Requisitos, ADRs e specs ficam em `../we-sync-requirements` (`docs/features/NNN-nome/`). O
+contrato da API de cada feature está em `2-contrato.md`: não divirja dele.
+
+## Front novo (leia antes de tudo)
+
+- O front está sendo **refeito do zero** a partir do protótipo em `prototype/` (decisão de 01/11/2026). A
+  referência de telas, regras e visual são `prototype/index.html` e `prototype/docs/` (01 decisões, 02 design
+  system, 03 telas, 04 regras de negócio, 05 cálculos, 06 ordem das features). Só regras marcadas "(decidido)" são
+  aprovadas; o que entra em cada feature é o que o `1-requisitos.md` dela aprovar.
+- **Sem Angular Material/CDK.** Visual e componentes seguem `prototype/docs/02-design-system.md`; o inventário e os
+  aprendizados ficam em `docs/design-system.md`.
+- O código atual de `src/` e `e2e/` é o **front legado** (Angular Material, features 001–003), guardado também na
+  branch `legacy`. Ele será substituído pela feature 004: não o use como padrão de UI nem o estenda. As seções
+  "Dados da API" e "Segurança" abaixo continuam valendo como regras; os caminhos de arquivo citados são do legado.
 
 ## Verificação (rode antes de dar uma tarefa por pronta)
 
@@ -14,7 +26,7 @@ npm run format:check
 npm run e2e        # Playwright, API simulada (uma vez: npx playwright install chromium)
 ```
 
-## Convenções (ADR-01 da feature 001)
+## Convenções de Angular (ADR-01 da feature 001; o ADR da 004 confirma ou troca)
 
 - **Standalone** em tudo. Nada de NgModules.
 - **Zoneless**: toda mudança que aparece na tela passa por um `signal` (ou `toSignal`). Componentes com
@@ -24,49 +36,43 @@ npm run e2e        # Playwright, API simulada (uma vez: npx playwright install c
 - Formulários: Reactive Forms tipados (`NonNullableFormBuilder`) com validadores próprios em `shared/validators`.
 - HTTP: `provideHttpClient(withFetch(), withInterceptors([...]))`, interceptors funcionais.
 - Rotas: `loadComponent` (lazy) por tela, guards funcionais.
-- UI: Angular Material com tema M3 próprio (feature 002). Fonte Roboto e ícones `material-symbols` empacotados (sem CDN, por
-  causa da CSP).
+- UI: Bootstrap 5.3 + componentes próprios do design system do protótipo (`.ws-*`). Bootstrap, fontes e ícones
+  (SVG próprios) empacotados, sem CDN, por causa da CSP. Nada de Angular Material, CDK, `ng-bootstrap` ou outra lib
+  de componentes sem ADR.
 - Idioma: textos pt-BR direto nos templates, sem i18n. `LOCALE_ID = 'pt-BR'`, `DEFAULT_CURRENCY_CODE = 'BRL'`.
 - Textos de interface ficam em constantes exportadas, e os testes usam a mesma constante.
 - Testes: Vitest para unitários (`*.spec.ts` ao lado do arquivo); Playwright para e2e (`e2e/`).
 
-## Tema e layout (feature 002)
+## Tema e layout
 
-- **Cores só em `src/styles.scss`** (tokens `--app-*` e `mat.*-overrides`). Componentes usam só `var(--mat-sys-*)` e
-  `var(--app-*)`. Hex, `rgb()`, `hsl()` ou nome de cor fora dele é proibido. Para conferir (deve dar vazio):
-  `grep -rEn '#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(' src/app --include='*.scss'`.
-- `src/styles/_theme-colors.scss` é gerado por `ng g @angular/material:theme-color` (comando no `README.md`) e
-  **não** é editado à mão (está no `.prettierignore`).
-- Breakpoint em dois lugares que se referenciam: `src/app/layout/breakpoints.ts` (`WIDE_LAYOUT_QUERY`) e
-  `src/styles/_breakpoints.scss` (`$wide`). Nos `.scss`: `@use '<caminho>/styles/breakpoints' as bp;` e
-  `@media (min-width: bp.$wide)`. Mude os dois juntos.
-- **Tela interna nova**: rota filha do Shell em `app.routes.ts`; começa com `<app-page-header [title]="…" />`;
-  conteúdo em `mat-card`; host em coluna com `gap: 24px` e `min-width: 0` (ver `features/home/home.page.ts`). O item
-  entra em `NAV_ITEMS` (`layout/nav-items.ts`) junto com a rota, nunca antes (RN-02 da 002).
-- **Telas de visitante** ficam sob o `AuthLayoutComponent` (rota `''` de baixo do `app.routes.ts`, **depois** do
-  Shell: um pai `''` com filhas casa `/` mesmo sem filha).
-- Textos do layout em `layout/layout.messages.ts`, sem import do Angular (o `e2e/support/texts.ts` reexporta).
+- **Cores só como tokens** num único arquivo global (no protótipo: `--ws-*` em `prototype/assets/we-sync.css`, tema
+  claro e escuro por `data-bs-theme`). Componentes usam só os tokens; hex, `rgb()`, `hsl()` ou nome de cor fora
+  desse arquivo é proibido.
+- Layout do protótipo: menu lateral a partir de `lg` (992 px) e menu inferior com botão "+" abaixo disso; topo com
+  ajuda (tour), tema, notificações e conta.
+- Toda tela nova traz o seu **tour guiado** (TOUR-02 em `prototype/docs/04-regras-de-negocio.md`).
+- Os detalhes de estrutura (onde ficam tokens, breakpoints, shell e rotas) são definidos no ADR da feature 004 e
+  registrados aqui quando ela for implementada.
 
-## Dados da API (feature 003)
+## Dados da API (regras da feature 003, valem para o front novo)
 
 - **Datas sem hora** (`"YYYY-MM-DD"` da API, `dd/mm/aaaa` na tela) só por `features/purchases/plain-date.ts`. Nunca
-  `new Date(string)`, `toISOString()` nem `DatePipe` sobre elas. O `mat-datepicker` usa o `BrDateAdapter`.
+  `new Date(string)`, `toISOString()` nem `DatePipe` sobre elas.
 - **Dinheiro** em centavos inteiros por `features/purchases/money.ts` (`parseBrl`, `formatBrl`, `centsToApi`,
   `apiToCents`). Nada de `parseFloat` nem conta com `float`; a resposta vem sem zeros à direita (`"10"`, `"89.9"`).
 - **Estado de lista no endereço** (mês, filtros, página) com um normalizador puro (`list-query.ts`): todo valor do
   endereço passa por ele antes de chegar à API, e toda ação da tela só navega.
 - **Sem cache** de dados fora das páginas: os serviços de API não guardam estado, e cada página carrega o que usa
   (`switchMap` + `takeUntilDestroyed`).
-- `DateAdapter`, `MAT_DATE_FORMATS`, `MatPaginatorIntl` e `MatDatepickerIntl` em pt-BR ficam nos `providers` da rota
-  da feature (`purchases.routes.ts`), não no `app.config.ts`.
 - Formulário que avisa antes de sair: `canDeactivate: [unsavedChangesGuard]` na rota e `hasUnsavedChanges()` na
   página (fotografia do valor, `beforeunload` no `host`). Sem sessão, o guard libera.
 
 ## Design system
 
-`docs/design-system.md`: inventário dos componentes e padrões de UI reutilizáveis e aprendizados sobre as libs
-(com versão e fonte). Consulte antes de pesquisar como uma lib funciona ou de criar um componente; registre lá o
-que aprender e o que criar.
+- Visual (tokens, componentes, padrões de interação): `prototype/docs/02-design-system.md`.
+- `docs/design-system.md`: inventário dos componentes e padrões de UI reutilizáveis do front novo e aprendizados
+  sobre as libs (com versão e fonte). Consulte antes de pesquisar como uma lib funciona ou de criar um componente;
+  registre lá o que aprender e o que criar.
 
 ## Segurança
 
@@ -75,7 +81,7 @@ que aprender e o que criar.
 - O campo `message` dos erros da API **nunca** aparece na tela. O front decide pelo status (e pelo `code`).
 - O `Authorization` só vai para `apiBaseUrl` e nunca para `/auth/*`.
 
-## Estrutura
+## Estrutura (front legado, até a feature 004)
 
 ```
 src/
