@@ -6,11 +6,11 @@ contrato da API de cada feature está em `2-contrato.md`: não divirja dele.
 
 ## Front novo (leia antes de tudo)
 
-- O front está sendo **refeito do zero** a partir do protótipo em `prototype/` (decisão de 01/11/2026). A
-  referência de telas, regras e visual são `prototype/index.html` e `prototype/docs/` (01 decisões, 02 design
+- O front está sendo **refeito do zero** a partir do protótipo em `../we-sync-requirements/prototype/` (decisão de 01/11/2026). A
+  referência de telas, regras e visual são `../we-sync-requirements/prototype/index.html` e `../we-sync-requirements/prototype/docs/` (01 decisões, 02 design
   system, 03 telas, 04 regras de negócio, 05 cálculos, 06 ordem das features). Só regras marcadas "(decidido)" são
   aprovadas; o que entra em cada feature é o que o `1-requisitos.md` dela aprovar.
-- **Sem Angular Material/CDK.** Visual e componentes seguem `prototype/docs/02-design-system.md`; o inventário e os
+- **Sem Angular Material/CDK.** Visual e componentes seguem `../we-sync-requirements/prototype/docs/02-design-system.md`; o inventário e os
   aprendizados ficam em `docs/design-system.md`.
 - O código atual de `src/` e `e2e/` é o **front legado** (Angular Material, features 001–003), guardado também na
   branch `legacy`. Ele será substituído pela feature 004: não o use como padrão de UI nem o estenda. As seções
@@ -45,12 +45,12 @@ npm run e2e        # Playwright, API simulada (uma vez: npx playwright install c
 
 ## Tema e layout
 
-- **Cores só como tokens** num único arquivo global (no protótipo: `--ws-*` em `prototype/assets/we-sync.css`, tema
+- **Cores só como tokens** num único arquivo global (no protótipo: `--ws-*` em `../we-sync-requirements/prototype/assets/we-sync.css`, tema
   claro e escuro por `data-bs-theme`). Componentes usam só os tokens; hex, `rgb()`, `hsl()` ou nome de cor fora
   desse arquivo é proibido.
 - Layout do protótipo: menu lateral a partir de `lg` (992 px) e menu inferior com botão "+" abaixo disso; topo com
   ajuda (tour), tema, notificações e conta.
-- Toda tela nova traz o seu **tour guiado** (TOUR-02 em `prototype/docs/04-regras-de-negocio.md`).
+- Toda tela nova traz o seu **tour guiado** (TOUR-02 em `../we-sync-requirements/prototype/docs/04-regras-de-negocio.md`).
 - Os detalhes de estrutura (onde ficam tokens, breakpoints, shell e rotas) são definidos no ADR da feature 004 e
   registrados aqui quando ela for implementada.
 
@@ -69,7 +69,7 @@ npm run e2e        # Playwright, API simulada (uma vez: npx playwright install c
 
 ## Design system
 
-- Visual (tokens, componentes, padrões de interação): `prototype/docs/02-design-system.md`.
+- Visual (tokens, componentes, padrões de interação): `../we-sync-requirements/prototype/docs/02-design-system.md`.
 - `docs/design-system.md`: inventário dos componentes e padrões de UI reutilizáveis do front novo e aprendizados
   sobre as libs (com versão e fonte). Consulte antes de pesquisar como uma lib funciona ou de criar um componente;
   registre lá o que aprender e o que criar.

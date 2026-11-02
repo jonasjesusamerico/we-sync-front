@@ -5,14 +5,15 @@ objetivo é não pesquisar duas vezes a mesma coisa.
 
 ## Front novo: Angular + Bootstrap, sem Angular Material
 
-Desde 01/11/2026 o front está sendo refeito do zero. A referência visual e de produto é o **protótipo**:
+Desde 01/11/2026 o front está sendo refeito do zero. A referência visual e de produto é o **protótipo**, que mora no
+`we-sync-requirements` (o requisito é o dono dele):
 
-- `prototype/index.html` — telas clicáveis (abrir no navegador, roda offline).
-- `prototype/docs/02-design-system.md` — **fonte dos tokens, componentes e padrões de interação** (cores `--ws-*`
+- `../we-sync-requirements/prototype/index.html` — telas clicáveis (abrir no navegador, roda offline).
+- `../we-sync-requirements/prototype/docs/02-design-system.md` — **fonte dos tokens, componentes e padrões de interação** (cores `--ws-*`
   claro/escuro, tipografia, layout, componentes `.ws-*`, tour guiado, formatos de dinheiro e data).
-- `prototype/assets/we-sync.css` e `prototype/assets/app.js` — implementação de referência dos tokens, componentes,
+- `../we-sync-requirements/prototype/assets/we-sync.css` e `../we-sync-requirements/prototype/assets/app.js` — implementação de referência dos tokens, componentes,
   ícones SVG e do tour (o Angular reproduz o resultado, não copia o código de protótipo sem revisão).
-- `prototype/docs/03-telas.md` e `04-regras-de-negocio.md` — o que cada tela faz e as regras com IDs.
+- `../we-sync-requirements/prototype/docs/03-telas.md` e `04-regras-de-negocio.md` — o que cada tela faz e as regras com IDs.
 
 Regras:
 
@@ -27,7 +28,7 @@ Regras:
 - Sem CDN: Bootstrap, fontes e ícones vêm empacotados (CSP). Os ícones do protótipo são SVG próprios.
 - Breakpoints do Bootstrap; o protótipo troca o menu inferior pelo lateral em `lg` (992 px) e ajusta detalhes
   abaixo de `sm` (576 px).
-- Toda tela nova traz o seu **tour guiado** (TOUR-02 em `prototype/docs/04-regras-de-negocio.md`), a partir da
+- Toda tela nova traz o seu **tour guiado** (TOUR-02 em `../we-sync-requirements/prototype/docs/04-regras-de-negocio.md`), a partir da
   feature que criar o tour.
 
 ## Como usar este arquivo
