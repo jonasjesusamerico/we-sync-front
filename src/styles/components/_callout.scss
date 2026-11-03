@@ -1,0 +1,25 @@
+.ws-callout {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border-radius: var(--ws-radius-sm);
+  background: var(--ws-primary-soft);
+  color: var(--ws-text);
+}
+.ws-callout > .ws-icon {
+  color: var(--ws-primary);
+  margin-top: 2px;
+}
+.ws-callout.is-warning {
+  background: var(--ws-warning-soft);
+}
+.ws-callout.is-warning > .ws-icon {
+  color: var(--ws-warning);
+}
+.ws-callout.is-success {
+  background: var(--ws-success-soft);
+}
+.ws-callout.is-success > .ws-icon {
+  color: var(--ws-success);
+}

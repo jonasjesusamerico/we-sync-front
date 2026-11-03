@@ -1,0 +1,82 @@
+<button
+  #trigger
+  type="button"
+  class="ws-user-btn"
+  id="ws-user-btn"
+  aria-haspopup="menu"
+  [attr.aria-expanded]="open()"
+  aria-controls="ws-user-menu-list"
+  (click)="toggle()"
+  (keydown)="onButtonKeydown($event)"
+>
+  <span class="ws-avatar">
+    @if (user()) {
+      {{ initials() }}
+    } @else {
+      <ws-icon name="user" />
+    }
+  </span>
+  @if (user(); as current) {
+    <span class="ws-user-name">{{ current.name }}</span>
+  }
+  <!-- The accessible name keeps the visible initials and name (WCAG 2.5.3, CA-34) and ends with the purpose. -->
+  <span class="visually-hidden">&ngsp;{{ texts.LABEL_ACCOUNT_MENU }}</span>
+  <ws-icon name="chevD" class="d-none d-lg-inline" />
+</button>
+<div class="dropdown-menu" [class.show]="open()">
+  <div class="px-2 py-1">
+    @if (user(); as current) {
+      <div class="fw-bold text-truncate">{{ current.name }}</div>
+      <div class="small text-muted text-truncate">{{ current.email }}</div>
+    } @else {
+      <div class="small text-muted">{{ texts.MSG_USER_UNAVAILABLE }}</div>
+    }
+  </div>
+  <hr class="dropdown-divider" />
+  <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -->
+  <ul
+    id="ws-user-menu-list"
+    role="menu"
+    aria-labelledby="ws-user-btn"
+    (keydown)="onMenuKeydown($event)"
+  >
+    <li role="none">
+      <button
+        #item
+        type="button"
+        class="dropdown-item"
+        role="menuitem"
+        tabindex="-1"
+        wsSoon
+        [wsSoonLabel]="texts.LABEL_MY_PROFILE"
+      >
+        <ws-icon name="user" />{{ texts.LABEL_MY_PROFILE }}
+      </button>
+    </li>
+    <li role="none">
+      <button
+        #item
+        type="button"
+        class="dropdown-item"
+        role="menuitem"
+        tabindex="-1"
+        wsSoon
+        [wsSoonLabel]="texts.LABEL_SETTINGS"
+      >
+        <ws-icon name="sliders" />{{ texts.LABEL_SETTINGS }}
+      </button>
+    </li>
+    <li role="none">
+      <button
+        #item
+        type="button"
+        class="dropdown-item"
+        role="menuitem"
+        tabindex="-1"
+        (click)="logout()"
+      >
+        <ws-icon name="logout" />{{ texts.LABEL_LOGOUT }}
+      </button>
+    </li>
+  </ul>
+</div>

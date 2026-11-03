@@ -1,0 +1,22 @@
+// Global styles (feature 004, ADR-03). Bootstrap's compiled CSS is loaded before this file (angular.json).
+@use 'styles/tokens';
+@use 'styles/bootstrap-bridge';
+@use 'styles/base';
+@use 'styles/components/buttons';
+@use 'styles/components/forms';
+@use 'styles/components/icon';
+@use 'styles/components/brand';
+@use 'styles/components/layout';
+@use 'styles/components/sidebar';
+@use 'styles/components/topbar';
+@use 'styles/components/bottomnav';
+@use 'styles/components/user-menu';
+@use 'styles/components/avatar';
+@use 'styles/components/page-head';
+@use 'styles/components/card';
+@use 'styles/components/callout';
+@use 'styles/components/alert';
+@use 'styles/components/soon';
+@use 'styles/components/strength';
+@use 'styles/components/auth';
+@use 'styles/components/tx';

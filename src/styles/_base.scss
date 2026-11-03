@@ -1,0 +1,25 @@
+body {
+  background: var(--ws-bg);
+  color: var(--ws-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ws-primary) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.ws-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

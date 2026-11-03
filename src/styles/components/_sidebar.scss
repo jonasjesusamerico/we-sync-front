@@ -1,0 +1,83 @@
+.ws-sidebar {
+  display: none;
+  width: var(--ws-sidebar-w);
+  flex: none;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.25rem 1rem;
+  background: var(--ws-surface);
+  border-right: 1px solid var(--ws-border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.ws-nav-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--ws-muted);
+  padding: 1.25rem 0.75rem 0.4rem;
+}
+.ws-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  min-height: 44px;
+  border-radius: var(--ws-radius-sm);
+  color: var(--ws-muted);
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+button.ws-nav-link {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  // The label never breaks; when label and "em breve" do not fit in the 256 px sidebar, the tag goes to a second
+  // line, aligned to the right (the prototype has no "em breve" item to show this case).
+  flex-wrap: wrap;
+  row-gap: 0.15rem;
+  white-space: nowrap;
+}
+.ws-nav-link:hover {
+  background: var(--ws-surface-2);
+  color: var(--ws-text);
+}
+.ws-nav-link[aria-current='page'] {
+  background: var(--ws-primary-soft);
+  color: var(--ws-primary);
+}
+.ws-sidebar-card {
+  margin-top: auto;
+  padding: 1rem;
+  border-radius: var(--ws-radius);
+  color: var(--ws-on-hero);
+  background: linear-gradient(140deg, var(--ws-hero-from), var(--ws-hero-to));
+}
+.ws-sidebar-card p {
+  color: var(--ws-on-hero-muted);
+  font-size: 0.85rem;
+  margin: 0.25rem 0 0.75rem;
+}
+.ws-sidebar-card .btn {
+  --bs-btn-bg: var(--ws-on-hero);
+  --bs-btn-color: var(--ws-hero-to);
+  --bs-btn-hover-bg: var(--ws-hero-btn-hover-bg);
+  --bs-btn-hover-color: var(--ws-hero-to);
+  --bs-btn-active-bg: var(--ws-hero-btn-hover-bg);
+  --bs-btn-active-color: var(--ws-hero-to);
+  --bs-btn-padding-y: 0.45rem;
+  font-size: 0.85rem;
+}
+
+@media (min-width: 992px) {
+  .ws-sidebar {
+    display: flex;
+  }
+}

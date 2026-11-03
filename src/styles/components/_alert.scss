@@ -1,0 +1,27 @@
+.alert {
+  --bs-alert-color: var(--ws-text);
+  --bs-alert-border-color: transparent;
+  --bs-alert-border-radius: var(--ws-radius-sm);
+  --bs-alert-link-color: var(--ws-primary);
+}
+.alert .alert-link {
+  color: var(--ws-primary);
+}
+.alert-danger {
+  --bs-alert-bg: var(--ws-danger-soft);
+}
+.alert-danger > .ws-icon {
+  color: var(--ws-danger);
+}
+.alert-success {
+  --bs-alert-bg: var(--ws-success-soft);
+}
+.alert-success > .ws-icon {
+  color: var(--ws-success);
+}
+.alert-primary {
+  --bs-alert-bg: var(--ws-primary-soft);
+}
+.alert-primary > .ws-icon {
+  color: var(--ws-primary);
+}

@@ -1,0 +1,84 @@
+// Design tokens (feature 004, ADR-03 rule 1): the only file of the project with color values.
+// Values from prototype/assets/we-sync.css and prototype/docs/02-design-system.md, plus the tokens of the
+// 3-sdd-frontend (TF-03) that replace the loose colors of the prototype.
+
+:root,
+[data-bs-theme='light'] {
+  --ws-primary: #1565d8;
+  --ws-primary-strong: #0f4fb0;
+  --ws-primary-soft: #eaf2fe;
+  --ws-primary-contrast: #ffffff;
+  --ws-primary-rgb: 21, 101, 216;
+  --ws-primary-strong-rgb: 15, 79, 176;
+
+  --ws-bg: #f4f7fc;
+  --ws-surface: #ffffff;
+  --ws-surface-2: #f8fafd;
+  --ws-border: #e3e9f2;
+  --ws-text: #1b2638;
+  --ws-muted: #5b6b82;
+
+  --ws-success: #0e7a50;
+  --ws-success-soft: #e3f6ee;
+  --ws-warning: #9a5b00;
+  --ws-warning-soft: #fff3dc;
+  --ws-danger: #c22f3c;
+  --ws-danger-soft: #fde8ea;
+  --ws-danger-rgb: 194, 47, 60;
+
+  --ws-cat-food: #1565d8;
+  --ws-cat-transport: #0b9693;
+  --ws-cat-home: #7c5cfc;
+  --ws-cat-health: #e2557a;
+  --ws-cat-education: #e8960c;
+  --ws-cat-leisure: #22a06b;
+
+  --ws-hero-from: #1565d8;
+  --ws-hero-to: #0b3f94;
+  --ws-on-hero: #ffffff;
+  --ws-on-hero-muted: #e8f0fb;
+  --ws-hero-overlay: rgba(255, 255, 255, 0.16);
+  --ws-hero-btn-hover-bg: #eaf2fe;
+
+  --ws-shadow: 0 1px 2px rgba(16, 38, 77, 0.04), 0 8px 24px rgba(16, 38, 77, 0.06);
+  --ws-shadow-lg: 0 12px 40px rgba(16, 38, 77, 0.14);
+  --ws-shadow-preview: 0 30px 60px rgba(0, 0, 0, 0.3);
+  --ws-radius: 18px;
+  --ws-radius-sm: 12px;
+  --ws-sidebar-w: 256px;
+}
+
+[data-bs-theme='dark'] {
+  --ws-primary: #5b9bff;
+  --ws-primary-strong: #8ab8ff;
+  --ws-primary-soft: #16294a;
+  --ws-primary-contrast: #0b1424;
+  --ws-primary-rgb: 91, 155, 255;
+  --ws-primary-strong-rgb: 138, 184, 255;
+
+  --ws-bg: #0c1422;
+  --ws-surface: #141e30;
+  --ws-surface-2: #1a2639;
+  --ws-border: #26344c;
+  --ws-text: #e7eef8;
+  --ws-muted: #9aaac0;
+
+  --ws-success: #4cd39a;
+  --ws-success-soft: #123326;
+  --ws-warning: #f3b64a;
+  --ws-warning-soft: #3a2a0c;
+  --ws-danger: #ff7c86;
+  --ws-danger-soft: #3d1a1f;
+  --ws-danger-rgb: 255, 124, 134;
+
+  --ws-hero-from: #1a4fa8;
+  --ws-hero-to: #0c2a5e;
+  --ws-on-hero: #ffffff;
+  --ws-on-hero-muted: #e8f0fb;
+  --ws-hero-overlay: rgba(255, 255, 255, 0.16);
+  --ws-hero-btn-hover-bg: #eaf2fe;
+
+  --ws-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
+  --ws-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --ws-shadow-preview: 0 30px 60px rgba(0, 0, 0, 0.3);
+}

@@ -1,0 +1,30 @@
+// Bootstrap variables pointed at the --ws-* tokens (ADR-03 rule 2). Loaded after bootstrap.min.css.
+
+:root,
+[data-bs-theme] {
+  --bs-body-font-family:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --bs-body-bg: var(--ws-bg);
+  --bs-body-color: var(--ws-text);
+  --bs-secondary-color: var(--ws-muted);
+  --bs-border-color: var(--ws-border);
+  --bs-border-radius: var(--ws-radius-sm);
+  --bs-link-color: var(--ws-primary);
+  --bs-link-hover-color: var(--ws-primary-strong);
+  --bs-link-color-rgb: var(--ws-primary-rgb);
+  --bs-link-hover-color-rgb: var(--ws-primary-strong-rgb);
+  --bs-focus-ring-color: color-mix(in srgb, var(--ws-primary) 35%, transparent);
+  --bs-primary: var(--ws-primary);
+  --bs-primary-rgb: var(--ws-primary-rgb);
+  --bs-danger-rgb: var(--ws-danger-rgb);
+  --bs-emphasis-color: var(--ws-text);
+  --bs-tertiary-bg: var(--ws-surface-2);
+  --bs-form-invalid-color: var(--ws-danger);
+  --bs-form-invalid-border-color: var(--ws-danger);
+  --bs-heading-color: inherit;
+}
+
+.text-muted,
+.text-body-secondary {
+  color: var(--ws-muted) !important;
+}

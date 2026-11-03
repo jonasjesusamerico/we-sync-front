@@ -1,0 +1,23 @@
+.ws-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  color: var(--ws-text);
+  text-decoration: none;
+}
+.ws-brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--ws-primary-contrast);
+  background: linear-gradient(135deg, var(--ws-hero-from), var(--ws-hero-to));
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--ws-primary) 35%, transparent);
+}
+.ws-brand-mark .ws-icon {
+  stroke: var(--ws-on-hero);
+}

@@ -1,0 +1,13 @@
+.ws-strength {
+  height: 6px;
+  margin-top: 0.5rem;
+}
+.ws-strength .progress-bar.is-weak {
+  background: var(--ws-danger);
+}
+.ws-strength .progress-bar.is-fair {
+  background: var(--ws-warning);
+}
+.ws-strength .progress-bar.is-strong {
+  background: var(--ws-success);
+}
