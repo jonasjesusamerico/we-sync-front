@@ -21,11 +21,14 @@ Abra `http://localhost:4200`: sem sessão, o app abre o login.
 
 ## Rotas
 
-| Caminho     | Tela                                                         | Acesso                                     |
-| ----------- | ------------------------------------------------------------ | ------------------------------------------ |
-| `/login`    | entrar (aceita `?returnUrl=` com um caminho interno)         | visitante (com sessão, vai para `/inicio`) |
-| `/cadastro` | criar conta, com login automático                            | visitante (com sessão, vai para `/inicio`) |
-| `/inicio`   | Início (saudação; o resumo do mês chega numa feature futura) | com sessão (sem, vai para o login)         |
+| Caminho         | Tela                                                                                                       | Acesso                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `/login`        | entrar (aceita `?returnUrl=` com um caminho interno)                                                       | visitante (com sessão, vai para `/inicio`) |
+| `/cadastro`     | criar conta, com login automático                                                                          | visitante (com sessão, vai para `/inicio`) |
+| `/inicio`       | Início: saudação, seletor de mês e o gasto do mês (`?ano=&mes=`)                                           | com sessão (sem, vai para o login)         |
+| `/compras`      | Compras do mês, com busca, filtros e página no endereço (`?ano=&mes=&busca=&categoria=&situacao=&pagina=`) | com sessão                                 |
+| `/compras/nova` | Nova compra (avisa antes de sair com alterações)                                                           | com sessão                                 |
+| `/compras/:id`  | Editar compra (e excluir)                                                                                  | com sessão                                 |
 
 `/` e qualquer caminho desconhecido levam a `/inicio`.
 
@@ -41,19 +44,20 @@ Abra `http://localhost:4200`: sem sessão, o app abre o login.
 
 ## Scripts
 
-| Script                      | Comando                                                  | Para quê                                                         |
-| --------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------- |
-| `npm start`                 | `ng serve --proxy-config proxy.conf.json`                | servidor de desenvolvimento em `:4200`, com `/api` → `:8080`     |
-| `npm run build`             | `ng build`                                               | build de produção em `dist/we-sync-front/browser`                |
-| `npm run watch`             | `ng build --watch --configuration development`           | build de desenvolvimento em modo watch                           |
-| `npm test`                  | `ng test --watch=false`                                  | testes unitários (Vitest), uma vez                               |
-| `npm run test:watch`        | `ng test`                                                | testes unitários em modo watch                                   |
-| `npm run lint`              | `node scripts/check-tokens.mjs && ng lint`               | cores só nos tokens + ESLint (`angular-eslint`)                  |
-| `npm run format`            | `prettier --write .`                                     | formata o código                                                 |
-| `npm run format:check`      | `prettier --check .`                                     | confere a formatação                                             |
-| `npm run e2e`               | `playwright test`                                        | e2e (Chromium) com a API simulada; sobe o `npm start` se preciso |
-| `npm run e2e:double-submit` | `playwright test --grep @double-submit --repeat-each=20` | clique duplo no login e no cadastro, 20 vezes (CA-14)            |
-| `npm run e2e:compose`       | `playwright test --config playwright.compose.config.ts`  | fumaça contra a stack do compose (`:3000`)                       |
+| Script                      | Comando                                                  | Para quê                                                                    |
+| --------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `npm start`                 | `ng serve --proxy-config proxy.conf.json`                | servidor de desenvolvimento em `:4200`, com `/api` → `:8080`                |
+| `npm run build`             | `ng build`                                               | build de produção em `dist/we-sync-front/browser`                           |
+| `npm run watch`             | `ng build --watch --configuration development`           | build de desenvolvimento em modo watch                                      |
+| `npm test`                  | `ng test --watch=false`                                  | testes unitários (Vitest), uma vez                                          |
+| `npm run test:watch`        | `ng test`                                                | testes unitários em modo watch                                              |
+| `npm run lint`              | `node scripts/check-tokens.mjs && ng lint`               | cores só nos tokens + ESLint (`angular-eslint`)                             |
+| `npm run format`            | `prettier --write .`                                     | formata o código                                                            |
+| `npm run format:check`      | `prettier --check .`                                     | confere a formatação                                                        |
+| `npm run e2e`               | `playwright test`                                        | e2e (Chromium) com a API simulada; sobe o `npm start` se preciso            |
+| `npm run e2e:double-submit` | `playwright test --grep @double-submit --repeat-each=20` | clique duplo no login, no cadastro, em salvar e em excluir compra, 20 vezes |
+| `npm run e2e:compose`       | `playwright test --config playwright.compose.config.ts`  | fumaça contra a stack do compose (`:3000`)                                  |
+| `npm run e2e:capture`       | `playwright test --config playwright.capture.config.ts`  | capturas do app e do protótipo lado a lado (`test-results/capture/`)        |
 
 ## Testes e2e (Playwright)
 
@@ -76,8 +80,20 @@ Com a stack do `we-sync-api` de pé (`docker compose up --build -d` lá, que tam
 npm run e2e:compose
 ```
 
-Faz cadastro (com um e-mail novo a cada execução), Início com o nome e Sair contra a API de verdade
-(`playwright.compose.config.ts`, `e2e/smoke.compose.spec.ts`), e falha se o console mostrar erro de CORS ou de CSP.
+Faz cadastro (com um e-mail novo a cada execução), Início com o nome e Sair, e cria, busca sem acento e exclui uma
+compra, vendo o gasto no Início e o total em Compras, contra a API de verdade (`playwright.compose.config.ts`,
+`e2e/smoke.compose.spec.ts`). Falha se o console mostrar erro de CORS ou de CSP. Se o container `we-sync-front` for
+anterior ao código, reconstrua só ele: `docker compose up --build -d front` no `we-sync-api`.
+
+### Capturas lado a lado com o protótipo
+
+```bash
+npm run e2e:capture
+```
+
+Gera `test-results/capture/<tela>-<largura>-<tema>-{app,prototipo}.png` para Compras, Nova compra, Editar compra e
+Início, a 1280 e a 360 px, nos temas claro e escuro, com os dados de exemplo do protótipo. Precisa do
+`../we-sync-requirements` ao lado. Não há asserção de pixels: a comparação é visual.
 Esse teste não roda no `npm run e2e`.
 
 ## Configuração

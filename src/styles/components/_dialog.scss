@@ -1,0 +1,30 @@
+// Modal (prototype we-sync.css "Modal") and the native <dialog> of the confirmation (feature 005 D-02, D-08).
+// Bootstrap only declares --bs-modal-* on .modal, so the dialog declares them (see docs/design-system.md).
+.modal-content {
+  --bs-modal-bg: var(--ws-surface);
+  --bs-modal-border-width: 0;
+  --bs-modal-border-radius: var(--ws-radius);
+  --bs-modal-header-border-color: var(--ws-border);
+  --bs-modal-footer-border-color: var(--ws-border);
+  box-shadow: var(--ws-shadow-lg);
+}
+.modal-title {
+  font-weight: 700;
+}
+dialog.ws-dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  width: min(300px, 100% - 2rem);
+  max-width: none;
+  color: var(--ws-text);
+  --bs-modal-bg: var(--ws-surface);
+  --bs-modal-color: var(--ws-text);
+  --bs-modal-border-width: 0;
+  --bs-modal-border-color: var(--ws-border);
+  --bs-modal-border-radius: var(--ws-radius);
+  --bs-modal-box-shadow: var(--ws-shadow-lg);
+}
+dialog.ws-dialog::backdrop {
+  background: var(--ws-backdrop);
+}

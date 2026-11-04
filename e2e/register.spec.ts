@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { ANA } from './support/api-mock';
-import { expect, fillRegister, test } from './support/fixtures';
+import { expect, fillRegister, HOME_URL, test } from './support/fixtures';
 import * as t from './support/texts';
 
 const submit = (page: Page) =>
@@ -21,7 +21,7 @@ test('CA-02', async ({ page, api }) => {
   await fillRegister(page, 'Ana Souza', 'ana@exemplo.com', 'Senha123!');
   await submit(page).click();
   await expect(heading(page)).toHaveText('Olá, Ana Souza');
-  await expect(page).toHaveURL('/inicio');
+  await expect(page).toHaveURL(HOME_URL);
   expect(api.calls('/auth/register')).toBe(1);
   expect(api.calls('/auth/login')).toBe(1);
   expect(visited.some((url) => url.includes('/login'))).toBe(false);
@@ -167,12 +167,12 @@ test('CA-25 cadastro', async ({ page, api }) => {
 });
 
 test('CA-19 pelo cadastro', async ({ page }) => {
-  await page.goto('/inicio?origem=link');
-  await expect(page).toHaveURL('/login?returnUrl=%2Finicio%3Forigem%3Dlink');
+  await page.goto('/inicio?ano=2026&mes=9');
+  await expect(page).toHaveURL('/login?returnUrl=%2Finicio%3Fano%3D2026%26mes%3D9');
   await page.getByRole('link', { name: t.LABEL_CREATE_ACCOUNT }).click();
-  await expect(page).toHaveURL('/cadastro?returnUrl=%2Finicio%3Forigem%3Dlink');
+  await expect(page).toHaveURL('/cadastro?returnUrl=%2Finicio%3Fano%3D2026%26mes%3D9');
   await fillRegister(page, 'Ana Souza', 'ana@exemplo.com', 'Senha123!');
   await submit(page).click();
-  await expect(page).toHaveURL('/inicio?origem=link');
+  await expect(page).toHaveURL('/inicio?ano=2026&mes=9');
   await expect(heading(page)).toHaveText('Olá, Ana Souza');
 });

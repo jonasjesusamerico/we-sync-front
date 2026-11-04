@@ -65,7 +65,8 @@ button.ws-nav-link {
   font-size: 0.85rem;
   margin: 0.25rem 0 0.75rem;
 }
-.ws-sidebar-card .btn {
+.ws-sidebar-card .btn,
+.ws-hero .btn {
   --bs-btn-bg: var(--ws-on-hero);
   --bs-btn-color: var(--ws-hero-to);
   --bs-btn-hover-bg: var(--ws-hero-btn-hover-bg);

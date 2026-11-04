@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: 'e2e',
-  testIgnore: '**/*.compose.spec.ts',
+  testIgnore: ['**/*.compose.spec.ts', '**/*.capture.spec.ts'],
   fullyParallel: true,
   // CA-14 must not depend on a retry.
   retries: 0,

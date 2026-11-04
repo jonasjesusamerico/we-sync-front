@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { ANA, type ApiMock, type MockUser } from './support/api-mock';
-import { expect, openUserMenu, test } from './support/fixtures';
+import { expect, HOME_URL, openUserMenu, test } from './support/fixtures';
 import { expectNoHorizontalScroll } from './support/layout';
 import { seedSession } from './support/session';
 import * as t from './support/texts';
@@ -25,12 +25,19 @@ test('CA-26', async ({ page, api }) => {
   await expect(sidebar.locator('.ws-nav-link')).toHaveCount(6);
   const home = sidebar.getByRole('link', { name: 'Início' });
   await expect(home).toHaveAttribute('aria-current', 'page');
+  await expect(sidebar.getByRole('link', { name: 'Compras' })).toHaveAttribute('href', '/compras');
   await expect(sidebar.locator('button.ws-nav-link .ws-badge-soon')).toHaveText(
-    Array(5).fill(t.SOON_TAG),
+    Array(4).fill(t.SOON_TAG),
   );
+  await expect(
+    sidebar.locator('.ws-sidebar-card').getByRole('link', { name: 'Nova compra' }),
+  ).toHaveAttribute('href', '/compras/nova');
   await expect(sidebar.locator('.ws-sidebar-card strong')).toHaveText(t.SIDEBAR_CARD_TITLE);
   const topbar = page.locator('#ws-topbar');
-  await expect(topbar.getByRole('button', { name: 'Nova compra, em breve' })).toBeVisible();
+  await expect(topbar.getByRole('link', { name: 'Nova compra' })).toHaveAttribute(
+    'href',
+    '/compras/nova',
+  );
   await expect(topbar.getByRole('button', { name: t.LABEL_USE_DARK_THEME })).toBeVisible();
   await expect(topbar.getByRole('button', { name: 'Notificações, em breve' })).toBeVisible();
   await expect(topbar.locator('.ws-avatar')).toHaveText('AS');
@@ -56,7 +63,7 @@ test('CA-29', async ({ page, api }) => {
       await item.click({ force: true });
       await item.press('Enter');
       await item.press(' ');
-      await expect(page).toHaveURL('/inicio');
+      await expect(page).toHaveURL(HOME_URL);
       await expect(page.locator('.dropdown-menu.show')).toHaveCount(menuOpen ? 1 : 0);
     }
   }
@@ -141,4 +148,46 @@ test('nome longo', async ({ page, api }) => {
   await expectNoHorizontalScroll(page);
   await page.setViewportSize({ width: 360, height: 740 });
   await expectNoHorizontalScroll(page);
+});
+
+test('CA-01 e CA-48: Compras e Nova compra navegam; o resto continua em breve', async ({
+  page,
+  api,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openHome(page, api);
+  const sidebar = page.locator('#ws-sidebar');
+  await sidebar.getByRole('link', { name: 'Compras' }).click();
+  await expect(page).toHaveURL(/\/compras\?ano=\d+&mes=\d+$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Compras');
+  await expect(sidebar.getByRole('link', { name: 'Compras' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  await page.locator('#ws-topbar').getByRole('link', { name: 'Nova compra' }).click();
+  await expect(page).toHaveURL('/compras/nova');
+  await sidebar.getByRole('link', { name: 'Início' }).click();
+  await sidebar.locator('.ws-sidebar-card').getByRole('link', { name: 'Nova compra' }).click();
+  await expect(page).toHaveURL('/compras/nova');
+  for (const name of ['Nossa casa', 'Metas e relatórios', 'Investimentos', 'Configurações']) {
+    await expect(sidebar.getByRole('button', { name: new RegExp(name) })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+  }
+  await expect(
+    page.locator('#ws-topbar').getByRole('button', { name: 'Notificações, em breve' }),
+  ).toHaveAttribute('aria-disabled', 'true');
+
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto('/inicio');
+  const bottom = page.locator('#ws-bottomnav');
+  await bottom.getByRole('link', { name: 'Compras' }).click();
+  await expect(page).toHaveURL(/\/compras\?ano=\d+&mes=\d+$/);
+  await bottom.getByRole('link', { name: 'Nova compra' }).click();
+  await expect(page).toHaveURL('/compras/nova');
+  await expect(bottom.getByRole('button', { name: 'Casa, em breve' })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
 });

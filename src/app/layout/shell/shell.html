@@ -10,6 +10,7 @@
               class="ws-nav-link"
               [routerLink]="item.route"
               routerLinkActive
+              [routerLinkActiveOptions]="ACTIVE_OPTIONS"
               ariaCurrentWhenActive="page"
               ><ws-icon [name]="item.icon" />{{ item.label }}</a
             >
@@ -25,9 +26,9 @@
     <div class="ws-sidebar-card">
       <strong>{{ texts.SIDEBAR_CARD_TITLE }}</strong>
       <p>{{ texts.SIDEBAR_CARD_TEXT }}</p>
-      <button type="button" class="btn w-100" wsSoon [wsSoonLabel]="texts.LABEL_NEW_PURCHASE">
-        {{ texts.LABEL_NEW_PURCHASE }}
-      </button>
+      <a class="btn w-100" [routerLink]="NEW_PURCHASE_PATH" [state]="newPurchaseState()">{{
+        texts.LABEL_NEW_PURCHASE
+      }}</a>
     </div>
   </aside>
 
@@ -35,14 +36,12 @@
     <header id="ws-topbar" class="ws-topbar">
       <ws-brand [link]="true" />
       <div class="ws-topbar-actions">
-        <button
-          type="button"
+        <a
           class="btn btn-primary d-none d-lg-inline-flex align-items-center gap-2 me-1"
-          wsSoon
-          [wsSoonLabel]="texts.LABEL_NEW_PURCHASE"
+          [routerLink]="NEW_PURCHASE_PATH"
+          [state]="newPurchaseState()"
+          ><ws-icon name="plus" />{{ texts.LABEL_NEW_PURCHASE }}</a
         >
-          <ws-icon name="plus" />{{ texts.LABEL_NEW_PURCHASE }}
-        </button>
         <ws-theme-toggle />
         <button
           type="button"
@@ -65,18 +64,29 @@
     @for (item of bottomStart; track item.key) {
       <ng-container *ngTemplateOutlet="bottomItem; context: { $implicit: item }" />
     }
-    <button type="button" class="ws-fab" wsSoon [wsSoonLabel]="texts.LABEL_NEW_PURCHASE">
-      <ws-icon name="plus" />
-    </button>
+    <a
+      class="ws-fab"
+      [routerLink]="NEW_PURCHASE_PATH"
+      [state]="newPurchaseState()"
+      [attr.aria-label]="texts.LABEL_NEW_PURCHASE"
+      ><ws-icon name="plus"
+    /></a>
     @for (item of bottomEnd; track item.key) {
       <ng-container *ngTemplateOutlet="bottomItem; context: { $implicit: item }" />
     }
   </nav>
+
+  <ws-toast-host />
+  <ws-confirm-host />
 </div>
 
 <ng-template #bottomItem let-item>
   @if (item.route) {
-    <a [routerLink]="item.route" routerLinkActive ariaCurrentWhenActive="page"
+    <a
+      [routerLink]="item.route"
+      routerLinkActive
+      [routerLinkActiveOptions]="ACTIVE_OPTIONS"
+      ariaCurrentWhenActive="page"
       ><ws-icon [name]="item.icon" />{{ item.shortLabel }}</a
     >
   } @else {

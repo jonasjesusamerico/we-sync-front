@@ -1,0 +1,17 @@
+// Pagination (prototype we-sync.css "Pagination"). Buttons at 44 px (feature 005 D-01).
+.ws-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: var(--ws-muted);
+}
+.ws-pager .btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}

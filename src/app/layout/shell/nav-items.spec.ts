@@ -10,8 +10,10 @@ describe('nav-items (itens do menu)', () => {
       ['Planejamento', 'Investimentos', 'trendUp'],
       ['Administração', 'Configurações', 'sliders'],
     ]);
-    expect(NAV_ITEMS.filter((i) => !i.soon).map((i) => i.key)).toEqual(['inicio']);
+    expect(NAV_ITEMS.filter((i) => !i.soon).map((i) => i.key)).toEqual(['inicio', 'compras']);
     expect(NAV_ITEMS.find((i) => i.key === 'inicio')!.route).toBe('/inicio');
+    expect(NAV_ITEMS.find((i) => i.key === 'compras')!.route).toBe('/compras');
+    expect(NAV_ITEMS.filter((i) => i.route).map((i) => i.key)).toEqual(['inicio', 'compras']);
     expect(NAV_GROUP_ORDER).toEqual(['Menu', 'Planejamento', 'Administração']);
     expect(BOTTOM_NAV_KEYS).toEqual(['inicio', 'compras', 'casa', 'configuracoes']);
     const short = BOTTOM_NAV_KEYS.map((k) => NAV_ITEMS.find((i) => i.key === k)!.shortLabel);

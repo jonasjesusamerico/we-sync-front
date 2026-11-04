@@ -1,0 +1,220 @@
+<div class="ws-page-head">
+  <div>
+    <h1>{{ t.PURCHASES_HEADING }}</h1>
+    <p id="summary">{{ summaryText() }}</p>
+  </div>
+  <ws-month-switcher [month]="month()" [current]="currentMonth" (monthChange)="goMonth($event)" />
+</div>
+
+<section class="ws-card mb-3" [attr.aria-label]="t.LABEL_FILTERS">
+  @switch (categories().status) {
+    @case ('loading') {
+      <ws-area-status status="loading" />
+    }
+    @case ('error') {
+      <ws-area-status status="error" [message]="categoriesError()" (retry)="loadCategories()" />
+    }
+    @default {
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-5">
+          <label class="form-label" for="f-search">{{ t.LABEL_SEARCH }}</label>
+          <div class="input-icon">
+            <ws-icon name="search" />
+            <input
+              id="f-search"
+              type="search"
+              class="form-control"
+              maxlength="255"
+              [placeholder]="t.SEARCH_PLACEHOLDER"
+              [formControl]="searchControl"
+            />
+          </div>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label" for="f-category">{{ t.LABEL_CATEGORY }}</label>
+          <select id="f-category" class="form-select" (change)="goCategory($event)">
+            <option value="" [selected]="query()?.categoryId === null">{{ t.LABEL_ALL }}</option>
+            @for (c of sortedCategories(); track c.id) {
+              <option [value]="c.id" [selected]="c.id === query()?.categoryId">{{ c.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <span class="form-label d-block" id="f-status-label">{{ t.LABEL_STATUS }}</span>
+          <div class="ws-chips" role="group" aria-labelledby="f-status-label" id="f-status">
+            @for (o of STATUS_OPTIONS; track o.slug; let i = $index) {
+              <div class="ws-chip">
+                <input
+                  type="radio"
+                  name="status"
+                  [id]="'st-' + i"
+                  [checked]="(query()?.status ?? null) === o.slug"
+                  (change)="goStatus(o.slug)"
+                />
+                <label [for]="'st-' + i">{{ o.label }}</label>
+              </div>
+            }
+          </div>
+        </div>
+        @if (filtersActive()) {
+          <div class="col-12 d-flex justify-content-end">
+            <button
+              type="button"
+              class="btn btn-ghost d-inline-flex align-items-center gap-2"
+              (click)="clear()"
+            >
+              <ws-icon name="x" />{{ t.LABEL_CLEAR_FILTERS }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+  }
+</section>
+
+<section class="ws-card" [attr.aria-label]="t.LABEL_LIST">
+  @switch (list().status) {
+    @case ('loading') {
+      <ws-area-status status="loading" />
+    }
+    @case ('error') {
+      <ws-area-status status="error" [message]="listError()" (retry)="retryList()" />
+    }
+    @default {
+      @if (page(); as p) {
+        @if (p.total === 0) {
+          @if (filtersActive()) {
+            <div class="ws-empty">
+              <span class="ws-kpi-icon"><ws-icon name="search" /></span>
+              <div class="fw-bold text-body">{{ t.EMPTY_FILTERED_TITLE }}</div>
+              <div>{{ t.EMPTY_FILTERED_TEXT }}</div>
+              <button
+                type="button"
+                class="btn btn-ghost d-inline-flex align-items-center gap-2 mt-3"
+                (click)="clear()"
+              >
+                <ws-icon name="x" />{{ t.LABEL_CLEAR_FILTERS }}
+              </button>
+            </div>
+          } @else {
+            <div class="ws-empty">
+              <span class="ws-kpi-icon"><ws-icon name="receipt" /></span>
+              <div class="fw-bold text-body">{{ emptyText() }}</div>
+              <a
+                class="btn btn-primary d-inline-flex align-items-center gap-2 mt-3"
+                [routerLink]="NEW_PURCHASE_PATH"
+                [state]="linkState()"
+                ><ws-icon name="plus" />{{ t.NEW_PURCHASE_HEADING }}</a
+              >
+            </div>
+          }
+        } @else {
+          <!-- Computer: table (ADR-09) -->
+          <div class="ws-table-wrap d-none d-md-block">
+            <table class="ws-table">
+              <thead>
+                <tr>
+                  <th scope="col">{{ t.COLUMN_DESCRIPTION }}</th>
+                  <th scope="col">{{ t.COLUMN_DATE }}</th>
+                  <th scope="col">{{ t.COLUMN_PAYMENT }}</th>
+                  <th scope="col">{{ t.COLUMN_STATUS }}</th>
+                  <th scope="col" class="is-num">{{ t.COLUMN_AMOUNT }}</th>
+                  <th scope="col">
+                    <span class="visually-hidden">{{ t.COLUMN_ACTIONS }}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="rows">
+                @for (item of p.items; track item.id) {
+                  <tr
+                    [class.is-canceled]="item.status === 'CANCELED'"
+                    (click)="openRow($event, item)"
+                  >
+                    <td class="ws-desc-cell">
+                      <div class="d-flex align-items-center gap-3">
+                        <ws-category-bubble [icon]="style(item).icon" [color]="style(item).color" />
+                        <div class="min-w-0">
+                          <a
+                            class="fw-semibold d-block text-truncate text-reset text-decoration-none"
+                            [routerLink]="editPath(item.id)"
+                            [state]="linkState()"
+                            [attr.title]="item.description"
+                            >{{ item.description }}</a
+                          >
+                          <div class="small text-muted">{{ item.category.name }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="ws-tabular">{{ formatDate(item.purchase_date) }}</td>
+                    <td>{{ item.payment_method.name }}</td>
+                    <td>
+                      <ws-status-pill [kind]="kind(item)" [label]="t.STATUS_LABELS[item.status]" />
+                    </td>
+                    <td
+                      class="is-num fw-bold"
+                      [class.text-muted]="item.status === 'CANCELED'"
+                      [class.text-decoration-line-through]="item.status === 'CANCELED'"
+                    >
+                      {{ brl(item.amount) }}
+                    </td>
+                    <td>
+                      <div class="d-flex gap-1 justify-content-end">
+                        <a
+                          class="btn btn-ghost btn-icon btn-sm"
+                          [routerLink]="editPath(item.id)"
+                          [state]="linkState()"
+                          [attr.aria-label]="t.editLabel(item.description)"
+                          ><ws-icon name="edit"
+                        /></a>
+                        <button
+                          type="button"
+                          class="btn btn-ghost btn-icon btn-sm"
+                          [attr.aria-label]="t.deleteLabel(item.description)"
+                          (click)="askDelete($event, item)"
+                        >
+                          <ws-icon name="trash" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Phone: cards (ADR-09); the stretched link makes the whole card open the purchase (D-09) -->
+          <ul class="ws-tx-list d-md-none" id="cards">
+            @for (item of p.items; track item.id) {
+              <li class="ws-tx position-relative" [class.is-canceled]="item.status === 'CANCELED'">
+                <ws-category-bubble [icon]="style(item).icon" [color]="style(item).color" />
+                <a
+                  class="ws-tx-main stretched-link"
+                  [routerLink]="editPath(item.id)"
+                  [state]="linkState()"
+                  [attr.title]="item.description"
+                >
+                  <div class="ws-tx-title">{{ item.description }}</div>
+                  <div class="ws-tx-meta">
+                    {{ formatDayMonth(item.purchase_date) }} · {{ item.payment_method.name }}
+                  </div>
+                </a>
+                <div class="d-flex flex-column align-items-end gap-1">
+                  <span class="ws-tx-amount">{{ brl(item.amount) }}</span>
+                  <ws-status-pill [kind]="kind(item)" [label]="t.STATUS_LABELS[item.status]" />
+                </div>
+              </li>
+            }
+          </ul>
+
+          @if (p.total_pages > 1) {
+            <ws-paginator
+              [page]="p.page"
+              [totalPages]="p.total_pages"
+              (pageChange)="goPage($event)"
+            />
+          }
+        }
+      }
+    }
+  }
+</section>

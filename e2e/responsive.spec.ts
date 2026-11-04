@@ -19,7 +19,7 @@ test('CA-27', async ({ page, api }) => {
   await expect(topbar.getByRole('button', { name: 'Notificações, em breve' })).toBeVisible();
   await expect(topbar.locator('.ws-avatar')).toHaveText('AS');
   await expect(topbar.locator('.ws-user-name')).toBeHidden();
-  await expect(topbar.getByRole('button', { name: 'Nova compra, em breve' })).toBeHidden();
+  await expect(topbar.getByRole('link', { name: 'Nova compra' })).toBeHidden();
   const nav = page.locator('#ws-bottomnav');
   await expect(nav).toBeVisible();
   const items = nav.locator(':scope > a, :scope > button');
@@ -29,12 +29,8 @@ test('CA-27', async ({ page, api }) => {
   const labels = await items.evaluateAll((els) =>
     els.slice(1).map((e) => e.getAttribute('aria-label')),
   );
-  expect(labels).toEqual([
-    'Compras, em breve',
-    'Nova compra, em breve',
-    'Casa, em breve',
-    'Ajustes, em breve',
-  ]);
+  await expect(items.nth(1)).toHaveText('Compras');
+  expect(labels).toEqual([null, 'Nova compra', 'Casa, em breve', 'Ajustes, em breve']);
   await expect(nav.locator('[aria-current]')).toHaveCount(1);
   await expectNoHorizontalScroll(page);
 });

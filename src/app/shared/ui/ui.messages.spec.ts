@@ -15,3 +15,18 @@ describe('ui.messages (textos)', () => {
     expect(ui.LABEL_USE_LIGHT_THEME).toBe('Usar tema claro');
   });
 });
+
+describe('ui.messages (feature 005)', () => {
+  it('has the paginator, month switcher and area texts', () => {
+    expect(ui.pagerInfo(1, 3)).toBe('Página 1 de 3');
+    expect(ui.LABEL_PREVIOUS_PAGE).toBe('Anterior');
+    expect(ui.LABEL_NEXT_PAGE).toBe('Próxima');
+    expect(ui.LABEL_MONTH).toBe('Mês');
+    expect(ui.LABEL_PREVIOUS_MONTH).toBe('Mês anterior');
+    expect(ui.LABEL_NEXT_MONTH).toBe('Próximo mês');
+    expect(ui.LABEL_CURRENT_MONTH).toBe('Mês atual');
+    expect(ui.LABEL_LOADING).toBe('Carregando…');
+    expect(ui.LABEL_RETRY).toBe('Tentar novamente');
+    expect(ui.LABEL_CLOSE_TOAST).toBe('Fechar aviso');
+  });
+});

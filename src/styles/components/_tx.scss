@@ -38,3 +38,22 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+// Feature 005: list container, canceled purchase (D-03) and the card link (stretched-link, D-09).
+.ws-tx-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.ws-tx.is-canceled .ws-tx-amount {
+  text-decoration: line-through;
+  color: var(--ws-muted);
+}
+.ws-tx.is-canceled .ws-tx-title,
+.ws-tx.is-canceled .ws-tx-meta {
+  color: var(--ws-muted);
+}
+.ws-tx .stretched-link {
+  color: inherit;
+  text-decoration: none;
+}

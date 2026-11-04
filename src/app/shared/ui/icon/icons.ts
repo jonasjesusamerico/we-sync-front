@@ -28,6 +28,19 @@ export const ICON_PATHS = {
   alert: 'M12 3l10 18H2zM12 10v5M12 18h.01',
   check: 'M5 12.5l4.5 4.5L19 7',
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2',
+  car: 'M5 16v-5l2-5h10l2 5v5M3 16h18v3H3zM7.5 13h.01M16.5 13h.01',
+  house: 'M4 21V9l8-6 8 6v12zM10 21v-6h4v6',
+  heart: 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z',
+  book: 'M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14',
+  tag: 'M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM7.5 7.5h.01',
+  chevL: 'M15 6l-6 6 6 6',
+  chevR: 'M9 6l6 6-6 6',
+  edit: 'M4 20h4L19 9l-4-4L4 16z',
+  trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
+  search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',
+  x: 'M6 6l12 12M18 6 6 18',
+  arrowDown: 'M12 5v14M6 13l6 6 6-6',
+  arrowUp: 'M12 19V5M6 11l6-6 6 6',
 } as const satisfies Record<string, string>;
 
 export type IconName = keyof typeof ICON_PATHS;

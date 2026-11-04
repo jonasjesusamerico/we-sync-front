@@ -1,5 +1,5 @@
 import { ANA } from './support/api-mock';
-import { expect, fillLogin, loginAs, test } from './support/fixtures';
+import { expect, fillLogin, HOME_URL, loginAs, test } from './support/fixtures';
 import { seedSession } from './support/session';
 import * as t from './support/texts';
 
@@ -25,11 +25,13 @@ test('CA-12', async ({ page }) => {
 
 test('CA-13', async ({ page }) => {
   await loginAs(page);
-  await expect(page).toHaveURL('/inicio');
+  await expect(page).toHaveURL(HOME_URL);
   await expect(page.locator('.ws-page-head p')).toHaveText(t.HOME_SUBTITLE);
-  await expect(page.locator('.ws-callout')).toHaveText(t.HOME_SOON);
+  await expect(page.locator('.ws-callout')).toHaveCount(0);
   await expect(page.locator('#ws-sidebar')).toBeVisible();
-  await expect(page.locator('.ws-month, .ws-hero, .ws-kpi')).toHaveCount(0);
+  await expect(page.locator('.ws-month')).toBeVisible();
+  await expect(page.locator('.ws-hero')).toBeVisible();
+  await expect(page.locator('.ws-kpi')).toHaveCount(0);
 });
 
 test('CA-14 login @double-submit', async ({ page, api }) => {
@@ -48,11 +50,11 @@ test('CA-14 login @double-submit', async ({ page, api }) => {
 });
 
 test('CA-19', async ({ page }) => {
-  await page.goto('/inicio?origem=link');
-  await expect(page).toHaveURL('/login?returnUrl=%2Finicio%3Forigem%3Dlink');
+  await page.goto('/inicio?ano=2026&mes=9');
+  await expect(page).toHaveURL('/login?returnUrl=%2Finicio%3Fano%3D2026%26mes%3D9');
   await fillLogin(page, ANA.email, ANA.password);
   await submit(page).click();
-  await expect(page).toHaveURL('/inicio?origem=link');
+  await expect(page).toHaveURL('/inicio?ano=2026&mes=9');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
 });
 
@@ -62,7 +64,7 @@ for (const param of ['https%3A%2F%2Fevil.example', '%2F%2Fevil.example']) {
     await fillLogin(page, ANA.email, ANA.password);
     await submit(page).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
-    await expect(page).toHaveURL('http://localhost:4200/inicio');
+    await expect(page).toHaveURL(HOME_URL);
   });
 }
 
@@ -70,7 +72,7 @@ test('CA-21', async ({ page, api }) => {
   await seedSession(page, api.issueSession(ANA.email));
   for (const url of ['/login', '/cadastro']) {
     await page.goto(url);
-    await expect(page).toHaveURL('/inicio');
+    await expect(page).toHaveURL(HOME_URL);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
   }
 });

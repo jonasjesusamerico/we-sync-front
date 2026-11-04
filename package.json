@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "e2e": "playwright test",
     "e2e:double-submit": "playwright test --grep @double-submit --repeat-each=20",
-    "e2e:compose": "playwright test --config playwright.compose.config.ts"
+    "e2e:compose": "playwright test --config playwright.compose.config.ts",
+    "e2e:capture": "playwright test --config playwright.capture.config.ts"
   },
   "private": true,
   "packageManager": "npm@11.19.1",

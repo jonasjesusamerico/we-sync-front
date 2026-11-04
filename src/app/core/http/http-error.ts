@@ -23,6 +23,19 @@ export function classifyHttpError(error: unknown): HttpErrorKind {
   }
 }
 
+/** `code` of the API envelope ({ code, message }), or null. Never exposes `message`. */
+export function apiErrorCode(error: unknown): string | null {
+  if (!(error instanceof HttpErrorResponse)) {
+    return null;
+  }
+  const body: unknown = error.error;
+  if (typeof body !== 'object' || body === null) {
+    return null;
+  }
+  const code = (body as { code?: unknown }).code;
+  return typeof code === 'string' ? code : null;
+}
+
 /** connection → MSG_CONNECTION; invalid → MSG_INVALID_DATA; the others → MSG_SERVER (DAS 5.2). */
 export function genericErrorMessage(kind: HttpErrorKind): string {
   switch (kind) {

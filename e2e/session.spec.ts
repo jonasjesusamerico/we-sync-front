@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { ANA } from './support/api-mock';
-import { expect, fillLogin, loginAs, openUserMenu, test } from './support/fixtures';
+import { expect, fillLogin, HOME_URL, loginAs, openUserMenu, test } from './support/fixtures';
 import { readSession, seedSession } from './support/session';
 import * as t from './support/texts';
 
@@ -22,7 +22,7 @@ test('CA-15', async ({ page, browser, api }) => {
   const next = await context.newPage();
   await next.goto('/inicio');
   await expect(heading(next)).toHaveText('Olá, Ana Souza');
-  await expect(next).toHaveURL('/inicio');
+  await expect(next).toHaveURL(HOME_URL);
   await context.close();
 });
 
@@ -49,8 +49,8 @@ test('CA-17', async ({ page, context, api }) => {
   await expect(heading(page)).toHaveText('Olá, Ana Souza');
   await expect(heading(other)).toHaveText('Olá, Ana Souza');
   expect(api.calls('/auth/refresh')).toBe(1);
-  await expect(page).toHaveURL('/inicio');
-  await expect(other).toHaveURL('/inicio');
+  await expect(page).toHaveURL(HOME_URL);
+  await expect(other).toHaveURL(HOME_URL);
 });
 
 async function expireAndOpen(page: Page, api: import('./support/api-mock').ApiMock) {
@@ -67,7 +67,7 @@ test('CA-18', async ({ page, api }) => {
   expect(await readSession(page)).toBeNull();
   await fillLogin(page, ANA.email, ANA.password);
   await page.getByRole('button', { name: t.LABEL_LOGIN_SUBMIT, exact: true }).click();
-  await expect(page).toHaveURL('/inicio');
+  await expect(page).toHaveURL(HOME_URL);
   await expect(heading(page)).toHaveText('Olá, Ana Souza');
 });
 
@@ -121,7 +121,7 @@ test('entrar numa aba', async ({ page, context }) => {
   await fillLogin(page, ANA.email, ANA.password);
   await page.getByRole('button', { name: t.LABEL_LOGIN_SUBMIT, exact: true }).click();
   await expect(heading(page)).toHaveText('Olá, Ana Souza');
-  await expect(other).toHaveURL('/inicio', { timeout: 5_000 });
+  await expect(other).toHaveURL(HOME_URL, { timeout: 5_000 });
 });
 
 test('CA-35', async ({ page, api }) => {

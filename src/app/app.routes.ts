@@ -30,6 +30,11 @@ export const routes: Routes = [
         title: TITLE_HOME,
         loadComponent: () => import('./features/home/home-page').then((m) => m.HomePage),
       },
+      {
+        path: 'compras',
+        loadChildren: () =>
+          import('./features/purchases/purchases.routes').then((m) => m.PURCHASES_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: 'inicio' },

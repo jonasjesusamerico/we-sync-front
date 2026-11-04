@@ -1,0 +1,48 @@
+// Table (prototype we-sync.css "Table" and its phone rule). Canceled rows in --ws-muted (feature 005 D-03).
+.ws-table-wrap {
+  overflow-x: auto;
+}
+.ws-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.ws-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ws-muted);
+  font-weight: 700;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--ws-border);
+  white-space: nowrap;
+}
+.ws-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--ws-border);
+  vertical-align: middle;
+}
+.ws-table tbody tr:hover td {
+  background: var(--ws-surface-2);
+}
+.ws-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.ws-table .is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ws-table tbody tr.is-canceled td,
+.ws-table tbody tr.is-canceled td a {
+  color: var(--ws-muted);
+}
+@media (max-width: 575.98px) {
+  .ws-table th,
+  .ws-table td {
+    padding: 0.6rem 0.4rem;
+  }
+  .ws-table .ws-cat {
+    display: none;
+  }
+}

@@ -1,0 +1,43 @@
+<section class="ws-hero h-100" aria-labelledby="hero-label">
+  <div class="position-relative z-1">
+    <div id="hero-label" class="ws-hero-label">{{ label() }}</div>
+    @switch (summary().status) {
+      @case ('loading') {
+        <ws-area-status status="loading" [onHero]="true" />
+      }
+      @case ('error') {
+        <ws-area-status
+          status="error"
+          [onHero]="true"
+          [message]="errorMessage()"
+          (retry)="retry()"
+        />
+      }
+      @default {
+        <div class="ws-hero-value ws-tabular" id="kpi-total">{{ spent() }}</div>
+        @if (seal(); as s) {
+          <span class="ws-hero-chip">
+            @if (s.icon; as icon) {
+              <ws-icon [name]="icon" />
+            }
+            <span>{{ s.text }}</span></span
+          >
+        }
+      }
+    }
+  </div>
+  @if (value(); as v) {
+    <div class="ws-hero-progress">
+      @if (v.purchase_count > 0) {
+        <a [routerLink]="PURCHASES_PATH" [queryParams]="purchasesQuery()"
+          >{{ LABEL_SEE_PURCHASES }}<ws-icon name="chevR"
+        /></a>
+      } @else {
+        <p class="mb-2">{{ emptyText() }}</p>
+        <a class="btn" [routerLink]="NEW_PURCHASE_PATH" [state]="newPurchaseState()">{{
+          LABEL_NEW_PURCHASE
+        }}</a>
+      }
+    </div>
+  }
+</section>

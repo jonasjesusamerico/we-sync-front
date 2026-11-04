@@ -42,3 +42,6 @@ export async function openUserMenu(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Menu da conta' }).click();
   await expect(page.locator('.ws-user-menu .dropdown-menu')).toHaveClass(/show/);
 }
+
+/** The home page always ends on its canonical address, with the month (ADR-04 of feature 005). */
+export const HOME_URL = /\/inicio\?ano=\d{1,4}&mes=\d{1,2}$/;

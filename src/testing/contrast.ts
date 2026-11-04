@@ -38,6 +38,10 @@ const TOKENS: Record<Theme, Record<string, string>> = {
     danger: '#c22f3c',
     'danger-soft': '#fde8ea',
     'success-soft': '#e3f6ee',
+    success: '#0e7a50',
+    warning: '#9a5b00',
+    'warning-soft': '#fff3dc',
+    'on-danger': '#ffffff',
     'hero-from': '#1565d8',
     'hero-to': '#0b3f94',
     'on-hero': '#ffffff',
@@ -57,6 +61,10 @@ const TOKENS: Record<Theme, Record<string, string>> = {
     danger: '#ff7c86',
     'danger-soft': '#3d1a1f',
     'success-soft': '#123326',
+    success: '#4cd39a',
+    warning: '#f3b64a',
+    'warning-soft': '#3a2a0c',
+    'on-danger': '#0b1424',
     'hero-from': '#1a4fa8',
     'hero-to': '#0c2a5e',
     'on-hero': '#ffffff',
@@ -88,6 +96,13 @@ const PAIRS: readonly [fg: string, bg: string, use: string][] = [
   ['on-hero-muted', 'hero-to', 'secondary text on the blue panel (end)'],
   ['hero-to', 'on-hero', '"Nova compra" button of the sidebar card'],
   ['hero-to', 'hero-btn-hover-bg', '"Nova compra" button of the sidebar card, hover'],
+  // Feature 005.
+  ['bg', 'text', 'toast'],
+  ['success', 'success-soft', '"Paga" status pill'],
+  ['warning', 'warning-soft', '"Pendente" status pill'],
+  ['danger', 'surface', 'outline danger button'],
+  ['danger', 'danger-soft', 'danger icon of the confirmation'],
+  ['on-danger', 'danger', 'danger button (D-22)'],
 ];
 
 export const CONTRAST_PAIRS: readonly { theme: Theme; fg: string; bg: string; use: string }[] = (

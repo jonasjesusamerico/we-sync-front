@@ -23,7 +23,9 @@ npm test
 npm run build
 npm run format:check
 npm run e2e        # Playwright, API simulada (uma vez: npx playwright install chromium)
-npm run e2e:double-submit   # CA-14, 20 repetições (ao mexer em login/cadastro)
+npm run e2e:double-submit   # clique duplo, 20 repetições (ao mexer em login, cadastro, salvar ou excluir compra)
+npm run e2e:compose         # contra a stack real (docker compose no we-sync-api), quando a tarefa toca a API
+npm run e2e:capture         # capturas do app e do protótipo lado a lado, em test-results/capture/ (telas)
 ```
 
 ## Convenções de Angular (ADR-01 da feature 004)
@@ -76,16 +78,21 @@ npm run e2e:double-submit   # CA-14, 20 repetições (ao mexer em login/cadastro
 
 ## Dados da API (regras da feature 003, valem para o front novo)
 
-- **Datas sem hora** (`"YYYY-MM-DD"` da API, `dd/mm/aaaa` na tela) só por um utilitário único (`plain-date.ts`, a criar na 005). Nunca
-  `new Date(string)`, `toISOString()` nem `DatePipe` sobre elas.
-- **Dinheiro** em centavos inteiros por um utilitário único (`money.ts`, a criar na 005: `parseBrl`, `formatBrl`,
-  `centsToApi`, `apiToCents`). Nada de `parseFloat` nem conta com `float`; a resposta vem sem zeros à direita (`"10"`, `"89.9"`).
-- **Estado de lista no endereço** (mês, filtros, página) com um normalizador puro (`list-query.ts`, a criar na 005): todo valor do
-  endereço passa por ele antes de chegar à API, e toda ação da tela só navega.
+- **Datas sem hora** (`"YYYY-MM-DD"` da API, `dd/mm/aaaa` na tela) só por `shared/date/plain-date.ts` (`parseIsoDate`,
+  `toIsoDate`, `formatDate`, `formatDayMonth`, rótulos e aritmética de mês). Nunca `new Date(string)`, `toISOString()`
+  nem `DatePipe` sobre elas. "Hoje" é o token `TODAY` (`core/navigation/today.ts`), a data local; nos testes, fixe-o.
+- **Dinheiro** em centavos inteiros por `shared/money/money.ts` (`apiToCents`, `centsToApi`, `formatBrl`,
+  `formatMoneyInput`, `digitsToCents`). Nada de `parseFloat` nem conta com `float`; a resposta vem sem zeros à direita
+  (`"10"`, `"89.9"`) e as somas podem passar de R$ 99.999.999,99 (até 13 dígitos, D-19 da 005).
+- **Estado de lista no endereço** (mês, filtros, página) com um normalizador puro: `shared/date/month-query.ts` (mês do
+  Início) e `features/purchases/purchase-list-query.ts` (Compras). Todo valor do endereço passa por ele antes de chegar
+  à API, e toda ação da tela só navega. Texto livre na query vai com o `STRICT_PARAM_CODEC` (o Go descarta pares com `;`).
 - **Sem cache** de dados fora das páginas: os serviços de API não guardam estado, e cada página carrega o que usa
-  (`switchMap` + `takeUntilDestroyed`).
-- Formulário que avisa antes de sair (a criar na 005): `canDeactivate: [unsavedChangesGuard]` na rota e `hasUnsavedChanges()` na
-  página (fotografia do valor, `beforeunload` no `host`). Sem sessão, o guard libera.
+  (`switchMap` + `takeUntilDestroyed`), num `Loadable<T>` (`shared/loadable.ts`) por área.
+- Formulário que avisa antes de sair: `canDeactivate: [unsavedChangesGuard]` (`core/navigation/unsaved-changes.guard.ts`)
+  na rota e `hasUnsavedChanges()` na página (fotografia do valor, `beforeunload` no `host`). Sem sessão, o guard libera.
+- Aviso e confirmação: `ToastService` e `ConfirmService` (`shared/ui/toast/`, `shared/ui/confirm/`), com os hosts na
+  casca.
 
 ## Design system
 
@@ -126,21 +133,31 @@ src/
                                  # session-end, session-sync, auth-guards, return-url, login-notice
       user/                      # current-user-store, user-api (GET /users/me), current-user-resolver, initials
       theme/                     # ThemeService
+      navigation/                # TODAY, unsaved-changes.guard, navigation.messages.ts
     shared/                      # não importa de core/, layout/ nem features/
       ui/                        # icon, brand, soon (wsSoon), password-field, strength-meter, form-alert,
-                                 # ui.messages.ts
-      validators/                # auth-validators, text-measure, password-strength, field-error
+                                 # month-switcher, paginator, category-bubble, status-pill, area-status,
+                                 # money-input (wsMoneyInput), toast, confirm, ui.messages.ts
+      validators/                # auth-validators, purchase-validators, text-measure, password-strength, field-error
+      money/                     # money.ts (centavos)
+      date/                      # plain-date.ts, month-query.ts
+      loadable.ts                # Loadable<T> de cada área
     layout/
       shell/                     # casca interna (shell, nav-items, user-menu/, shell.messages.ts)
       access/                    # moldura de login/cadastro (painel azul + formulário)
       theme-toggle/              # botão de tema (usa o ThemeService de core/)
     features/
       auth/                      # login/, register/, auth.messages.ts
-      home/                      # moldura do Início, home.messages.ts
+      home/                      # Início, spending-card/ (cartão do gasto), spending-seal, home.messages.ts
+      purchases/                 # data/ (modelos, PurchasesApi, CatalogApi), list/ (Compras), form/ (nova e
+                                 # edição), purchases.routes, purchase-list-query, purchase-links (o único que a
+                                 # casca e o Início importam), catalog-style, purchase-description, purchases.messages
   testing/                       # só de teste (api-examples, FakeLockManager, contraste, helpers)
 e2e/
-  support/                       # api-mock (API simulada com estado), fixtures, session, texts, layout, a11y
+  support/                       # api-mock (API simulada com estado, compras por usuário), fixtures (HOME_URL),
+                                 # session, texts, layout, a11y, purchases (dados do app.js, fixedToday)
   *.spec.ts                      # API simulada
   smoke.compose.spec.ts          # contra a stack real (npm run e2e:compose)
+  prototype.capture.spec.ts      # capturas app × protótipo (npm run e2e:capture)
 proxy.conf.json                  # /api → http://localhost:8080
 ```
