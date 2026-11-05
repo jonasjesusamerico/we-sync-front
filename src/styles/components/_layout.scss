@@ -1,0 +1,22 @@
+.ws-app {
+  display: flex;
+  min-height: 100vh;
+}
+.ws-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ws-content {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 1rem 6.5rem;
+}
+
+@media (min-width: 992px) {
+  .ws-content {
+    padding: 0.5rem 2rem 2.5rem;
+  }
+}

@@ -1,4 +1,4 @@
 import { InjectionToken } from '@angular/core';
 
-/** URL base da API (`environment.apiBaseUrl`), sem barra no fim. Ex.: `/api/v1`. */
+/** Base URL of the API (`environment.apiBaseUrl`), without the trailing slash. */
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');

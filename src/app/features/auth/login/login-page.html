@@ -1,0 +1,102 @@
+<ws-access-layout>
+  <div wsAccessPanel class="ws-auth-preview">
+    <div class="small text-muted fw-semibold">{{ texts.LOGIN_PREVIEW.label }}</div>
+    <div class="fs-3 fw-bold mb-3">{{ texts.LOGIN_PREVIEW.total }}</div>
+    <div class="ws-tx">
+      <span class="ws-cat" style="--cat: var(--ws-cat-food)"><ws-icon name="food" /></span>
+      <div class="ws-tx-main">
+        <div class="ws-tx-title">{{ texts.LOGIN_PREVIEW.items[0].title }}</div>
+        <div class="ws-tx-meta">{{ texts.LOGIN_PREVIEW.items[0].meta }}</div>
+      </div>
+      <span class="ws-tx-amount">{{ texts.LOGIN_PREVIEW.items[0].amount }}</span>
+    </div>
+    <div class="ws-tx">
+      <span class="ws-cat" style="--cat: var(--ws-cat-leisure)"><ws-icon name="smile" /></span>
+      <div class="ws-tx-main">
+        <div class="ws-tx-title">{{ texts.LOGIN_PREVIEW.items[1].title }}</div>
+        <div class="ws-tx-meta">{{ texts.LOGIN_PREVIEW.items[1].meta }}</div>
+      </div>
+      <span class="ws-tx-amount">{{ texts.LOGIN_PREVIEW.items[1].amount }}</span>
+    </div>
+  </div>
+  <div wsAccessPanel class="mb-2">
+    <h2>{{ texts.LOGIN_PANEL_TITLE }}</h2>
+    <p>{{ texts.LOGIN_PANEL_TEXT }}</p>
+  </div>
+
+  <h1 class="mb-1">{{ texts.LOGIN_TITLE }}</h1>
+  <p class="text-muted mb-4">{{ texts.LOGIN_SUBTITLE }}</p>
+
+  @if (alert(); as current) {
+    <ws-form-alert [kind]="current.kind">{{ current.text }}</ws-form-alert>
+  }
+
+  <form novalidate class="d-grid gap-3" [formGroup]="form" (ngSubmit)="submit()">
+    <div>
+      <label class="form-label" for="email">{{ texts.LABEL_EMAIL }}</label>
+      <div class="input-icon">
+        <ws-icon name="mail" />
+        <input
+          #emailInput
+          id="email"
+          type="email"
+          class="form-control"
+          autocomplete="email"
+          [placeholder]="texts.PLACEHOLDER_EMAIL"
+          formControlName="email"
+          [class.is-invalid]="emailError()"
+          [attr.aria-invalid]="emailError() ? 'true' : null"
+          [attr.aria-describedby]="emailError() ? 'email-error' : null"
+        />
+      </div>
+      @if (emailError(); as message) {
+        <div id="email-error" class="invalid-feedback d-block">{{ message }}</div>
+      }
+    </div>
+    <div>
+      <div class="d-flex justify-content-between">
+        <label class="form-label" for="password">{{ texts.LABEL_PASSWORD }}</label>
+        <button
+          type="button"
+          class="btn btn-link p-0 small fw-semibold text-decoration-none"
+          wsSoon
+          [wsSoonLabel]="texts.LABEL_FORGOT_PASSWORD"
+        >
+          {{ texts.LABEL_FORGOT_PASSWORD }}
+        </button>
+      </div>
+      <ws-password-field
+        [control]="form.controls.password"
+        inputId="password"
+        autocomplete="current-password"
+        [invalid]="!!passwordError()"
+        [describedBy]="passwordError() ? 'password-error' : null"
+      />
+      @if (passwordError(); as message) {
+        <div id="password-error" class="invalid-feedback d-block">{{ message }}</div>
+      }
+    </div>
+    <button
+      type="submit"
+      class="btn btn-primary btn-lg mt-2"
+      [disabled]="submitting()"
+      [attr.aria-busy]="submitting()"
+    >
+      @if (submitting()) {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      }
+      {{ texts.LABEL_LOGIN_SUBMIT }}
+    </button>
+  </form>
+
+  <div class="ws-divider my-4">{{ texts.LABEL_DIVIDER_OR }}</div>
+  <p class="text-center mb-0">
+    {{ texts.LOGIN_NO_ACCOUNT }}
+    <a
+      class="fw-semibold text-decoration-none"
+      routerLink="/cadastro"
+      [queryParams]="linkQuery()"
+      >{{ texts.LABEL_CREATE_ACCOUNT }}</a
+    >
+  </p>
+</ws-access-layout>

@@ -1,39 +1,47 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { CurrentUserStore } from '../user/current-user-store';
+import { HOME_URL } from './return-url';
+import { SESSION_KEY } from './session.models';
+import { SessionStore } from './session-store';
 
-import { SESSION_KEY, SessionStore } from './session.store';
+const ACCESS_PAGES = new Set(['login', 'cadastro']);
 
-const GUEST_URL = /^\/(?:login|cadastro)(?:[/?#;]|$)/;
-
-/** RN-12: reage ao evento `storage` (sair ou entrar em outra aba). */
+/** Follows the session of the other tabs through the `storage` event (ADR-14). */
 @Injectable({ providedIn: 'root' })
 export class SessionSync {
   private readonly store = inject(SessionStore);
+  private readonly currentUser = inject(CurrentUserStore);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private started = false;
 
   start(): void {
-    if (this.started) {
+    if (this.started || typeof window === 'undefined') {
       return;
     }
     this.started = true;
-    const handler = (event: StorageEvent) => this.onStorage(event);
-    window.addEventListener('storage', handler);
-    this.destroyRef.onDestroy(() => window.removeEventListener('storage', handler));
+    const listener = (event: StorageEvent) => this.onStorage(event);
+    window.addEventListener('storage', listener);
+    this.destroyRef.onDestroy(() => window.removeEventListener('storage', listener));
   }
 
   private onStorage(event: StorageEvent): void {
-    if (event.key !== SESSION_KEY && event.key !== null) {
+    // key null = the whole storage was cleared.
+    if (event.key !== null && event.key !== SESSION_KEY) {
       return;
     }
-    this.store.syncFromStorage();
-    const hasSession = this.store.hasSession();
-    const guest = GUEST_URL.test(this.router.url);
-    if (!hasSession && !guest) {
-      void this.router.navigate(['/login'], { replaceUrl: true });
-    } else if (hasSession && guest) {
-      void this.router.navigate(['/'], { replaceUrl: true });
+    const hasSession = this.store.read() !== null;
+    const tree = this.router.parseUrl(this.router.url);
+    const first = tree.root.children['primary']?.segments[0]?.path;
+    const onAccessPage = first !== undefined && ACCESS_PAGES.has(first);
+    if (!hasSession) {
+      this.currentUser.clear();
+      if (!onAccessPage) {
+        void this.router.navigateByUrl('/login', { replaceUrl: true });
+      }
+    } else if (onAccessPage) {
+      void this.router.navigateByUrl(HOME_URL, { replaceUrl: true });
     }
   }
 }

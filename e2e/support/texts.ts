@@ -1,12 +1,11 @@
-// Textos da interface usados nos e2e. Os de campo e de auth vêm das mesmas constantes do app; os de RN-15 são
-// repetidos aqui porque `error-messages.ts` depende do runtime do Angular.
+// The e2e uses the same text constants as the app.
 export * from '../../src/app/features/auth/auth.messages';
-export * from '../../src/app/layout/layout.messages';
-export * from '../../src/app/shared/validators/validation-messages';
-export * from '../../src/app/features/purchases/purchase.messages';
-
-export const MSG_CONNECTION =
-  'Não foi possível conectar. Verifique sua internet e tente novamente.';
-export const HOME_TITLE = 'Bem-vindo ao we-sync';
-export const MSG_SERVER = 'Algo deu errado. Tente novamente em instantes.';
-export const MSG_INVALID_DATA = 'Verifique os dados informados.';
+export * from '../../src/app/layout/shell/shell.messages';
+export * from '../../src/app/features/home/home.messages';
+export * from '../../src/app/shared/ui/ui.messages';
+export * from '../../src/app/features/purchases/purchases.messages';
+export * from '../../src/app/core/navigation/navigation.messages';
+// Feature 006. The settings texts share names with the auth ones (LABEL_NAME, …): they come as a namespace.
+export * as settings from '../../src/app/features/settings/settings.messages';
+export * from '../../src/app/core/theme/theme.messages';
+export * from '../../src/app/core/catalog/catalog.messages';

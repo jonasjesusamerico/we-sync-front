@@ -1,53 +1,42 @@
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-
 import { sanitizeReturnUrl } from './return-url';
 
 describe('sanitizeReturnUrl', () => {
   let router: Router;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideRouter([])] });
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideRouter([])],
+    });
     router = TestBed.inject(Router);
   });
 
-  it('returnUrl interno', () => {
-    expect(sanitizeReturnUrl('/compras?mes=10', router)).toBe('/compras?mes=10');
+  it.each([
+    ['/inicio', '/inicio'],
+    ['/inicio?x=1#a', '/inicio?x=1#a'],
+    ['/', '/'],
+  ])('returnUrl interno: %s', (raw, expected) => {
+    expect(sanitizeReturnUrl(raw, router)).toBe(expected);
   });
 
-  it('returnUrl raiz', () => {
-    expect(sanitizeReturnUrl('/', router)).toBe('/');
+  it.each([
+    undefined,
+    '',
+    ['/inicio'],
+    'inicio',
+    '//evil.example',
+    '/\\evil.example',
+    '/a\\b',
+    'https://evil.example',
+    'javascript:alert(1)',
+    '/\t/evil.example',
+  ])('returnUrl externo ou inválido: %j', (raw) => {
+    expect(sanitizeReturnUrl(raw, router)).toBe('/inicio');
   });
 
-  it('returnUrl vazio ou ausente', () => {
-    expect(sanitizeReturnUrl(null, router)).toBe('/');
-    expect(sanitizeReturnUrl(undefined, router)).toBe('/');
-    expect(sanitizeReturnUrl('', router)).toBe('/');
-  });
-
-  it('returnUrl absoluto', () => {
-    expect(sanitizeReturnUrl('https://evil.com', router)).toBe('/');
-  });
-
-  it('returnUrl protocolo relativo', () => {
-    expect(sanitizeReturnUrl('//evil.com', router)).toBe('/');
-  });
-
-  it('returnUrl com barra invertida', () => {
-    expect(sanitizeReturnUrl('/\\evil.com', router)).toBe('/');
-    expect(sanitizeReturnUrl('/a\\b', router)).toBe('/');
-  });
-
-  it('returnUrl javascript:', () => {
-    expect(sanitizeReturnUrl('javascript:alert(1)', router)).toBe('/');
-  });
-
-  it('returnUrl sem barra inicial', () => {
-    expect(sanitizeReturnUrl('compras', router)).toBe('/');
-  });
-
-  it('returnUrl para login/cadastro', () => {
-    expect(sanitizeReturnUrl('/login', router)).toBe('/');
-    expect(sanitizeReturnUrl('/cadastro?x=1', router)).toBe('/');
+  it.each(['/login', '/cadastro?returnUrl=%2Finicio'])('returnUrl para acesso: %s', (raw) => {
+    expect(sanitizeReturnUrl(raw, router)).toBe('/inicio');
   });
 });

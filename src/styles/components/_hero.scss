@@ -1,0 +1,78 @@
+// Hero balance card (prototype we-sync.css "Hero balance card"), colors as tokens. Without the goal progress bar
+// (feature 012); .ws-hero-progress holds the "Ver compras" link or the empty month (feature 005 D-07).
+.ws-hero {
+  position: relative;
+  overflow: hidden;
+  color: var(--ws-on-hero);
+  border-radius: calc(var(--ws-radius) + 4px);
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--ws-hero-from), var(--ws-hero-to));
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--ws-primary) 30%, transparent);
+}
+.ws-hero::after,
+.ws-hero::before {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ws-on-hero) 8%, transparent);
+  pointer-events: none;
+}
+.ws-hero::before {
+  width: 280px;
+  height: 280px;
+  right: -80px;
+  top: -120px;
+}
+.ws-hero::after {
+  width: 180px;
+  height: 180px;
+  right: 120px;
+  bottom: -110px;
+}
+.ws-hero-label {
+  color: var(--ws-on-hero-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.ws-hero-value {
+  font-size: clamp(2rem, 1.5rem + 2vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0.25rem 0 0.75rem;
+}
+.ws-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--ws-hero-overlay);
+  color: var(--ws-on-hero);
+}
+.ws-hero-chip .ws-icon {
+  width: 16px;
+  height: 16px;
+}
+.ws-hero-progress {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.25rem;
+}
+.ws-hero-progress small,
+.ws-hero-progress p {
+  color: var(--ws-on-hero-muted);
+}
+.ws-hero-progress a:not(.btn) {
+  color: var(--ws-on-hero);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 44px;
+  font-weight: 600;
+}
+.ws-hero .btn {
+  min-height: 44px;
+}

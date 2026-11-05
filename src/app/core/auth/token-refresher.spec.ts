@@ -1,205 +1,199 @@
-import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-
+import { firstValueFrom } from 'rxjs';
+import { ERROR_INTERNAL, ERROR_INVALID_TOKEN } from '../../../testing/api-examples';
 import { FakeLockManager } from '../../../testing/fake-lock-manager';
-import { API_BASE_URL } from '../http/api-base-url';
-import { LOCKS } from './locks';
-import { RefreshError } from './refresh-error';
-import { SESSION_KEY } from './session.store';
+import { API, httpTestingProviders } from '../../../testing/http';
+import { seedSession, settle, storedSession, tokens } from '../../../testing/session';
+import { authInterceptor } from './auth-interceptor';
+import { LOCK_MANAGER, REFRESH_LOCK_NAME } from './lock-manager';
+import { RefreshError } from './session-errors';
+import { SessionEnd } from './session-end';
+import { SessionStore } from './session-store';
 import { TokenRefresher } from './token-refresher';
 
-const REFRESH_URL = '/api/v1/auth/refresh';
-const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-const seed = (access: string, refresh: string) =>
-  localStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify({ access_token: access, refresh_token: refresh }),
-  );
-const stored = () => JSON.parse(localStorage.getItem(SESSION_KEY) ?? 'null');
+const ME = `${API}/users/me`;
+const REFRESH = `${API}/auth/refresh`;
 
 describe('TokenRefresher', () => {
-  let refresher: TokenRefresher;
   let http: HttpTestingController;
-  let locks: FakeLockManager;
+  let client: HttpClient;
+  let locks: FakeLockManager | null;
+  let sessionEnd: { expired: ReturnType<typeof vi.fn>; loggedOut: ReturnType<typeof vi.fn> };
 
-  beforeEach(() => {
-    localStorage.clear();
-    locks = new FakeLockManager();
+  function setup(withLocks = true) {
+    locks = withLocks ? new FakeLockManager() : null;
+    sessionEnd = { expired: vi.fn(), loggedOut: vi.fn() };
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: '/api/v1' },
-        { provide: LOCKS, useValue: locks },
+        ...httpTestingProviders([authInterceptor]),
+        { provide: LOCK_MANAGER, useValue: locks },
+        { provide: SessionEnd, useValue: sessionEnd },
       ],
     });
-    refresher = TestBed.inject(TokenRefresher);
     http = TestBed.inject(HttpTestingController);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    http.verify();
-    localStorage.clear();
-  });
-
-  async function flushRefresh(body: object, status = 200) {
-    await settle();
-    const req = http.expectOne(REFRESH_URL);
-    req.flush(body, { status, statusText: String(status) });
-    return req;
+    client = TestBed.inject(HttpClient);
   }
 
-  it('renova e grava o par novo', async () => {
-    seed('A1', 'R1');
-    const result = refresher.refresh('A1');
+  const unauthorized = { status: 401, statusText: 'Unauthorized' };
 
-    const req = await flushRefresh({
-      access_token: 'A2',
-      refresh_token: 'R2',
-      token_type: 'Bearer',
-    });
-
-    await expect(result).resolves.toBe('A2');
-    expect(req.request.body).toEqual({ refresh_token: 'R1' });
-    expect(stored()).toEqual({ access_token: 'A2', refresh_token: 'R2' });
+  afterEach(() => {
+    http.verify();
+    localStorage.clear();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('três chamadas na mesma aba = um refresh', async () => {
-    seed('A1', 'R1');
-    const results = [refresher.refresh('A1'), refresher.refresh('A1'), refresher.refresh('A1')];
-
-    await flushRefresh({ access_token: 'A2', refresh_token: 'R2', token_type: 'Bearer' });
-
-    await expect(Promise.all(results)).resolves.toEqual(['A2', 'A2', 'A2']);
-  });
-
-  it('token já trocado', async () => {
-    seed('A2', 'R2');
-
-    await expect(refresher.refresh('A1')).resolves.toBe('A2');
-    http.expectNone(REFRESH_URL);
-  });
-
-  it('duas abas com o token vencido', async () => {
-    seed('A1', 'R1');
-    const otherTab = createEnvironmentInjector(
-      [TokenRefresher],
-      TestBed.inject(EnvironmentInjector),
-    ).get(TokenRefresher);
-    expect(otherTab).not.toBe(refresher);
-
-    const first = refresher.refresh('A1');
-    const second = otherTab.refresh('A1');
-    await flushRefresh({ access_token: 'A2', refresh_token: 'R2', token_type: 'Bearer' });
-
-    await expect(Promise.all([first, second])).resolves.toEqual(['A2', 'A2']);
-    http.expectNone(REFRESH_URL);
-    expect(stored()).toEqual({ access_token: 'A2', refresh_token: 'R2' });
-  });
-
-  it('sessão sumiu (logout em outra aba)', async () => {
-    const error = await refresher.refresh('A1').catch((e: unknown) => e);
-
-    expect(error).toBeInstanceOf(RefreshError);
-    expect((error as RefreshError).reason).toBe('logged-out');
-    http.expectNone(REFRESH_URL);
-  });
-
-  it('refresh 401', async () => {
-    seed('A1', 'R1');
-    const result = refresher.refresh('A1').catch((e: unknown) => e);
-
-    await flushRefresh({ code: 'UNAUTHORIZED', message: 'invalid credentials' }, 401);
-
-    const error = await result;
-    expect(error).toBeInstanceOf(RefreshError);
-    expect((error as RefreshError).reason).toBe('expired');
-    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
-  });
-
-  it('refresh 400', async () => {
-    seed('A1', 'R1');
-    const result = refresher.refresh('A1').catch((e: unknown) => e);
-
-    await flushRefresh({ code: 'BAD_REQUEST', message: 'refresh_token is required' }, 400);
-
-    const error = await result;
-    expect(error).toBeInstanceOf(RefreshError);
-    expect((error as RefreshError).reason).toBe('expired');
-    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
-  });
-
-  it('refresh 500 mantém a sessão', async () => {
-    seed('A1', 'R1');
-    const result = refresher.refresh('A1').catch((e: unknown) => e);
-
-    await flushRefresh({ code: 'INTERNAL_SERVER_ERROR', message: 'internal server error' }, 500);
-
-    const error = await result;
-    expect(error).toBeInstanceOf(HttpErrorResponse);
-    expect((error as HttpErrorResponse).status).toBe(500);
-    expect(stored()).toEqual({ access_token: 'A1', refresh_token: 'R1' });
-  });
-
-  it('refresh sem rede mantém a sessão', async () => {
-    seed('A1', 'R1');
-    const result = refresher.refresh('A1').catch((e: unknown) => e);
-
+  it('renova e repete', async () => {
+    setup();
+    seedSession('A1', 'R1');
+    const result = firstValueFrom(client.get(ME));
+    http.expectOne(ME).flush(ERROR_INVALID_TOKEN, unauthorized);
     await settle();
-    http.expectOne(REFRESH_URL).error(new ProgressEvent('error'));
-
-    const error = await result;
-    expect(error).toBeInstanceOf(HttpErrorResponse);
-    expect((error as HttpErrorResponse).status).toBe(0);
-    expect(stored()).toEqual({ access_token: 'A1', refresh_token: 'R1' });
+    const refresh = http.expectOne(REFRESH);
+    expect(refresh.request.body).toEqual({ refresh_token: 'R1' });
+    expect(refresh.request.headers.has('Authorization')).toBe(false);
+    refresh.flush(tokens('A2', 'R2'));
+    await settle();
+    expect(storedSession()).toEqual({ access_token: 'A2', refresh_token: 'R2' });
+    const retry = http.expectOne(ME);
+    expect(retry.request.headers.get('Authorization')).toBe('Bearer A2');
+    retry.flush({ id: 42 });
+    expect(await result).toEqual({ id: 42 });
   });
 
-  it('inFlight é liberado', async () => {
-    seed('A1', 'R1');
-    const first = refresher.refresh('A1');
-    await flushRefresh({ access_token: 'A2', refresh_token: 'R2', token_type: 'Bearer' });
-    await expect(first).resolves.toBe('A2');
-
-    const second = refresher.refresh('A2');
-    const req = await flushRefresh({
-      access_token: 'A3',
-      refresh_token: 'R3',
-      token_type: 'Bearer',
+  it('várias chamadas, uma renovação', async () => {
+    setup();
+    seedSession('A1', 'R1');
+    const results = [1, 2, 3].map(() => firstValueFrom(client.get(ME)));
+    const first = http.match(ME);
+    expect(first).toHaveLength(3);
+    first.forEach((req) => req.flush(ERROR_INVALID_TOKEN, unauthorized));
+    await settle();
+    http.expectOne(REFRESH).flush(tokens('A2', 'R2'));
+    await settle();
+    const retries = http.match(ME);
+    expect(retries).toHaveLength(3);
+    retries.forEach((req) => {
+      expect(req.request.headers.get('Authorization')).toBe('Bearer A2');
+      req.flush({ id: 42 });
     });
-
-    await expect(second).resolves.toBe('A3');
-    expect(req.request.body).toEqual({ refresh_token: 'R2' });
+    expect(await Promise.all(results)).toHaveLength(3);
   });
 
-  it('save falha', async () => {
-    seed('A1', 'R1');
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new DOMException('cheio', 'QuotaExceededError');
-    });
-    const result = refresher.refresh('A1').catch((e: unknown) => e);
-
-    await flushRefresh({ access_token: 'A2', refresh_token: 'R2', token_type: 'Bearer' });
-
-    const error = await result;
-    expect(error).toBeInstanceOf(RefreshError);
-    expect((error as RefreshError).reason).toBe('expired');
-    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
-  });
-
-  it('espera do lock estourada propaga e mantém a sessão', async () => {
-    seed('A1', 'R1');
-    vi.spyOn(AbortSignal, 'timeout').mockReturnValue(
-      AbortSignal.abort(new DOMException('t', 'TimeoutError')),
+  it('outra aba já renovou (lock)', async () => {
+    setup();
+    seedSession('A1', 'R1');
+    let release!: () => void;
+    const otherTab = locks!.request(
+      REFRESH_LOCK_NAME,
+      { signal: new AbortController().signal },
+      () => new Promise<void>((resolve) => (release = resolve)),
     );
+    const result = TestBed.inject(TokenRefresher).refresh('A1');
+    await settle();
+    expect(locks!.waiting(REFRESH_LOCK_NAME)).toBe(1);
+    seedSession('A2', 'R2');
+    release();
+    await otherTab;
+    expect(await result).toBe('A2');
+    http.expectNone(REFRESH);
+  });
 
-    const error = await refresher.refresh('A1').catch((e: unknown) => e);
+  it('sem lock, outra aba renovou', async () => {
+    setup(false);
+    seedSession('A1', 'R1');
+    const result = TestBed.inject(TokenRefresher).refresh('A1');
+    await settle();
+    const refresh = http.expectOne(REFRESH);
+    seedSession('A2', 'R2');
+    refresh.flush(ERROR_INVALID_TOKEN, unauthorized);
+    expect(await result).toBe('A2');
+    expect(storedSession()).toEqual({ access_token: 'A2', refresh_token: 'R2' });
+    expect(sessionEnd.expired).not.toHaveBeenCalled();
+  });
 
-    expect(error).toBeInstanceOf(DOMException);
-    expect((error as DOMException).name).toBe('TimeoutError');
-    http.expectNone(REFRESH_URL);
-    expect(stored()).toEqual({ access_token: 'A1', refresh_token: 'R1' });
+  it.each([401, 400])('refresh recusado (%i)', async (status) => {
+    setup();
+    seedSession('A1', 'R1');
+    const result = firstValueFrom(client.get(ME));
+    http.expectOne(ME).flush(ERROR_INVALID_TOKEN, unauthorized);
+    await settle();
+    http.expectOne(REFRESH).flush(ERROR_INVALID_TOKEN, { status, statusText: 'Error' });
+    await expect(result).rejects.toMatchObject({ status: 401 });
+    expect(storedSession()).toBeNull();
+    expect(sessionEnd.expired).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([0, 500])('refresh indisponível (%i)', async (status) => {
+    setup();
+    seedSession('A1', 'R1');
+    const result = firstValueFrom(client.get(ME));
+    http.expectOne(ME).flush(ERROR_INVALID_TOKEN, unauthorized);
+    await settle();
+    const refresh = http.expectOne(REFRESH);
+    if (status === 0) {
+      refresh.error(new ProgressEvent('error'), { status: 0 });
+    } else {
+      refresh.flush(ERROR_INTERNAL, { status, statusText: 'Error' });
+    }
+    await expect(result).rejects.toMatchObject({ status: 401, url: ME });
+    expect(storedSession()).toEqual({ access_token: 'A1', refresh_token: 'R1' });
+    expect(sessionEnd.expired).not.toHaveBeenCalled();
+  });
+
+  it('espera do lock estourada', async () => {
+    vi.useFakeTimers();
+    setup();
+    seedSession('A1', 'R1');
+    void locks!.request(
+      REFRESH_LOCK_NAME,
+      { signal: new AbortController().signal },
+      () => new Promise<void>(() => undefined),
+    );
+    const result = TestBed.inject(TokenRefresher).refresh('A1');
+    const assertion = expect(result).rejects.toEqual(new RefreshError('unavailable'));
+    await vi.advanceTimersByTimeAsync(10_000);
+    await assertion;
+    expect(storedSession()).toEqual({ access_token: 'A1', refresh_token: 'R1' });
+  });
+
+  it('outra aba saiu', async () => {
+    setup();
+    seedSession('A1', 'R1');
+    const result = firstValueFrom(client.get(ME));
+    localStorage.clear();
+    http.expectOne(ME).flush(ERROR_INVALID_TOKEN, unauthorized);
+    await expect(result).rejects.toMatchObject({ status: 401 });
+    expect(sessionEnd.loggedOut).toHaveBeenCalledTimes(1);
+    http.expectNone(REFRESH);
+  });
+
+  it('storage recusa o par novo', async () => {
+    setup();
+    seedSession('A1', 'R1');
+    const result = firstValueFrom(client.get(ME));
+    http.expectOne(ME).flush(ERROR_INVALID_TOKEN, unauthorized);
+    await settle();
+    vi.spyOn(TestBed.inject(SessionStore), 'save').mockReturnValue(false);
+    http.expectOne(REFRESH).flush(tokens('A2', 'R2'));
+    await expect(result).rejects.toMatchObject({ status: 401 });
+    expect(storedSession()).toBeNull();
+    expect(sessionEnd.expired).toHaveBeenCalledTimes(1);
+  });
+
+  it('repetição com 401', async () => {
+    setup();
+    seedSession('A1', 'R1');
+    const result = firstValueFrom(client.get(ME));
+    http.expectOne(ME).flush(ERROR_INVALID_TOKEN, unauthorized);
+    await settle();
+    http.expectOne(REFRESH).flush(tokens('A2', 'R2'));
+    await settle();
+    http.expectOne(ME).flush(ERROR_INVALID_TOKEN, unauthorized);
+    await expect(result).rejects.toMatchObject({ status: 401 });
+    expect(sessionEnd.expired).toHaveBeenCalledTimes(1);
+    http.expectNone(ME);
   });
 });

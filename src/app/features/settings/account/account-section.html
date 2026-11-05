@@ -1,0 +1,153 @@
+<section id="tab-conta" [attr.aria-label]="t.SECTION_LABELS.conta">
+  <form class="ws-card mb-3" novalidate [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+    <h2 class="ws-section-title mb-3">{{ t.PROFILE_TITLE }}</h2>
+    @if (status() === 'ready' && user(); as current) {
+      @if (profileError(); as message) {
+        <ws-form-alert kind="error">{{ message }}</ws-form-alert>
+      }
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="acc-name">{{ t.LABEL_NAME }}</label>
+          <input
+            #nameInput
+            id="acc-name"
+            class="form-control"
+            autocomplete="name"
+            formControlName="name"
+            [class.is-invalid]="nameError()"
+            [attr.aria-invalid]="nameError() ? 'true' : null"
+            [attr.aria-describedby]="nameError() ? 'acc-name-error' : null"
+          />
+          @if (nameError(); as message) {
+            <div id="acc-name-error" class="invalid-feedback d-block">{{ message }}</div>
+          }
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="acc-email">{{ t.LABEL_EMAIL }}</label>
+          <input
+            id="acc-email"
+            type="email"
+            class="form-control"
+            readonly
+            aria-describedby="acc-email-hint"
+            [value]="current.email"
+          />
+          <div class="form-text" id="acc-email-hint">{{ t.EMAIL_HINT }}</div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end mt-3">
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="savingProfile()"
+          [attr.aria-busy]="savingProfile()"
+        >
+          @if (savingProfile()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          }
+          {{ t.SAVE_PROFILE }}
+        </button>
+      </div>
+    } @else if (status() === 'unavailable') {
+      <ws-area-status
+        status="error"
+        [message]="t.MSG_PROFILE_UNAVAILABLE"
+        (retry)="retryProfile()"
+      />
+    } @else {
+      <ws-area-status status="loading" />
+    }
+  </form>
+
+  <form class="ws-card mb-3" novalidate [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+    <h2 class="ws-section-title mb-3">{{ t.PASSWORD_TITLE }}</h2>
+    @if (passwordError(); as message) {
+      <ws-form-alert kind="error">{{ message }}</ws-form-alert>
+    }
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="acc-pass">{{ t.LABEL_CURRENT_PASSWORD }}</label>
+        <ws-password-field
+          #currentField
+          [control]="passwordForm.controls.current"
+          inputId="acc-pass"
+          autocomplete="current-password"
+          [invalid]="!!currentError()"
+          [describedBy]="currentError() ? 'acc-pass-error' : null"
+        />
+        @if (currentError(); as message) {
+          <div id="acc-pass-error" class="invalid-feedback d-block">{{ message }}</div>
+        }
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="acc-new">{{ t.LABEL_NEW_PASSWORD }}</label>
+        <ws-password-field
+          #nextField
+          [control]="passwordForm.controls.next"
+          inputId="acc-new"
+          autocomplete="new-password"
+          [invalid]="!!nextError()"
+          [describedBy]="nextError() ? 'acc-new-hint acc-new-error' : 'acc-new-hint'"
+        />
+        <ws-strength-meter [password]="newPassword()" hintId="acc-new-hint" />
+        @if (nextError(); as message) {
+          <div id="acc-new-error" class="invalid-feedback d-block">{{ message }}</div>
+        }
+      </div>
+    </div>
+    <p class="form-text mt-3 mb-0">{{ t.PASSWORD_NOTE }}</p>
+    <div class="d-flex justify-content-end mt-3">
+      <button
+        type="submit"
+        class="btn btn-ghost"
+        [disabled]="changingPassword()"
+        [attr.aria-busy]="changingPassword()"
+      >
+        @if (changingPassword()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        {{ t.PASSWORD_TITLE }}
+      </button>
+    </div>
+  </form>
+
+  <div class="ws-card mb-3">
+    <h2 class="ws-section-title mb-3">{{ t.PREFERENCES_TITLE }}</h2>
+    <fieldset aria-describedby="theme-hint">
+      <legend class="form-label fs-6">{{ t.LABEL_THEME }}</legend>
+      <div class="form-text mt-0 mb-2" id="theme-hint">{{ t.THEME_HINT }}</div>
+      <div class="ws-segmented">
+        <input
+          type="radio"
+          name="theme"
+          id="th-light"
+          value="light"
+          [checked]="theme.theme() === 'light'"
+          (change)="setTheme('light')"
+        />
+        <label for="th-light"><ws-icon name="sun" />{{ t.THEME_LIGHT }}</label>
+        <input
+          type="radio"
+          name="theme"
+          id="th-dark"
+          value="dark"
+          [checked]="theme.theme() === 'dark'"
+          (change)="setTheme('dark')"
+        />
+        <label for="th-dark"><ws-icon name="moon" />{{ t.THEME_DARK }}</label>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="ws-card ws-danger-zone">
+    <h2 class="ws-section-title text-danger-ws">{{ t.DELETE_TITLE }}</h2>
+    <p class="ws-section-sub mb-3">{{ t.DELETE_TEXT }}</p>
+    <button type="button" class="btn btn-outline-danger" (click)="deleting.set(true)">
+      {{ t.DELETE_OPEN }}
+    </button>
+  </div>
+</section>
+
+@if (deleting()) {
+  <ws-delete-account-dialog (closed)="deleting.set(false)" />
+}

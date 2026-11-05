@@ -1,0 +1,50 @@
+.form-control,
+.form-select {
+  border-radius: var(--ws-radius-sm);
+  padding: 0.7rem 0.9rem;
+  background-color: var(--ws-surface);
+  border-color: var(--ws-border);
+  color: var(--ws-text);
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--ws-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ws-primary) 18%, transparent);
+  background-color: var(--ws-surface);
+  color: var(--ws-text);
+}
+// Without Bootstrap's error icon (its color is outside the tokens and it sits under the show-password button).
+.form-control.is-invalid {
+  background-image: none;
+  padding-right: 0.9rem;
+  border-color: var(--ws-danger);
+}
+.form-control.is-invalid:focus {
+  border-color: var(--ws-danger);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ws-danger) 18%, transparent);
+}
+.invalid-feedback {
+  color: var(--ws-danger);
+}
+.form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+}
+.input-icon {
+  position: relative;
+}
+.input-icon > .ws-icon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ws-muted);
+  pointer-events: none;
+}
+.input-icon > .form-control {
+  padding-left: 2.6rem;
+}
+.progress {
+  --bs-progress-bg: var(--ws-surface-2);
+}

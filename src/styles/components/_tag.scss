@@ -1,0 +1,23 @@
+// Small tag: "sua", "padrão" (prototype we-sync.css ".ws-tag").
+.ws-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ws-muted);
+  background: var(--ws-surface-2);
+  border: 1px solid var(--ws-border);
+  white-space: nowrap;
+}
+.ws-tag .ws-icon {
+  width: 13px;
+  height: 13px;
+}
+.ws-tag.is-primary {
+  color: var(--ws-primary);
+  background: var(--ws-primary-soft);
+  border-color: transparent;
+}

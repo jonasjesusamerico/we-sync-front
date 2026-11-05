@@ -1,0 +1,7 @@
+// Inner layout of the purchases list (RF-12, RN-09): the whole row is clickable and long descriptions end in "…".
+tbody tr {
+  cursor: pointer;
+}
+.ws-desc-cell {
+  max-width: 22rem;
+}

@@ -1,0 +1,217 @@
+<section
+  [id]="kind() === 'category' ? 'tab-categorias' : 'tab-pagamentos'"
+  [attr.aria-label]="
+    kind() === 'category' ? t.SECTION_LABELS.categorias : t.SECTION_LABELS.pagamentos
+  "
+>
+  <div class="ws-card mb-3">
+    <h2 class="ws-section-title">{{ texts().newTitle }}</h2>
+    <p class="ws-section-sub mb-3">{{ texts().newSubtitle }}</p>
+    @if (createError(); as message) {
+      <ws-form-alert kind="error">{{ message }}</ws-form-alert>
+    }
+    @if (kind() === 'category') {
+      <form class="d-grid gap-3" novalidate [formGroup]="createForm" (ngSubmit)="create()">
+        <div>
+          <label class="form-label" for="cat-name">{{ t.LABEL_NAME }}</label>
+          <input
+            #nameInput
+            id="cat-name"
+            class="form-control"
+            autocomplete="off"
+            [wsCodePointLimit]="NAME_MAX"
+            [placeholder]="texts().placeholder"
+            formControlName="name"
+            [class.is-invalid]="nameError()"
+            [attr.aria-invalid]="nameError() ? 'true' : null"
+            [attr.aria-describedby]="nameError() ? 'cat-name-error cat-name-hint' : 'cat-name-hint'"
+          />
+          @if (nameError(); as message) {
+            <div id="cat-name-error" class="invalid-feedback d-block">{{ message }}</div>
+          }
+          <div class="form-text" id="cat-name-hint">{{ texts().hint }}</div>
+        </div>
+        <fieldset>
+          <legend class="form-label fs-6">{{ t.LABEL_ICON }}</legend>
+          <div class="ws-chips">
+            @for (icon of ICON_CHOICES; track icon) {
+              <div class="ws-chip">
+                <input
+                  type="radio"
+                  name="icon"
+                  formControlName="icon"
+                  [value]="icon"
+                  [id]="'ci-' + icon"
+                />
+                <label [for]="'ci-' + icon"
+                  ><ws-icon [name]="iconName(icon)" /><span class="visually-hidden">{{
+                    iconLabel(icon)
+                  }}</span></label
+                >
+              </div>
+            }
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend class="form-label fs-6">{{ t.LABEL_COLOR }}</legend>
+          <div class="ws-swatches">
+            @for (color of COLOR_CHOICES; track color) {
+              <input
+                type="radio"
+                name="color"
+                formControlName="color"
+                [value]="color"
+                [id]="'cc-' + color"
+              />
+              <label [for]="'cc-' + color" [style.--sw]="colorValue(color)"
+                ><span class="visually-hidden">{{ colorLabel(color) }}</span></label
+              >
+            }
+          </div>
+        </fieldset>
+        <div>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="creating() || list().status !== 'ready'"
+            [attr.aria-busy]="creating()"
+          >
+            @if (creating()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            }
+            {{ texts().submit }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <form
+        class="row g-2 align-items-start"
+        novalidate
+        [formGroup]="createForm"
+        (ngSubmit)="create()"
+      >
+        <div class="col-12 col-md">
+          <label class="visually-hidden" for="pay-name">{{ t.LABEL_NAME }}</label>
+          <input
+            #nameInput
+            id="pay-name"
+            class="form-control"
+            autocomplete="off"
+            [wsCodePointLimit]="NAME_MAX"
+            [placeholder]="texts().placeholder"
+            formControlName="name"
+            [class.is-invalid]="nameError()"
+            [attr.aria-invalid]="nameError() ? 'true' : null"
+            [attr.aria-describedby]="nameError() ? 'pay-name-error' : null"
+          />
+          @if (nameError(); as message) {
+            <div id="pay-name-error" class="invalid-feedback d-block">{{ message }}</div>
+          }
+        </div>
+        <div class="col-12 col-md-auto">
+          <button
+            type="submit"
+            class="btn btn-primary w-100"
+            [disabled]="creating() || list().status !== 'ready'"
+            [attr.aria-busy]="creating()"
+          >
+            @if (creating()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            }
+            {{ texts().submit }}
+          </button>
+        </div>
+      </form>
+    }
+  </div>
+
+  <div class="ws-card">
+    <h2 #listTitle class="ws-section-title mb-2" id="catalog-list-title" tabindex="-1">
+      {{ texts().listTitle }}
+    </h2>
+    @switch (list().status) {
+      @case ('loading') {
+        <ws-area-status status="loading" />
+      }
+      @case ('error') {
+        <ws-area-status status="error" [message]="errorMessage()" (retry)="retry()" />
+      }
+    }
+    @if (lists(); as l) {
+      <ul class="ws-tx-list">
+        @for (item of l.own; track item.id) {
+          <li class="ws-tx">
+            <ws-category-bubble [icon]="bubble(item).icon" [color]="bubble(item).color" />
+            <div class="ws-tx-main">
+              <div class="ws-tx-title text-wrap text-break">{{ item.name }}</div>
+            </div>
+            <span class="ws-tag is-primary">{{ t.TAG_OWN }}</span>
+            <button
+              type="button"
+              class="btn btn-ghost btn-icon btn-sm"
+              [attr.aria-label]="t.editLabel(item.name)"
+              (click)="editing.set(item)"
+            >
+              <ws-icon name="edit" />
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-icon btn-sm"
+              [attr.aria-label]="t.archiveLabel(item.name)"
+              (click)="archive(item)"
+            >
+              <ws-icon name="archive" />
+            </button>
+          </li>
+        }
+        @for (item of l.globals; track item.id) {
+          <li class="ws-tx">
+            <ws-category-bubble [icon]="bubble(item).icon" [color]="bubble(item).color" />
+            <div class="ws-tx-main">
+              <div class="ws-tx-title text-wrap text-break">{{ item.name }}</div>
+            </div>
+            <span class="ws-tag"><ws-icon name="lockSmall" />{{ t.TAG_DEFAULT }}</span>
+          </li>
+        }
+      </ul>
+      @if (l.archived.length > 0) {
+        <details class="ws-archived mt-3">
+          <summary>{{ t.archivedSummary(l.archived.length) }}</summary>
+          <ul class="ws-tx-list mt-2">
+            @for (item of l.archived; track item.id) {
+              <li class="ws-tx">
+                <ws-category-bubble [icon]="bubble(item).icon" [color]="bubble(item).color" />
+                <div class="ws-tx-main">
+                  <div class="ws-tx-title text-wrap text-break">{{ item.name }}</div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-soft btn-sm"
+                  [attr.aria-label]="t.reactivateLabel(item.name)"
+                  [disabled]="reactivating().has(item.id)"
+                  [attr.aria-busy]="reactivating().has(item.id)"
+                  (click)="reactivate(item)"
+                >
+                  @if (reactivating().has(item.id)) {
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                  }
+                  {{ t.REACTIVATE }}
+                </button>
+              </li>
+            }
+          </ul>
+        </details>
+      }
+    }
+  </div>
+</section>
+
+@if (editing(); as item) {
+  <ws-catalog-edit-dialog
+    [kind]="kind()"
+    [item]="item"
+    (saved)="onSaved()"
+    (gone)="onGone()"
+    (closed)="editing.set(null)"
+  />
+}

@@ -1,0 +1,39 @@
+.dropdown-menu {
+  --bs-dropdown-bg: var(--ws-surface);
+  --bs-dropdown-color: var(--ws-text);
+  --bs-dropdown-border-color: var(--ws-border);
+  --bs-dropdown-link-color: var(--ws-text);
+  --bs-dropdown-link-hover-color: var(--ws-text);
+  --bs-dropdown-link-hover-bg: var(--ws-surface-2);
+  --bs-dropdown-link-active-bg: var(--ws-primary-soft);
+  --bs-dropdown-link-active-color: var(--ws-primary);
+  --bs-dropdown-divider-bg: var(--ws-border);
+  border-radius: var(--ws-radius-sm);
+  box-shadow: var(--ws-shadow-lg);
+  padding: 0.4rem;
+}
+.dropdown-item {
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+}
+
+// Without Bootstrap's JS (Popper) the menu is positioned here, under the button, aligned to the right.
+.ws-user-menu {
+  position: relative;
+}
+.ws-user-menu .dropdown-menu {
+  top: 100%;
+  right: 0;
+  left: auto;
+  margin-top: 0.25rem;
+  min-width: 16rem;
+  max-width: min(20rem, calc(100vw - 2rem));
+}
+.ws-user-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}

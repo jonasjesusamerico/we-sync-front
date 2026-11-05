@@ -1,0 +1,11 @@
+<ws-theme-toggle extraClass="ws-auth-theme" />
+<div class="ws-auth">
+  <section class="ws-auth-art" aria-hidden="true">
+    <ws-brand />
+    <ng-content select="[wsAccessPanel]" />
+  </section>
+  <main class="ws-auth-form">
+    <div class="d-lg-none mb-4"><ws-brand /></div>
+    <ng-content />
+  </main>
+</div>

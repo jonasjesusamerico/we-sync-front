@@ -1,0 +1,97 @@
+<div class="ws-app">
+  <aside id="ws-sidebar" class="ws-sidebar" [attr.aria-label]="texts.LABEL_MAIN_MENU">
+    <div class="px-2 pb-2"><ws-brand [link]="true" /></div>
+    @for (group of groups; track group.title) {
+      <div class="ws-nav-title">{{ group.title }}</div>
+      <nav class="d-flex flex-column gap-1" [attr.aria-label]="group.title">
+        @for (item of group.items; track item.key) {
+          @if (item.route) {
+            <a
+              class="ws-nav-link"
+              [routerLink]="item.route"
+              routerLinkActive
+              [routerLinkActiveOptions]="ACTIVE_OPTIONS"
+              ariaCurrentWhenActive="page"
+              ><ws-icon [name]="item.icon" />{{ item.label }}</a
+            >
+          } @else {
+            <button type="button" class="ws-nav-link" wsSoon>
+              <ws-icon [name]="item.icon" />{{ item.label }}
+              <span class="ws-badge-soon">{{ SOON_TAG }}</span>
+            </button>
+          }
+        }
+      </nav>
+    }
+    <div class="ws-sidebar-card">
+      <strong>{{ texts.SIDEBAR_CARD_TITLE }}</strong>
+      <p>{{ texts.SIDEBAR_CARD_TEXT }}</p>
+      <a class="btn w-100" [routerLink]="NEW_PURCHASE_PATH" [state]="newPurchaseState()">{{
+        texts.LABEL_NEW_PURCHASE
+      }}</a>
+    </div>
+  </aside>
+
+  <div class="ws-main">
+    <header id="ws-topbar" class="ws-topbar">
+      <ws-brand [link]="true" />
+      <div class="ws-topbar-actions">
+        <a
+          class="btn btn-primary d-none d-lg-inline-flex align-items-center gap-2 me-1"
+          [routerLink]="NEW_PURCHASE_PATH"
+          [state]="newPurchaseState()"
+          ><ws-icon name="plus" />{{ texts.LABEL_NEW_PURCHASE }}</a
+        >
+        <ws-theme-toggle />
+        <button
+          type="button"
+          class="btn btn-ghost btn-icon"
+          wsSoon
+          [wsSoonLabel]="texts.LABEL_NOTIFICATIONS"
+        >
+          <ws-icon name="bell" />
+        </button>
+        <ws-user-menu />
+      </div>
+    </header>
+
+    <main class="ws-content">
+      <router-outlet />
+    </main>
+  </div>
+
+  <nav id="ws-bottomnav" class="ws-bottomnav" [attr.aria-label]="texts.LABEL_BOTTOM_NAV">
+    @for (item of bottomStart; track item.key) {
+      <ng-container *ngTemplateOutlet="bottomItem; context: { $implicit: item }" />
+    }
+    <a
+      class="ws-fab"
+      [routerLink]="NEW_PURCHASE_PATH"
+      [state]="newPurchaseState()"
+      [attr.aria-label]="texts.LABEL_NEW_PURCHASE"
+      ><ws-icon name="plus"
+    /></a>
+    @for (item of bottomEnd; track item.key) {
+      <ng-container *ngTemplateOutlet="bottomItem; context: { $implicit: item }" />
+    }
+  </nav>
+
+  <ws-toast-host />
+  <ws-confirm-host />
+</div>
+
+<ng-template #bottomItem let-item>
+  @if (item.route) {
+    <a
+      [routerLink]="item.route"
+      routerLinkActive
+      [routerLinkActiveOptions]="ACTIVE_OPTIONS"
+      ariaCurrentWhenActive="page"
+      ><ws-icon [name]="item.icon" />{{ item.shortLabel }}</a
+    >
+  } @else {
+    <button type="button" wsSoon [wsSoonLabel]="item.shortLabel">
+      <ws-icon [name]="item.icon" />{{ item.shortLabel }}
+    </button>
+  }
+</ng-template>

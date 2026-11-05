@@ -1,9 +1,7 @@
 dist
+.angular
 coverage
-node_modules
 playwright-report
 test-results
-.angular
-# Gerado por `ng g @angular/material:theme-color` (feature 002, ADR-02). Não editar à mão.
-src/styles/_theme-colors.scss
-
+package-lock.json
+public/theme-init.js

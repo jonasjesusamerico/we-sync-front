@@ -1,0 +1,35 @@
+// Segmented control (prototype we-sync.css "Segmented control"). Options at 44 px, not 40 (feature 005 D-01).
+.ws-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--ws-surface-2);
+  border: 1px solid var(--ws-border);
+  border-radius: 14px;
+}
+.ws-segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.ws-segmented label {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ws-muted);
+  cursor: pointer;
+}
+.ws-segmented input:checked + label {
+  background: var(--ws-surface);
+  color: var(--ws-text);
+  box-shadow: var(--ws-shadow);
+}
+.ws-segmented input:focus-visible + label {
+  outline: 3px solid color-mix(in srgb, var(--ws-primary) 55%, transparent);
+}

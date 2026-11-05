@@ -1,0 +1,11 @@
+// Empty state (prototype we-sync.css "Empty state").
+.ws-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--ws-muted);
+}
+.ws-empty .ws-kpi-icon {
+  margin: 0 auto 0.75rem;
+  width: 56px;
+  height: 56px;
+}

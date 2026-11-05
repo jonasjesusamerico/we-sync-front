@@ -1,0 +1,107 @@
+<ws-access-layout>
+  <div wsAccessPanel class="my-auto">
+    <h2>{{ texts.REGISTER_PANEL_TITLE }}</h2>
+    <ul class="list-unstyled d-grid gap-3 mt-4 fs-6">
+      @for (benefit of texts.REGISTER_PANEL_BENEFITS; track benefit.icon) {
+        <li class="d-flex align-items-center gap-3">
+          <span class="ws-hero-chip"><ws-icon [name]="benefit.icon" /></span>{{ benefit.text }}
+        </li>
+      }
+    </ul>
+  </div>
+
+  <h1 class="mb-1">{{ texts.REGISTER_TITLE }}</h1>
+  <p class="text-muted mb-4">{{ texts.REGISTER_SUBTITLE }}</p>
+
+  @if (error(); as current) {
+    <ws-form-alert kind="error">
+      @if (current.kind === 'taken') {
+        {{ texts.MSG_EMAIL_TAKEN }}
+        <a
+          class="alert-link fw-semibold text-decoration-none"
+          routerLink="/login"
+          [queryParams]="linkQuery()"
+          >{{ texts.LABEL_GO_TO_LOGIN }}</a
+        >
+      } @else {
+        {{ current.text }}
+      }
+    </ws-form-alert>
+  }
+
+  <form novalidate class="d-grid gap-3" [formGroup]="form" (ngSubmit)="submit()">
+    <div>
+      <label class="form-label" for="name">{{ texts.LABEL_NAME }}</label>
+      <div class="input-icon">
+        <ws-icon name="user" />
+        <input
+          #nameInput
+          id="name"
+          class="form-control"
+          autocomplete="name"
+          [placeholder]="texts.PLACEHOLDER_NAME"
+          formControlName="name"
+          [class.is-invalid]="nameError()"
+          [attr.aria-invalid]="nameError() ? 'true' : null"
+          [attr.aria-describedby]="nameError() ? 'name-error' : null"
+        />
+      </div>
+      @if (nameError(); as message) {
+        <div id="name-error" class="invalid-feedback d-block">{{ message }}</div>
+      }
+    </div>
+    <div>
+      <label class="form-label" for="email">{{ texts.LABEL_EMAIL }}</label>
+      <div class="input-icon">
+        <ws-icon name="mail" />
+        <input
+          #emailInput
+          id="email"
+          type="email"
+          class="form-control"
+          autocomplete="email"
+          [placeholder]="texts.PLACEHOLDER_EMAIL"
+          formControlName="email"
+          [class.is-invalid]="emailError()"
+          [attr.aria-invalid]="emailError() ? 'true' : null"
+          [attr.aria-describedby]="emailError() ? 'email-error' : null"
+        />
+      </div>
+      @if (emailError(); as message) {
+        <div id="email-error" class="invalid-feedback d-block">{{ message }}</div>
+      }
+    </div>
+    <div>
+      <label class="form-label" for="password">{{ texts.LABEL_PASSWORD }}</label>
+      <ws-password-field
+        [control]="form.controls.password"
+        inputId="password"
+        autocomplete="new-password"
+        [invalid]="!!passwordError()"
+        [describedBy]="passwordError() ? 'password-hint password-error' : 'password-hint'"
+      />
+      <ws-strength-meter [password]="password()" hintId="password-hint" />
+      @if (passwordError(); as message) {
+        <div id="password-error" class="invalid-feedback d-block">{{ message }}</div>
+      }
+    </div>
+    <button
+      type="submit"
+      class="btn btn-primary btn-lg mt-2"
+      [disabled]="submitting()"
+      [attr.aria-busy]="submitting()"
+    >
+      @if (submitting()) {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      }
+      {{ texts.LABEL_REGISTER_SUBMIT }}
+    </button>
+  </form>
+
+  <p class="text-center mt-4 mb-0">
+    {{ texts.REGISTER_HAS_ACCOUNT }}
+    <a class="fw-semibold text-decoration-none" routerLink="/login" [queryParams]="linkQuery()">{{
+      texts.LABEL_GO_TO_LOGIN
+    }}</a>
+  </p>
+</ws-access-layout>

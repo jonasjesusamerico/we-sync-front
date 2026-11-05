@@ -1,0 +1,31 @@
+// Status pill (prototype we-sync.css "Status pill").
+.ws-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ws-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.ws-status.is-paid {
+  color: var(--ws-success);
+  background: var(--ws-success-soft);
+}
+.ws-status.is-pending {
+  color: var(--ws-warning);
+  background: var(--ws-warning-soft);
+}
+.ws-status.is-canceled {
+  color: var(--ws-muted);
+  background: var(--ws-surface-2);
+  border: 1px solid var(--ws-border);
+}

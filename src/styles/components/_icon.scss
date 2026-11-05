@@ -1,0 +1,23 @@
+// Host of the ws-icon component; the inner <svg> inherits stroke, fill and line settings.
+ws-icon {
+  display: inline-block;
+}
+ws-icon > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.ws-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ws-icon-lg {
+  width: 24px;
+  height: 24px;
+}

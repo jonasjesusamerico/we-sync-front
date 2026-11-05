@@ -1,0 +1,34 @@
+<div class="ws-page-head">
+  <div>
+    <h1>{{ t.SETTINGS_HEADING }}</h1>
+    <p>{{ t.SETTINGS_SUBTITLE }}</p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-3">
+    <nav #nav class="ws-settings-nav" [attr.aria-label]="t.LABEL_SECTIONS">
+      <button type="button" wsSoon>
+        <ws-icon name="wallet" />{{ t.SECTION_LABELS.rendas }}&ngsp;<span class="ws-badge-soon">{{
+          SOON_TAG
+        }}</span>
+      </button>
+      <button type="button" wsSoon>
+        <ws-icon name="target" />{{ t.SECTION_LABELS.orcamento }}&ngsp;<span
+          class="ws-badge-soon"
+          >{{ SOON_TAG }}</span
+        >
+      </button>
+      <a routerLink="categorias" routerLinkActive ariaCurrentWhenActive="page"
+        ><ws-icon name="tag" />{{ t.SECTION_LABELS.categorias }}</a
+      >
+      <a routerLink="formas-de-pagamento" routerLinkActive ariaCurrentWhenActive="page"
+        ><ws-icon name="card" />{{ t.SECTION_LABELS.pagamentos }}</a
+      >
+      <a routerLink="conta" routerLinkActive ariaCurrentWhenActive="page"
+        ><ws-icon name="user" />{{ t.SECTION_LABELS.conta }}</a
+      >
+    </nav>
+  </div>
+  <div class="col-12 col-lg-9"><router-outlet /></div>
+</div>

@@ -1,61 +1,63 @@
-import { LockManagerLike } from '../app/core/auth/locks';
+import { LockManagerLike } from '../app/core/auth/lock-manager';
 
 interface Waiter {
-  start: () => void;
-  cancel: (reason: unknown) => void;
+  run: () => void;
+  abort: () => void;
 }
 
-/**
- * Lock exclusivo por nome, com fila FIFO real (o próximo callback só começa quando a promise do anterior termina)
- * e respeito ao `signal`. Uma instância compartilhada entre vários injetores simula várias abas.
- */
+/** Web Locks stand-in for unit tests: one holder per name, FIFO, honours the abort signal. */
 export class FakeLockManager implements LockManagerLike {
-  private readonly held = new Set<string>();
   private readonly queues = new Map<string, Waiter[]>();
+  private readonly holders = new Set<string>();
 
-  request<T>(
-    name: string,
-    options: { mode: 'exclusive'; signal?: AbortSignal },
-    callback: () => Promise<T>,
-  ): Promise<T> {
-    const { signal } = options;
-    if (signal?.aborted) {
-      return Promise.reject(signal.reason);
-    }
+  request<T>(name: string, options: { signal: AbortSignal }, task: () => Promise<T>): Promise<T> {
     return new Promise<T>((resolve, reject) => {
+      const { signal } = options;
+      if (signal.aborted) {
+        reject(signal.reason);
+        return;
+      }
+      const waiter: Waiter = {
+        run: () => {
+          signal.removeEventListener('abort', onAbort);
+          this.holders.add(name);
+          task()
+            .then(resolve, reject)
+            .finally(() => {
+              this.holders.delete(name);
+              this.next(name);
+            });
+        },
+        abort: () => reject(signal.reason),
+      };
       const onAbort = () => {
         const queue = this.queues.get(name) ?? [];
         const index = queue.indexOf(waiter);
         if (index >= 0) {
           queue.splice(index, 1);
-          waiter.cancel(signal?.reason);
+          waiter.abort();
         }
       };
-      const waiter: Waiter = {
-        start: () => {
-          signal?.removeEventListener('abort', onAbort);
-          this.held.add(name);
-          Promise.resolve()
-            .then(callback)
-            .then(resolve, reject)
-            .finally(() => this.release(name));
-        },
-        cancel: (reason) => reject(reason),
-      };
-      signal?.addEventListener('abort', onAbort, { once: true });
-      if (this.held.has(name)) {
-        const queue = this.queues.get(name) ?? [];
-        queue.push(waiter);
-        this.queues.set(name, queue);
-      } else {
-        waiter.start();
+      signal.addEventListener('abort', onAbort);
+      const queue = this.queues.get(name) ?? [];
+      queue.push(waiter);
+      this.queues.set(name, queue);
+      if (!this.holders.has(name)) {
+        this.next(name);
       }
     });
   }
 
-  private release(name: string): void {
-    this.held.delete(name);
-    const next = this.queues.get(name)?.shift();
-    next?.start();
+  held(name: string): boolean {
+    return this.holders.has(name);
+  }
+
+  waiting(name: string): number {
+    return this.queues.get(name)?.length ?? 0;
+  }
+
+  private next(name: string): void {
+    const waiter = this.queues.get(name)?.shift();
+    waiter?.run();
   }
 }

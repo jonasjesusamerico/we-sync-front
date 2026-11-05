@@ -1,68 +1,89 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-
-import { AuthApi } from './auth.api';
-import { LOCKS, REFRESH_LOCK_NAME, REFRESH_LOCK_WAIT_MS } from './locks';
-import { RefreshError } from './refresh-error';
-import { SessionStore } from './session.store';
+import { AuthApi } from './auth-api';
+import { LOCK_MANAGER, REFRESH_LOCK_NAME, REFRESH_LOCK_TIMEOUT_MS } from './lock-manager';
+import { RefreshError } from './session-errors';
+import { SessionStore } from './session-store';
 
 /**
- * Renovação única (RN-13): chamadas simultâneas da aba reaproveitam a mesma promise, e entre abas o
- * `navigator.locks` garante exclusão mútua. Dentro do lock o storage é relido: se o access token já mudou, outra
- * chamada ou aba já renovou.
+ * Single token renewal (ADR-13): one promise per tab, the Web Locks lock between tabs, and a new read of the
+ * storage before and after calling the API.
  */
 @Injectable({ providedIn: 'root' })
 export class TokenRefresher {
-  private readonly api = inject(AuthApi);
   private readonly store = inject(SessionStore);
-  private readonly locks = inject(LOCKS);
+  private readonly api = inject(AuthApi);
+  private readonly locks = inject(LOCK_MANAGER);
   private inFlight: Promise<string> | null = null;
 
-  /** Resolve com o access token a usar na repetição. Rejeita com RefreshError ou com o erro do refresh. */
-  refresh(usedAccessToken: string): Promise<string> {
+  /** Returns a valid access token to repeat the call that failed with `failedAccessToken`. Rejects with RefreshError. */
+  refresh(failedAccessToken: string): Promise<string> {
     if (this.inFlight) {
       return this.inFlight;
     }
-    const promise = this.locks
-      .request(
-        REFRESH_LOCK_NAME,
-        { mode: 'exclusive', signal: AbortSignal.timeout(REFRESH_LOCK_WAIT_MS) },
-        () => this.criticalSection(usedAccessToken),
-      )
-      .finally(() => {
+    const promise = this.underLock(failedAccessToken).finally(() => {
+      if (this.inFlight === promise) {
         this.inFlight = null;
-      });
+      }
+    });
     this.inFlight = promise;
     return promise;
   }
 
-  private async criticalSection(usedAccessToken: string): Promise<string> {
+  private async underLock(failedAccessToken: string): Promise<string> {
+    if (!this.locks) {
+      return this.critical(failedAccessToken);
+    }
+    // Same as AbortSignal.timeout(), but with setTimeout, which the unit tests can fake.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REFRESH_LOCK_TIMEOUT_MS);
+    try {
+      return await this.locks.request(REFRESH_LOCK_NAME, { signal: controller.signal }, () => {
+        clearTimeout(timer);
+        return this.critical(failedAccessToken);
+      });
+    } catch (error) {
+      if (error instanceof RefreshError) {
+        throw error;
+      }
+      throw new RefreshError('unavailable');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  private async critical(failedAccessToken: string): Promise<string> {
     const session = this.store.read();
-    if (session === null) {
+    if (!session) {
       throw new RefreshError('logged-out');
     }
-    if (session.access_token !== usedAccessToken) {
+    if (session.access_token !== failedAccessToken) {
       return session.access_token;
     }
-    let tokens;
     try {
-      tokens = await firstValueFrom(this.api.refresh(session.refresh_token));
-    } catch (error) {
-      if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 400)) {
+      const tokens = await firstValueFrom(this.api.refresh(session.refresh_token));
+      if (!this.store.save(tokens)) {
         this.store.clear();
         throw new RefreshError('expired');
       }
-      throw error;
+      return tokens.access_token;
+    } catch (error) {
+      if (error instanceof RefreshError) {
+        throw error;
+      }
+      if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 400)) {
+        const current = this.store.read();
+        if (!current) {
+          throw new RefreshError('logged-out');
+        }
+        if (current.refresh_token !== session.refresh_token) {
+          return current.access_token;
+        }
+        this.store.clear();
+        throw new RefreshError('expired');
+      }
+      throw new RefreshError('unavailable');
     }
-    const saved = this.store.save({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-    });
-    if (!saved) {
-      this.store.clear();
-      throw new RefreshError('expired');
-    }
-    return tokens.access_token;
   }
 }

@@ -1,17 +1,12 @@
-import { Page } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 
 export const SESSION_KEY = 'we-sync.session';
+export const THEME_KEY = 'we-sync.theme';
 
-/**
- * Abre `/login` e grava uma sessão no `localStorage`. Não usa `addInitScript`, que regravaria a sessão a cada
- * carga, inclusive depois de Sair.
- */
+/** Opens /login and writes the session (no addInitScript, so it is not written again after logout). */
 export async function seedSession(
   page: Page,
-  session: { access_token: string; refresh_token: string } = {
-    access_token: 'A1',
-    refresh_token: 'R1',
-  },
+  session: { access_token: string; refresh_token: string },
 ): Promise<void> {
   await page.goto('/login');
   await page.evaluate(([key, value]) => localStorage.setItem(key, value), [
@@ -20,6 +15,16 @@ export async function seedSession(
   ] as const);
 }
 
-export function readSession(page: Page): Promise<string | null> {
-  return page.evaluate((key) => localStorage.getItem(key), SESSION_KEY);
+export async function readSession(
+  page: Page,
+): Promise<{ access_token: string; refresh_token: string } | null> {
+  const raw = await page.evaluate((key) => localStorage.getItem(key), SESSION_KEY);
+  return raw === null ? null : JSON.parse(raw);
+}
+
+export async function seedTheme(context: BrowserContext, theme: 'light' | 'dark'): Promise<void> {
+  await context.addInitScript(([key, value]) => localStorage.setItem(key, value), [
+    THEME_KEY,
+    theme,
+  ] as const);
 }

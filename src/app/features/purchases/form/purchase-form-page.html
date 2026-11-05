@@ -1,0 +1,243 @@
+<div class="ws-page-head">
+  <div>
+    <a
+      class="small fw-semibold text-decoration-none d-inline-flex align-items-center gap-1 mb-1 ws-back"
+      [routerLink]="destination.path"
+      [queryParams]="destination.queryParams"
+      ><ws-icon name="chevL" />{{ t.BACK_TO_PURCHASES }}</a
+    >
+    <h1>{{ mode() === 'create' ? t.NEW_PURCHASE_HEADING : t.EDIT_PURCHASE_HEADING }}</h1>
+    @if (mode() === 'create') {
+      <p>{{ t.NEW_PURCHASE_SUBTITLE }}</p>
+    }
+  </div>
+</div>
+
+@if (formError(); as message) {
+  <ws-form-alert kind="error" class="d-block mb-3">{{ message }}</ws-form-alert>
+}
+
+@if (purchaseState(); as state) {
+  <section class="ws-card">
+    @if (state.status === 'error') {
+      <ws-area-status status="error" [message]="state.message" (retry)="retryPurchase()" />
+    } @else {
+      <ws-area-status status="loading" />
+    }
+  </section>
+} @else {
+  <form class="row g-3" novalidate [formGroup]="form" (ngSubmit)="submit(false)">
+    <div class="col-12 col-lg-8">
+      <section class="ws-card mb-3">
+        <label class="form-label" for="amount">{{ t.LABEL_AMOUNT }}</label>
+        <div class="ws-money" id="amount-box" [class.is-invalid]="errors().amount">
+          <span>{{ t.CURRENCY_SYMBOL }}</span>
+          <input
+            id="amount"
+            wsMoneyInput
+            formControlName="amount"
+            [attr.aria-invalid]="errors().amount"
+            [attr.aria-describedby]="errors().amount ? 'amount-error' : null"
+          />
+        </div>
+        @if (errors().amount) {
+          <div class="invalid-feedback d-block" id="amount-error">{{ t.ERR_AMOUNT }}</div>
+        }
+
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-md-7">
+            <label class="form-label" for="description">{{ t.LABEL_DESCRIPTION }}</label>
+            <input
+              id="description"
+              class="form-control"
+              [wsCodePointLimit]="DESCRIPTION_MAX"
+              formControlName="description"
+              [placeholder]="t.DESCRIPTION_PLACEHOLDER"
+              [class.is-invalid]="!!errors().description"
+              [attr.aria-invalid]="!!errors().description"
+              [attr.aria-describedby]="errors().description ? 'description-error' : null"
+            />
+            @if (errors().description; as message) {
+              <div class="invalid-feedback d-block" id="description-error">{{ message }}</div>
+            }
+          </div>
+          <div class="col-12 col-md-5">
+            <label class="form-label" for="date">{{ t.LABEL_DATE }}</label>
+            <input
+              id="date"
+              type="date"
+              class="form-control"
+              formControlName="date"
+              required
+              min="0001-01-01"
+              max="9999-12-31"
+              [class.is-invalid]="errors().date"
+              [attr.aria-invalid]="errors().date"
+              [attr.aria-describedby]="errors().date ? 'date-error' : null"
+            />
+            @if (errors().date) {
+              <div class="invalid-feedback d-block" id="date-error">{{ t.ERR_DATE }}</div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="ws-card mb-3">
+        <fieldset [attr.aria-describedby]="errors().category ? 'category-error' : null">
+          <legend class="form-label fs-6">{{ t.LABEL_CATEGORY }}</legend>
+          @switch (options().status) {
+            @case ('loading') {
+              <ws-area-status status="loading" />
+            }
+            @case ('error') {
+              <ws-area-status status="error" [message]="optionsError()" (retry)="retryOptions()" />
+            }
+            @default {
+              <div class="ws-cat-grid" id="categories" [class.is-invalid]="!!errors().category">
+                @for (option of categoryOptions(); track option.item.id) {
+                  <div class="ws-chip" [style.--cat]="style(option.item).color">
+                    <input
+                      type="radio"
+                      name="categoryId"
+                      [id]="'c-' + option.item.id"
+                      [value]="option.item.id"
+                      formControlName="categoryId"
+                    />
+                    <label [for]="'c-' + option.item.id"
+                      ><ws-category-bubble
+                        [icon]="style(option.item).icon"
+                        [color]="style(option.item).color"
+                      />{{ option.label }}</label
+                    >
+                  </div>
+                }
+              </div>
+            }
+          }
+          @if (errors().category; as message) {
+            <div class="invalid-feedback d-block" id="category-error">{{ message }}</div>
+          }
+        </fieldset>
+      </section>
+
+      <section class="ws-card">
+        <fieldset class="mb-4" [attr.aria-describedby]="errors().payment ? 'payment-error' : null">
+          <legend class="form-label fs-6">{{ t.LABEL_PAYMENT }}</legend>
+          @switch (options().status) {
+            @case ('loading') {
+              <ws-area-status status="loading" />
+            }
+            @case ('error') {
+              <ws-area-status status="error" [message]="optionsError()" (retry)="retryOptions()" />
+            }
+            @default {
+              <div class="ws-chips" id="payments">
+                @for (option of paymentOptions(); track option.item.id) {
+                  <div class="ws-chip">
+                    <input
+                      type="radio"
+                      name="paymentMethodId"
+                      [id]="'p-' + option.item.id"
+                      [value]="option.item.id"
+                      formControlName="paymentMethodId"
+                    />
+                    <label [for]="'p-' + option.item.id">{{ option.label }}</label>
+                  </div>
+                }
+              </div>
+            }
+          }
+          @if (errors().payment; as message) {
+            <div class="invalid-feedback d-block" id="payment-error">{{ message }}</div>
+          }
+        </fieldset>
+        <fieldset>
+          <legend class="form-label fs-6">{{ t.LABEL_STATUS }}</legend>
+          <div class="ws-segmented">
+            <input type="radio" name="status" id="s-paid" value="PAID" formControlName="status" />
+            <label for="s-paid"><ws-icon name="check" />{{ t.STATUS_LABELS.PAID }}</label>
+            <input
+              type="radio"
+              name="status"
+              id="s-pending"
+              value="PENDING"
+              formControlName="status"
+            />
+            <label for="s-pending"><ws-icon name="clock" />{{ t.STATUS_LABELS.PENDING }}</label>
+            @if (mode() === 'edit') {
+              <input
+                type="radio"
+                name="status"
+                id="s-canceled"
+                value="CANCELED"
+                formControlName="status"
+              />
+              <label for="s-canceled"><ws-icon name="x" />{{ t.STATUS_LABELS.CANCELED }}</label>
+            }
+          </div>
+        </fieldset>
+      </section>
+    </div>
+
+    <div class="col-12 col-lg-4">
+      <aside class="ws-card position-sticky ws-summary">
+        <h2 class="fs-6 fw-bold mb-3">{{ t.SUMMARY_HEADING }}</h2>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <ws-category-bubble [icon]="preview().style.icon" [color]="preview().style.color" />
+          <div class="min-w-0">
+            <div class="fw-semibold text-truncate" id="preview-desc">
+              {{ preview().description }}
+            </div>
+            <div class="small text-muted" id="preview-meta">{{ preview().meta }}</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-baseline border-top pt-3 mb-3">
+          <span class="text-muted">{{ t.LABEL_VALUE }}</span>
+          <strong class="fs-4 ws-tabular" id="preview-amount">{{ preview().amount }}</strong>
+        </div>
+        <div class="d-grid gap-2">
+          <button
+            type="submit"
+            class="btn btn-primary btn-lg"
+            [disabled]="saveDisabled()"
+            [attr.aria-busy]="submitting() === 'save'"
+          >
+            @if (submitting() === 'save') {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+            }
+            {{ mode() === 'create' ? t.SAVE_PURCHASE : t.SAVE_CHANGES }}
+          </button>
+          @if (mode() === 'create') {
+            <button
+              type="button"
+              class="btn btn-soft"
+              [disabled]="saveDisabled()"
+              [attr.aria-busy]="submitting() === 'new'"
+              (click)="submit(true)"
+            >
+              @if (submitting() === 'new') {
+                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              }
+              {{ t.SAVE_AND_NEW }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="btn btn-outline-danger"
+              [disabled]="submitting() !== null"
+              (click)="askDelete()"
+            >
+              {{ t.DELETE }}
+            </button>
+          }
+          <a
+            class="btn btn-ghost"
+            [routerLink]="destination.path"
+            [queryParams]="destination.queryParams"
+            >{{ t.CANCEL }}</a
+          >
+        </div>
+      </aside>
+    </div>
+  </form>
+}

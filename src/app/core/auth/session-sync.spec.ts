@@ -1,117 +1,115 @@
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-
-import { routes } from '../../app.routes';
-import { API_BASE_URL } from '../http/api-base-url';
+import { USER_RESPONSE_EXAMPLE } from '../../../testing/api-examples';
+import { API, httpTestingProviders } from '../../../testing/http';
+import { seedSession, settle } from '../../../testing/session';
+import { CurrentUserStore } from '../user/current-user-store';
+import { currentUserResolver } from '../user/current-user-resolver';
+import { authGuard, guestGuard } from './auth-guards';
+import { authInterceptor } from './auth-interceptor';
+import { SESSION_KEY } from './session.models';
 import { SessionSync } from './session-sync';
-import { SESSION_KEY, SessionStore } from './session.store';
 
-const seed = (access = 'A1', refresh = 'R1') =>
-  localStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify({ access_token: access, refresh_token: refresh }),
-  );
-const fire = (key: string | null) =>
-  window.dispatchEvent(new StorageEvent('storage', { key, newValue: null }));
+@Component({ template: '' })
+class Blank {}
 
 describe('SessionSync', () => {
+  let http: HttpTestingController;
   let router: Router;
-  let harness: RouterTestingHarness;
-  let navigate: ReturnType<typeof vi.spyOn>;
 
-  async function startAt(url: string) {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideRouter(routes),
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        { provide: API_BASE_URL, useValue: '/api/v1' },
+        ...httpTestingProviders([authInterceptor]),
+        provideRouter([
+          { path: 'login', component: Blank, canActivate: [guestGuard] },
+          { path: 'cadastro', component: Blank, canActivate: [guestGuard] },
+          {
+            path: '',
+            component: Blank,
+            canActivate: [authGuard],
+            resolve: { user: currentUserResolver },
+            children: [
+              { path: 'inicio', component: Blank },
+              { path: 'outra', component: Blank },
+            ],
+          },
+        ]),
       ],
     });
-    harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl(url);
+    http = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
     TestBed.inject(SessionSync).start();
-    navigate = vi.spyOn(router, 'navigate');
+  });
+
+  afterEach(() => {
+    http.verify();
+    localStorage.clear();
+  });
+
+  async function openInicio(harness: RouterTestingHarness) {
+    const navigation = harness.navigateByUrl('/inicio');
+    await settle();
+    http.expectOne(`${API}/users/me`).flush(USER_RESPONSE_EXAMPLE);
+    await navigation;
   }
 
-  const settle = () => harness.fixture.whenStable();
+  const storageEvent = (key: string | null) =>
+    window.dispatchEvent(new StorageEvent('storage', { key, newValue: null }));
 
-  beforeEach(() => localStorage.clear());
-  afterEach(() => localStorage.clear());
-
-  it('storage: saiu em outra aba', async () => {
-    seed();
-    await startAt('/');
-
+  it('outra aba saiu', async () => {
+    seedSession('A1', 'R1');
+    const harness = await RouterTestingHarness.create();
+    await openInicio(harness);
     localStorage.removeItem(SESSION_KEY);
-    fire(SESSION_KEY);
-    await settle();
-
-    expect(navigate).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
+    storageEvent(SESSION_KEY);
+    await harness.fixture.whenStable();
     expect(router.url).toBe('/login');
-    expect(TestBed.inject(SessionStore).isAuthenticated()).toBe(false);
+    expect(TestBed.inject(CurrentUserStore).user()).toBeNull();
   });
 
-  it('storage: entrou em outra aba', async () => {
-    await startAt('/login');
-
-    seed();
-    fire(SESSION_KEY);
-    await settle();
-
-    expect(navigate).toHaveBeenCalledWith(['/'], { replaceUrl: true });
-    expect(router.url).toBe('/');
-    expect(TestBed.inject(SessionStore).isAuthenticated()).toBe(true);
-  });
-
-  it('storage: renovou em outra aba', async () => {
-    seed();
-    await startAt('/');
-
-    seed('A2', 'R2');
-    fire(SESSION_KEY);
-    await settle();
-
-    expect(navigate).not.toHaveBeenCalled();
-    expect(router.url).toBe('/');
-  });
-
-  it('storage: outra chave', async () => {
-    seed();
-    await startAt('/');
-
-    localStorage.removeItem(SESSION_KEY);
-    fire('outra');
-    await settle();
-
-    expect(navigate).not.toHaveBeenCalled();
-  });
-
-  it('storage: clear()', async () => {
-    seed();
-    await startAt('/');
-
+  it('storage limpo', async () => {
+    seedSession('A1', 'R1');
+    const harness = await RouterTestingHarness.create();
+    await openInicio(harness);
     localStorage.clear();
-    fire(null);
-    await settle();
-
-    expect(navigate).toHaveBeenCalledWith(['/login'], { replaceUrl: true });
+    storageEvent(null);
+    await harness.fixture.whenStable();
     expect(router.url).toBe('/login');
   });
 
-  it('start() registra o listener uma vez só', async () => {
-    seed();
-    await startAt('/');
-    TestBed.inject(SessionSync).start();
-
-    localStorage.removeItem(SESSION_KEY);
-    fire(SESSION_KEY);
+  it('outra aba entrou', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/login');
+    seedSession('A1', 'R1');
+    storageEvent(SESSION_KEY);
     await settle();
+    http.expectOne(`${API}/users/me`).flush(USER_RESPONSE_EXAMPLE);
+    await harness.fixture.whenStable();
+    expect(router.url).toBe('/inicio');
+  });
 
-    expect(navigate).toHaveBeenCalledTimes(1);
+  it('outra aba renovou', async () => {
+    seedSession('A1', 'R1');
+    const harness = await RouterTestingHarness.create();
+    await openInicio(harness);
+    seedSession('A2', 'R2');
+    storageEvent(SESSION_KEY);
+    await harness.fixture.whenStable();
+    expect(router.url).toBe('/inicio');
+    expect(TestBed.inject(CurrentUserStore).status()).toBe('ready');
+  });
+
+  it('outra chave', async () => {
+    seedSession('A1', 'R1');
+    const harness = await RouterTestingHarness.create();
+    await openInicio(harness);
+    localStorage.removeItem(SESSION_KEY);
+    storageEvent('we-sync.theme');
+    await harness.fixture.whenStable();
+    expect(router.url).toBe('/inicio');
   });
 });

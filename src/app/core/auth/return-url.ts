@@ -1,24 +1,34 @@
-import { PRIMARY_OUTLET, Router, UrlTree } from '@angular/router';
+import { Router } from '@angular/router';
 
-const GUEST_PATHS = new Set(['login', 'cadastro']);
+export const HOME_URL = '/inicio';
 
-/** RN-09, RN-10, CA-14: aceita só caminho interno que não seja login/cadastro; senão `'/'`. */
-export function sanitizeReturnUrl(url: string | null | undefined, router: Router): string {
-  if (typeof url !== 'string' || url === '') {
-    return '/';
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
+const ACCESS_PAGES = new Set(['login', 'cadastro']);
+
+/** RN-10 (DAS 5.5): the return route is always internal and never an access page; otherwise HOME_URL. */
+export function sanitizeReturnUrl(raw: unknown, router: Router): string {
+  if (typeof raw !== 'string' || raw === '') {
+    return HOME_URL;
   }
-  if (!url.startsWith('/') || url.startsWith('//') || url.startsWith('/\\') || url.includes('\\')) {
-    return '/';
+  if (
+    !raw.startsWith('/') ||
+    raw.startsWith('//') ||
+    raw.startsWith('/\\') ||
+    raw.includes('\\') ||
+    CONTROL_CHARS.test(raw)
+  ) {
+    return HOME_URL;
   }
-  let tree: UrlTree;
+  let tree;
   try {
-    tree = router.parseUrl(url);
+    tree = router.parseUrl(raw);
   } catch {
-    return '/';
+    return HOME_URL;
   }
-  const firstSegment = tree.root.children[PRIMARY_OUTLET]?.segments[0]?.path;
-  if (firstSegment !== undefined && GUEST_PATHS.has(firstSegment)) {
-    return '/';
+  const first = tree.root.children['primary']?.segments[0]?.path;
+  if (first !== undefined && ACCESS_PAGES.has(first)) {
+    return HOME_URL;
   }
   return router.serializeUrl(tree);
 }

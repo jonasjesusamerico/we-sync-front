@@ -1,243 +1,121 @@
-import { expect, Page, test } from '@playwright/test';
+import { ANA } from './support/api-mock';
+import { expect, fillLogin, HOME_URL, loginAs, test } from './support/fixtures';
+import { seedSession } from './support/session';
+import * as t from './support/texts';
 
-import { CONTRACT, mockApi } from './support/api-mock';
-import { tab } from './support/layout';
-import {
-  APP_NAME,
-  HOME_TITLE,
-  LABEL_ACCOUNT,
-  LABEL_AUTH_TABS,
-  LABEL_LOGIN,
-  LABEL_REGISTER,
-  MSG_CONNECTION,
-  MSG_EMAIL_FORMAT,
-  MSG_EMAIL_MAX_BYTES,
-  MSG_EMAIL_TAKEN,
-  MSG_INVALID_CREDENTIALS,
-  MSG_PASSWORD_MAX_BYTES,
-  MSG_PASSWORD_MIN_BYTES,
-  MSG_PASSWORD_MISMATCH,
-  MSG_REGISTERED,
-} from './support/texts';
+test.beforeEach(({ api }) => api.addUser(ANA));
 
-const email = (page: Page) => page.getByLabel('E-mail');
-const password = (page: Page) => page.getByLabel('Senha', { exact: true });
-const confirmPassword = (page: Page) => page.getByLabel('Confirmar senha');
-const fieldError = (page: Page, label: string) =>
-  page
-    .locator('mat-form-field', { has: page.getByLabel(label, { exact: true }) })
-    .locator('mat-error');
+const submit = (page: import('@playwright/test').Page) =>
+  page.getByRole('button', { name: t.LABEL_LOGIN_SUBMIT, exact: true });
 
-test.describe('auth', () => {
-  test('fluxo principal', async ({ page }) => {
-    const api = await mockApi(page, { register: CONTRACT.registered, login: CONTRACT.tokens });
+test('CA-12', async ({ page }) => {
+  await page.goto('/login');
+  await fillLogin(page, ANA.email, 'senha-errada');
+  await submit(page).click();
+  await expect(page.getByRole('alert')).toHaveText(t.MSG_INVALID_CREDENTIALS);
+  await expect(page.locator('#password')).toHaveValue('');
+  await expect(page.locator('#email')).toHaveValue(ANA.email);
 
-    await page.goto('/');
-    await expect(page).toHaveURL('/login?returnUrl=%2F');
-    await tab(page, LABEL_REGISTER).click();
-    await expect(page).toHaveURL('/cadastro');
+  await fillLogin(page, 'ninguem@exemplo.com', 'Senha123!');
+  await submit(page).click();
+  await expect(page.getByRole('alert')).toHaveText(t.MSG_INVALID_CREDENTIALS);
+  await expect(page.locator('#password')).toHaveValue('');
+  await expect(page.locator('#email')).toHaveValue('ninguem@exemplo.com');
+});
 
-    await email(page).fill('ana@exemplo.com');
-    await password(page).fill('senha123');
-    await confirmPassword(page).fill('senha123');
-    await page.getByRole('button', { name: 'Criar conta' }).click();
+test('CA-13', async ({ page }) => {
+  await loginAs(page);
+  await expect(page).toHaveURL(HOME_URL);
+  await expect(page.locator('.ws-page-head p')).toHaveText(t.HOME_SUBTITLE);
+  await expect(page.locator('.ws-callout')).toHaveCount(0);
+  await expect(page.locator('#ws-sidebar')).toBeVisible();
+  await expect(page.locator('.ws-month')).toBeVisible();
+  await expect(page.locator('.ws-hero')).toBeVisible();
+  await expect(page.locator('.ws-kpi')).toHaveCount(0);
+});
 
-    await expect(page).toHaveURL('/login');
-    await expect(tab(page, LABEL_LOGIN)).toHaveAttribute('aria-selected', 'true');
-    await expect(email(page)).toHaveValue('ana@exemplo.com');
-    await expect(page.getByRole('status')).toHaveText(MSG_REGISTERED);
-    expect(api.bodies.register[0]).toEqual({ email: 'ana@exemplo.com', password: 'senha123' });
+test('CA-14 login @double-submit', async ({ page, api }) => {
+  api.delay('/auth/login', 800);
+  api.delay('/users/me', 500);
+  await page.goto('/login');
+  await fillLogin(page, ANA.email, ANA.password);
+  const button = submit(page);
+  await button.dblclick();
+  await page.locator('#password').press('Enter');
+  await expect(button).toBeDisabled();
+  await page.waitForTimeout(900);
+  await expect(button).toBeDisabled();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
+  expect(api.calls('/auth/login')).toBe(1);
+});
 
-    await password(page).fill('senha123');
-    await page.getByRole('button', { name: 'Entrar' }).click();
+test('CA-19', async ({ page }) => {
+  await page.goto('/inicio?ano=2026&mes=9');
+  await expect(page).toHaveURL('/login?returnUrl=%2Finicio%3Fano%3D2026%26mes%3D9');
+  await fillLogin(page, ANA.email, ANA.password);
+  await submit(page).click();
+  await expect(page).toHaveURL('/inicio?ano=2026&mes=9');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
+});
 
-    await expect(page).toHaveURL('/');
-    await expect(page.getByText('we-sync', { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: LABEL_ACCOUNT })).toBeVisible();
-    await expect(page.getByRole('heading', { name: HOME_TITLE })).toBeVisible();
+for (const param of ['https%3A%2F%2Fevil.example', '%2F%2Fevil.example']) {
+  test(`CA-20 ${param}`, async ({ page }) => {
+    await page.goto(`/login?returnUrl=${param}`);
+    await fillLogin(page, ANA.email, ANA.password);
+    await submit(page).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
+    await expect(page).toHaveURL(HOME_URL);
   });
+}
 
-  test('confirmação diferente', async ({ page }) => {
-    const api = await mockApi(page, { register: CONTRACT.registered });
-    await page.goto('/cadastro');
+test('CA-21', async ({ page, api }) => {
+  await seedSession(page, api.issueSession(ANA.email));
+  for (const url of ['/login', '/cadastro']) {
+    await page.goto(url);
+    await expect(page).toHaveURL(HOME_URL);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
+  }
+});
 
-    await email(page).fill('ana@exemplo.com');
-    await password(page).fill('senha123');
-    await confirmPassword(page).fill('senha124');
-    await page.getByRole('button', { name: 'Criar conta' }).click();
+test('CA-25 login', async ({ page, api }) => {
+  api.fail('/auth/login', 'abort');
+  await page.goto('/login');
+  await fillLogin(page, ANA.email, ANA.password);
+  await submit(page).click();
+  await expect(page.getByRole('alert')).toHaveText(t.MSG_CONNECTION);
+  await expect(page.locator('#email')).toHaveValue(ANA.email);
+  await expect(page.locator('#password')).toHaveValue(ANA.password);
+});
 
-    await expect(fieldError(page, 'Confirmar senha')).toHaveText(MSG_PASSWORD_MISMATCH);
-    expect(api.calls.register).toBe(0);
-  });
+test('5xx e 422', async ({ page, api }) => {
+  await page.goto('/login');
+  await fillLogin(page, ANA.email, ANA.password);
+  api.fail('/auth/login', 500);
+  await submit(page).click();
+  await expect(page.getByRole('alert')).toHaveText(t.MSG_SERVER);
+  api.fail('/auth/login', 422);
+  await submit(page).click();
+  await expect(page.getByRole('alert')).toHaveText(t.MSG_INVALID_DATA);
+});
 
-  test('senha curta e longa', async ({ page }) => {
-    const api = await mockApi(page, { register: CONTRACT.registered });
-    await page.goto('/cadastro');
-    await email(page).fill('ana@exemplo.com');
+test('senha curta no login', async ({ page, api }) => {
+  await page.goto('/login');
+  await fillLogin(page, ANA.email, 'a');
+  await submit(page).click();
+  await expect(page.getByRole('alert')).toHaveText(t.MSG_INVALID_CREDENTIALS);
+  expect(api.calls('/auth/login')).toBe(1);
+});
 
-    await password(page).fill('senha12');
-    await confirmPassword(page).fill('senha12');
-    await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(fieldError(page, 'Senha')).toHaveText(MSG_PASSWORD_MIN_BYTES);
+test('esqueci a senha', async ({ page }) => {
+  await page.goto('/login');
+  const forgot = page.getByRole('button', { name: `${t.LABEL_FORGOT_PASSWORD}, em breve` });
+  await forgot.click({ force: true });
+  await forgot.press('Enter');
+  await expect(page).toHaveURL('/login');
+});
 
-    const long = 'á'.repeat(40);
-    await password(page).fill(long);
-    await confirmPassword(page).fill(long);
-    await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(fieldError(page, 'Senha')).toHaveText(MSG_PASSWORD_MAX_BYTES);
-
-    expect(api.calls.register).toBe(0);
-  });
-
-  test('e-mail inválido e longo', async ({ page }) => {
-    const api = await mockApi(page, { register: CONTRACT.registered });
-    await page.goto('/cadastro');
-    await password(page).fill('senha123');
-    await confirmPassword(page).fill('senha123');
-
-    await email(page).fill('ana@exemplo');
-    await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(fieldError(page, 'E-mail')).toHaveText(MSG_EMAIL_FORMAT);
-
-    await email(page).fill('a'.repeat(243) + '@exemplo.com');
-    await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(fieldError(page, 'E-mail')).toHaveText(MSG_EMAIL_MAX_BYTES);
-
-    expect(api.calls.register).toBe(0);
-  });
-
-  test('e-mail duplicado', async ({ page }) => {
-    const api = await mockApi(page, { register: CONTRACT.conflict });
-    await page.goto('/cadastro');
-
-    await email(page).fill('  ANA@exemplo.com ');
-    await password(page).fill('senha123');
-    await confirmPassword(page).fill('senha123');
-    await page.getByRole('button', { name: 'Criar conta' }).click();
-
-    const alert = page.getByRole('alert');
-    await expect(alert).toContainText(MSG_EMAIL_TAKEN);
-    await expect(alert.getByRole('link', { name: 'Entrar' })).toHaveAttribute('href', '/login');
-    expect(api.bodies.register[0]).toEqual({ email: 'ANA@exemplo.com', password: 'senha123' });
-    await expect(page.getByText('email already registered')).toHaveCount(0);
-  });
-
-  test('credenciais inválidas', async ({ page }) => {
-    await mockApi(page, { login: CONTRACT.invalidCredentials });
-    await page.goto('/login');
-
-    await email(page).fill('ana@exemplo.com');
-    await password(page).fill('senha123');
-    await page.getByRole('button', { name: 'Entrar' }).click();
-
-    await expect(page.getByRole('alert')).toHaveText(MSG_INVALID_CREDENTIALS);
-    await expect(password(page)).toHaveValue('');
-    await expect(email(page)).toHaveValue('ana@exemplo.com');
-    await expect(page.locator('mat-error')).toHaveCount(0);
-  });
-
-  test('API fora do ar', async ({ page }) => {
-    await mockApi(page, { login: 'abort', register: 'abort' });
-
-    await page.goto('/login');
-    await email(page).fill('ana@exemplo.com');
-    await password(page).fill('senha123');
-    await page.getByRole('button', { name: 'Entrar' }).click();
-    await expect(page.getByRole('alert')).toHaveText(MSG_CONNECTION);
-    await expect(email(page)).toHaveValue('ana@exemplo.com');
-    await expect(password(page)).toHaveValue('senha123');
-
-    await page.goto('/cadastro');
-    await email(page).fill('ana@exemplo.com');
-    await password(page).fill('senha123');
-    await confirmPassword(page).fill('senha123');
-    await page.getByRole('button', { name: 'Criar conta' }).click();
-    await expect(page.getByRole('alert')).toHaveText(MSG_CONNECTION);
-    await expect(email(page)).toHaveValue('ana@exemplo.com');
-    await expect(password(page)).toHaveValue('senha123');
-    await expect(confirmPassword(page)).toHaveValue('senha123');
-  });
-
-  test('clique duplo', async ({ page }) => {
-    const api = await mockApi(page, { login: { ...CONTRACT.tokens, delayMs: 500 } });
-    await page.goto('/login');
-
-    await email(page).fill('ana@exemplo.com');
-    await password(page).fill('senha123');
-    await page.getByRole('button', { name: 'Entrar' }).dblclick();
-    await password(page).press('Enter');
-
-    await expect(page).toHaveURL('/');
-    expect(api.calls.login).toBe(1);
-  });
-
-  test('mostrar senha', async ({ page }) => {
-    await page.goto('/login');
-    await password(page).fill('senha123');
-
-    await page.getByRole('button', { name: 'Mostrar senha' }).click();
-    await expect(password(page)).toHaveAttribute('type', 'text');
-    await page.getByRole('button', { name: 'Ocultar senha' }).click();
-    await expect(password(page)).toHaveAttribute('type', 'password');
-  });
-
-  test('CA-06 tela dividida', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto('/login');
-
-    const aside = page.locator('aside');
-    await expect(aside).toBeVisible();
-    await expect(aside).toHaveCSS('background-color', 'rgb(75, 102, 254)');
-    await expect(aside.locator('.name')).toHaveText(APP_NAME);
-    const asideBox = await aside.boundingBox();
-    const formBox = await page.locator('form').boundingBox();
-    expect(asideBox!.x).toBeGreaterThan(formBox!.x);
-
-    // O `mat-tab-nav-bar` dá `role="tablist"` ao `<nav>`; o nome `Acesso` fica nele.
-    const tablist = page.getByRole('tablist', { name: LABEL_AUTH_TABS });
-    await expect(tablist).toBeVisible();
-    await expect(tablist.getByRole('tab')).toHaveText([LABEL_LOGIN, LABEL_REGISTER]);
-    await expect(tab(page, LABEL_LOGIN)).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('.brand-small')).toBeHidden();
-  });
-
-  test('CA-08 abas trocam a URL', async ({ page }) => {
-    await page.goto('/login');
-
-    await tab(page, LABEL_REGISTER).click();
-    await expect(page).toHaveURL('/cadastro');
-    await expect(confirmPassword(page)).toBeVisible();
-
-    await tab(page, LABEL_LOGIN).click();
-    await expect(page).toHaveURL('/login');
-    await expect(confirmPassword(page)).toHaveCount(0);
-  });
-
-  test('CA-09 /cadastro direto', async ({ page }) => {
-    await page.goto('/cadastro');
-
-    await expect(tab(page, LABEL_REGISTER)).toHaveAttribute('aria-selected', 'true');
-    await expect(tab(page, LABEL_LOGIN)).toHaveAttribute('aria-selected', 'false');
-  });
-
-  test('trocar de aba descarta o digitado', async ({ page }) => {
-    await page.goto('/login');
-    await email(page).fill('ana@exemplo.com');
-
-    await tab(page, LABEL_REGISTER).click();
-    await expect(page).toHaveURL('/cadastro');
-    await tab(page, LABEL_LOGIN).click();
-    await expect(page).toHaveURL('/login');
-
-    await expect(email(page)).toHaveValue('');
-  });
-
-  test('CA-11 sem Google nem Esqueci a senha', async ({ page }) => {
-    for (const url of ['/login', '/cadastro']) {
-      await page.goto(url);
-      await expect(email(page)).toBeVisible();
-      await expect(page.getByText(/google/i)).toHaveCount(0);
-      await expect(page.getByText(/esqueci/i)).toHaveCount(0);
-    }
-  });
+test('Bearer só na API', async ({ page, api }) => {
+  await loginAs(page);
+  expect(api.requests('/users/me')[0].headers['authorization']).toMatch(/^Bearer access-/);
+  expect(api.requests('/auth/login')[0].headers['authorization']).toBeUndefined();
 });

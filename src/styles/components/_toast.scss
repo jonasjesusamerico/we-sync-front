@@ -1,0 +1,36 @@
+// Toast (prototype we-sync.css "Toast"), plus the close button (feature 005 D-04).
+.ws-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 6.5rem;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1.1rem;
+  border-radius: 14px;
+  background: var(--ws-text);
+  color: var(--ws-bg);
+  font-weight: 600;
+  box-shadow: var(--ws-shadow-lg);
+  animation: ws-toast-in 0.25s ease;
+}
+@media (min-width: 992px) {
+  .ws-toast {
+    bottom: 2rem;
+  }
+}
+@keyframes ws-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+.ws-toast .btn-icon {
+  --bs-btn-color: var(--ws-bg);
+  --bs-btn-hover-color: var(--ws-bg);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--ws-bg) 15%, transparent);
+  --bs-btn-border-color: transparent;
+  margin: -0.5rem -0.6rem -0.5rem 0;
+}

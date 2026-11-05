@@ -1,0 +1,39 @@
+.ws-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ws-primary);
+  background: var(--ws-primary-soft);
+  border: 2px solid var(--ws-surface);
+  box-shadow: 0 0 0 1px var(--ws-border);
+}
+.ws-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  padding: 0.2rem;
+  border-radius: 999px;
+  color: var(--ws-text);
+}
+.ws-user-btn .ws-user-name {
+  display: none;
+  font-weight: 600;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (min-width: 992px) {
+  .ws-user-btn .ws-user-name {
+    display: inline-block;
+  }
+}

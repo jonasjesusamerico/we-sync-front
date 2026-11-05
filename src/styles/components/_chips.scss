@@ -1,0 +1,46 @@
+// Chips: filters and radio choices (prototype we-sync.css "Chips").
+.ws-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.ws-chip {
+  position: relative;
+}
+.ws-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.ws-chip label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid var(--ws-border);
+  background: var(--ws-surface);
+  color: var(--ws-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+.ws-chip label:hover {
+  border-color: var(--ws-primary);
+}
+.ws-chip input:checked + label {
+  background: var(--ws-primary-soft);
+  border-color: var(--ws-primary);
+  color: var(--ws-primary);
+}
+.ws-chip input:focus-visible + label {
+  outline: 3px solid color-mix(in srgb, var(--ws-primary) 55%, transparent);
+  outline-offset: 2px;
+}
+.ws-chip .ws-icon {
+  width: 18px;
+  height: 18px;
+}

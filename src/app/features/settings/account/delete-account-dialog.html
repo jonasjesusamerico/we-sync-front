@@ -1,0 +1,40 @@
+<ws-form-dialog size="sm" labelledBy="delete-title" [busy]="submitting()" (dismiss)="cancel()">
+  <form class="modal-content" novalidate [formGroup]="form" (ngSubmit)="submit()">
+    <div class="modal-body p-4">
+      <span class="ws-kpi-icon is-danger mx-auto mb-3 d-flex"><ws-icon name="trash" /></span>
+      <h2 class="fs-5 fw-bold text-center" id="delete-title">{{ t.DELETE_DIALOG_TITLE }}</h2>
+      <p class="text-muted text-center">{{ t.DELETE_DIALOG_TEXT }}</p>
+      @if (error(); as message) {
+        <ws-form-alert kind="error">{{ message }}</ws-form-alert>
+      }
+      <label class="form-label" for="delete-pass">{{ t.LABEL_YOUR_PASSWORD }}</label>
+      <ws-password-field
+        [control]="form.controls.password"
+        inputId="delete-pass"
+        autocomplete="current-password"
+        [autofocus]="true"
+        [invalid]="!!passwordError()"
+        [describedBy]="passwordError() ? 'delete-pass-error' : null"
+      />
+      @if (passwordError(); as message) {
+        <div id="delete-pass-error" class="invalid-feedback d-block">{{ message }}</div>
+      }
+      <div class="d-grid gap-2 mt-4">
+        <button
+          type="submit"
+          class="btn btn-danger"
+          [disabled]="submitting()"
+          [attr.aria-busy]="submitting()"
+        >
+          @if (submitting()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          }
+          {{ t.DELETE_CONFIRM }}
+        </button>
+        <button type="button" class="btn btn-ghost" [disabled]="submitting()" (click)="cancel()">
+          {{ t.CANCEL }}
+        </button>
+      </div>
+    </div>
+  </form>
+</ws-form-dialog>
