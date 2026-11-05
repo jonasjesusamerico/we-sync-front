@@ -1,5 +1,6 @@
-// Captures of each screen of feature 005 and of the same screen of the prototype, at 1280 and 360 px, light and
-// dark, saved in test-results/capture/<tela>-<largura>-<tema>-{app,prototipo}.png (D-17). No pixel assertion.
+// Captures of each screen of features 005 and 006 and of the same screen of the prototype, at 1280 and 360 px,
+// light and dark, saved in test-results/capture/<tela>-<largura>-<tema>-{app,prototipo}.png (D-17). No pixel
+// assertion.
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Page } from '@playwright/test';
@@ -7,6 +8,7 @@ import { ANA } from './support/api-mock';
 import { expect, test } from './support/fixtures';
 import { fixedToday, seedOctober } from './support/purchases';
 import { seedSession, seedTheme } from './support/session';
+import { JONAS, seedCatalog } from './support/settings';
 
 const OUT = 'test-results/capture';
 const PROTOTYPE = resolve(__dirname, '../../we-sync-requirements/prototype');
@@ -17,8 +19,11 @@ interface Screen {
   name: string;
   /** App path; `aluguel` is replaced by the id of the "Aluguel" purchase. */
   app: string;
+  /** File of the prototype, with an optional `?query` and then an optional `#fragment`. */
   prototype: string;
   ready: (page: Page) => Promise<void>;
+  /** Feature 006: the prototype's user (Jonas) with its own categories and payment methods (seedCatalog). */
+  settings?: boolean;
 }
 
 const SCREENS: Screen[] = [
@@ -46,6 +51,27 @@ const SCREENS: Screen[] = [
     prototype: 'dashboard.html',
     ready: (page) => expect(page.locator('#kpi-total')).toBeVisible(),
   },
+  {
+    name: 'conta',
+    app: '/configuracoes/conta',
+    prototype: 'configuracoes.html#conta',
+    ready: (page) => expect(page.locator('#acc-name')).toHaveValue('Jonas'),
+    settings: true,
+  },
+  {
+    name: 'categorias',
+    app: '/configuracoes/categorias',
+    prototype: 'configuracoes.html#categorias',
+    ready: (page) => expect(page.locator('li.ws-tx').first()).toBeVisible(),
+    settings: true,
+  },
+  {
+    name: 'pagamentos',
+    app: '/configuracoes/formas-de-pagamento',
+    prototype: 'configuracoes.html#pagamentos',
+    ready: (page) => expect(page.locator('li.ws-tx').first()).toBeVisible(),
+    settings: true,
+  },
 ];
 
 for (const screen of SCREENS) {
@@ -56,9 +82,13 @@ for (const screen of SCREENS) {
         const file = `${OUT}/${screen.name}-${width}-${theme}`;
         await page.setViewportSize({ width, height });
         await seedTheme(context, theme);
-        api.addUser(ANA);
-        const [aluguel] = seedOctober(api, ANA.email);
-        api.addPurchase(ANA.email, {
+        const user = screen.settings ? JONAS : ANA;
+        api.addUser(user);
+        if (screen.settings) {
+          seedCatalog(api, user.email);
+        }
+        const [aluguel] = seedOctober(api, user.email);
+        api.addPurchase(user.email, {
           date: '2026-09-15',
           description: 'Setembro',
           categoryId: 3,
@@ -67,7 +97,7 @@ for (const screen of SCREENS) {
           status: 'PAID',
         });
         await fixedToday(page, TODAY);
-        await seedSession(page, api.issueSession(ANA.email));
+        await seedSession(page, api.issueSession(user.email));
         await page.goto(screen.app.replace('aluguel', String(aluguel)));
         await screen.ready(page);
         await page.waitForFunction(() => document.getAnimations().length === 0);
@@ -77,10 +107,12 @@ for (const screen of SCREENS) {
         await proto.setViewportSize({ width, height });
         await proto.clock.install({ time: TODAY });
         await proto.addInitScript((value) => localStorage.setItem('ws-theme', value), theme);
-        const [htmlFile, query = ''] = screen.prototype.split('?');
+        const [path, fragment = ''] = screen.prototype.split('#');
+        const [htmlFile, query = ''] = path.split('?');
         const url = pathToFileURL(`${PROTOTYPE}/${htmlFile}`);
         url.search = new URLSearchParams(query).toString();
         url.searchParams.set('semtour', '1');
+        url.hash = fragment;
         await proto.goto(url.href);
         await proto.waitForTimeout(300);
         await proto.screenshot({ path: `${file}-prototipo.png`, fullPage: true });

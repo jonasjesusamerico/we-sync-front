@@ -184,18 +184,37 @@ describe('PurchaseFormPage', () => {
       'Pix',
       'Transferência bancária',
       'Boleto',
+      'Vale-refeição',
     ]);
     expect(text(root().querySelector('form'))).not.toContain('Repetir');
   });
 
-  it('ícones das categorias', async () => {
+  it('ícones das categorias (vindos da API)', async () => {
     await openNew();
     const food = $<HTMLElement>('#categories .ws-chip:first-child');
     expect(food.style.getPropertyValue('--cat')).toBe('var(--ws-cat-food)');
     expect(food.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.food);
     const pets = $('#c-31').closest<HTMLElement>('.ws-chip')!;
-    expect(pets.style.getPropertyValue('--cat')).toBe('var(--ws-muted)');
-    expect(pets.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.tag);
+    expect(pets.style.getPropertyValue('--cat')).toBe('var(--ws-cat-leisure)');
+    expect(pets.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.heart);
+    const bar = $('#c-30').closest<HTMLElement>('.ws-chip')!;
+    expect(bar.style.getPropertyValue('--cat')).toBe('var(--ws-muted)');
+    expect(bar.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.tag);
+  });
+
+  it('nova sem arquivada', async () => {
+    await openNew();
+    expect(root().querySelector('#c-32')).toBeNull();
+    expect(root().querySelector('#p-41')).toBeNull();
+    expect(text($('#categories'))).not.toContain('Academia');
+    expect(text($('#payments'))).not.toContain('Cartão antigo');
+  });
+
+  it('prévia neutra', async () => {
+    await openNew();
+    const bubble = $<HTMLElement>('aside ws-category-bubble');
+    expect(bubble.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.tag);
+    expect(bubble.style.getPropertyValue('--cat')).toBe('var(--ws-muted)');
   });
 
   it('resumo ao vivo', async () => {
@@ -352,6 +371,42 @@ describe('PurchaseFormPage', () => {
     await stable();
     expect(toast()?.text).toBe('Compra salva com sucesso');
     expect(router.url).toBe('/compras?ano=2026&mes=11');
+  });
+
+  describe('categoria arquivada (feature 006)', () => {
+    const academia: Purchase = {
+      ...PURCHASE_EXAMPLE,
+      category: { id: 32, name: 'Academia', is_global: false, icon: 'HEART', color: 'HEALTH' },
+    };
+    const categoryLabels = () => Array.from(root().querySelectorAll('#categories label')).map(text);
+
+    it('editar com arquivada', async () => {
+      await openEdit(academia);
+      expect($('#c-32').checked).toBe(true);
+      expect(categoryLabels().at(-1)).toBe('Academia (arquivada)');
+      const req = await submit();
+      expect(req.request.body).toMatchObject({ category_id: 32 });
+      req.flush(academia);
+      await stable();
+    });
+
+    it('editar troca', async () => {
+      await openEdit(academia);
+      $('#c-6').click();
+      await stable();
+      expect($('#c-6').checked).toBe(true);
+      expect(categoryLabels()).toContain('Academia (arquivada)');
+    });
+
+    it('editar com a forma arquivada', async () => {
+      await openEdit({
+        ...PURCHASE_EXAMPLE,
+        payment_method: { id: 41, name: 'Cartão antigo', is_global: false },
+      });
+      expect($('#p-41').checked).toBe(true);
+      const labels = Array.from(root().querySelectorAll('#payments label')).map(text);
+      expect(labels.at(-1)).toBe('Cartão antigo (arquivada)');
+    });
   });
 
   it('edição com descrição longa', async () => {

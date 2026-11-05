@@ -1,8 +1,9 @@
-import { FormControl } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import {
   emailValidator,
   nameValidator,
   newPasswordValidator,
+  passwordsDiffer,
   requiredPasswordValidator,
 } from './auth-validators';
 
@@ -65,5 +66,25 @@ describe('requiredPasswordValidator', () => {
   it('senha do login', () => {
     expect(run(requiredPasswordValidator, '')).toEqual({ required: true });
     expect(run(requiredPasswordValidator, 'a')).toBeNull();
+  });
+});
+
+describe('passwordsDiffer', () => {
+  const group = (current: string, next: string) =>
+    new FormGroup(
+      {
+        current: new FormControl(current, { nonNullable: true }),
+        next: new FormControl(next, { nonNullable: true }),
+      },
+      { validators: [passwordsDiffer] },
+    );
+
+  it('nova igual à atual', () => {
+    expect(group('Senha123!', 'Senha123!').errors).toEqual({ samePassword: true });
+  });
+
+  it('diferentes ou atual vazia', () => {
+    expect(group('Senha123!', 'Outra-456').errors).toBeNull();
+    expect(group('', '').errors).toBeNull();
   });
 });

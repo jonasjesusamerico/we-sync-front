@@ -13,7 +13,10 @@ export interface NavItem {
   soon: boolean;
 }
 
-/** Menu of RF-03. Início and Compras (feature 005) navigate; the others are "em breve" (RN-16). */
+/**
+ * Menu of RF-03. Início, Compras (feature 005) and Configurações (feature 006) navigate; the others are "em breve"
+ * (RN-16).
+ */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: 'inicio',
@@ -61,7 +64,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: NAV_LABELS.configuracoes,
     shortLabel: NAV_SHORT_LABELS.configuracoes,
     icon: 'sliders',
-    soon: true,
+    route: '/configuracoes',
+    soon: false,
   },
 ];
 

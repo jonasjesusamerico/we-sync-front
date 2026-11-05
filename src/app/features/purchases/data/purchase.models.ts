@@ -1,4 +1,5 @@
-// Payloads of 2-contrato.md (feature 005), in snake_case as they arrive from the API.
+// Payloads of 2-contrato.md (features 005 and 006), in snake_case as they arrive from the API.
+import type { CatalogColorOut, CatalogIcon } from '../../../core/catalog/catalog.models';
 
 export type PurchaseStatus = 'PENDING' | 'PAID' | 'CANCELED';
 
@@ -8,13 +9,19 @@ export interface CatalogRef {
   is_global: boolean;
 }
 
+/** `Purchase.category`: icon and color come from the API (feature 006). */
+export interface CategorySummary extends CatalogRef {
+  icon: CatalogIcon;
+  color: CatalogColorOut;
+}
+
 export interface Purchase {
   id: number;
   user_id: number;
   /** "YYYY-MM-DD" */
   purchase_date: string;
   description: string;
-  category: CatalogRef;
+  category: CategorySummary;
   payment_method: CatalogRef;
   /** Decimal string without trailing zeros ("1234.5"). */
   amount: string;
@@ -74,15 +81,3 @@ export interface MonthSummary {
   spent: string;
   comparison: Comparison;
 }
-
-export interface Category {
-  id: number;
-  /** Only on the user's own items. */
-  user_id?: number;
-  name: string;
-  is_global: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export type PaymentMethod = Category;

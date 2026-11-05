@@ -55,7 +55,10 @@ npm run e2e:capture         # capturas do app e do protótipo lado a lado, em te
 - **Ícones** só por `<ws-icon name="…" />` (`shared/ui/icon/icons.ts`, caminhos do `ICONS` do protótipo). Nada de
   `innerHTML`, SVG externo, fonte de ícones ou emoji.
 - **Tema** (ADR-16): `public/theme-init.js` aplica `localStorage['we-sync.theme']` (ou a preferência do sistema) antes
-  da primeira pintura; `ThemeService` troca e grava; o botão é `layout/theme-toggle/`.
+  da primeira pintura; `ThemeService.set()` troca e grava; o botão é `layout/theme-toggle/`. Desde a 006 (ADR-14), o
+  tema também fica **na conta**: com sessão, `set()` envia `PUT /users/me/preferences` (um por vez, na ordem; falha →
+  toast de aviso, sem desfazer); o `CurrentUserStore.load()` adota o `theme` do `GET /users/me` (`adoptAccountTheme`,
+  sem chamar a API; `null` não muda nada).
 - Layout do protótipo: menu lateral a partir de `lg` (992 px) e menu inferior com botão "+" abaixo disso, só por CSS
   (sem `matchMedia` em TypeScript); topo com tema, notificações e conta. Os ids `ws-sidebar`, `ws-topbar` e
   `ws-bottomnav` são alvos do tour.
@@ -73,6 +76,9 @@ npm run e2e:capture         # capturas do app e do protótipo lado a lado, em te
   telas de acesso vão para o Início.
 - **ADR-15:** rota de retorno na URL (`?returnUrl=`, sempre por `sanitizeReturnUrl`), avisos do login no `state` da
   navegação (`readLoginNotice`); o e-mail nunca vai para a URL.
+- **Conta excluída (ADR-16 da 006):** `SessionEnd.accountDeleted()` limpa a sessão e o usuário e vai para o login com o
+  aviso `account-deleted` ("Sua conta foi excluída."), sem `returnUrl` e sem `POST /auth/logout`. A troca de senha grava
+  o par novo (`SessionStore.save`); os outros aparelhos saem no próximo `401`.
 - Usuário atual: `CurrentUserStore` (`GET /users/me`), carregado pelo `currentUserResolver` da casca; falha → dados
   indisponíveis (RN-20), sem bloquear a tela.
 
@@ -131,13 +137,17 @@ src/
       http/                      # API_BASE_URL, error-messages.ts, http-error.ts (RN-19)
       auth/                      # session-store, auth-api, token-refresher, lock-manager, auth-interceptor,
                                  # session-end, session-sync, auth-guards, return-url, login-notice
-      user/                      # current-user-store, user-api (GET /users/me), current-user-resolver, initials
-      theme/                     # ThemeService
+      user/                      # current-user-store (setUser), user-api (me, perfil, preferências, senha,
+                                 # exclusão), current-user-resolver, initials
+      catalog/                   # CatalogApi, catalog-style (catalogStyle, escolhas), catalog-options, mensagens
+      theme/                     # ThemeService (set, adoptAccountTheme), theme.messages
       navigation/                # TODAY, unsaved-changes.guard, navigation.messages.ts
     shared/                      # não importa de core/, layout/ nem features/
       ui/                        # icon, brand, soon (wsSoon), password-field, strength-meter, form-alert,
                                  # month-switcher, paginator, category-bubble, status-pill, area-status,
-                                 # money-input (wsMoneyInput), toast, confirm, ui.messages.ts
+                                 # money-input (wsMoneyInput), toast, confirm, dialog (ws-form-dialog),
+                                 # ui.messages.ts
+      text/                      # code-point-limit (wsCodePointLimit)
       validators/                # auth-validators, purchase-validators, text-measure, password-strength, field-error
       money/                     # money.ts (centavos)
       date/                      # plain-date.ts, month-query.ts
@@ -149,13 +159,17 @@ src/
     features/
       auth/                      # login/, register/, auth.messages.ts
       home/                      # Início, spending-card/ (cartão do gasto), spending-seal, home.messages.ts
-      purchases/                 # data/ (modelos, PurchasesApi, CatalogApi), list/ (Compras), form/ (nova e
-                                 # edição), purchases.routes, purchase-list-query, purchase-links (o único que a
-                                 # casca e o Início importam), catalog-style, purchase-description, purchases.messages
+      purchases/                 # data/ (modelos, PurchasesApi), list/ (Compras), form/ (nova e edição),
+                                 # purchases.routes, purchase-list-query, purchase-links (o único que a casca e o
+                                 # Início importam), purchase-description, purchases.messages
+      settings/                  # Configurações (006): settings.routes, settings-page (menu de seções),
+                                 # account/ (Conta, diálogo de exclusão), catalog/ (Categorias e Formas, diálogo
+                                 # de edição), settings.messages
   testing/                       # só de teste (api-examples, FakeLockManager, contraste, helpers)
 e2e/
-  support/                       # api-mock (API simulada com estado, compras por usuário), fixtures (HOME_URL),
-                                 # session, texts, layout, a11y, purchases (dados do app.js, fixedToday)
+  support/                       # api-mock (API simulada com estado: compras, catálogo com arquivadas, conta),
+                                 # fixtures (HOME_URL), session, texts, layout, a11y, purchases (dados do app.js,
+                                 # fixedToday), settings (JONAS, seedCatalog, openSettings)
   *.spec.ts                      # API simulada
   smoke.compose.spec.ts          # contra a stack real (npm run e2e:compose)
   prototype.capture.spec.ts      # capturas app × protótipo (npm run e2e:capture)

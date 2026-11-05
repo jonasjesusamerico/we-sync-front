@@ -99,3 +99,12 @@
   --bs-btn-disabled-border-color: var(--ws-danger);
   --bs-btn-disabled-color: var(--ws-on-danger);
 }
+
+// Small text buttons in lists ("Reativar") are 44 px tall (CA-29, D-03 of feature 006); .btn-icon already is.
+.ws-tx .btn-sm:not(.btn-icon) {
+  min-height: 44px;
+}
+// The buttons of a list row keep their size; the name wraps instead (CA-29, D-05 of feature 006).
+.ws-tx > .btn {
+  flex-shrink: 0;
+}

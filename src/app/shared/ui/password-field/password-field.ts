@@ -18,6 +18,7 @@ import { LABEL_HIDE_PASSWORD, LABEL_SHOW_PASSWORD } from '../ui.messages';
   template: `
     <div class="input-icon position-relative">
       <ws-icon name="lock" />
+      <!-- eslint-disable @angular-eslint/template/no-autofocus -- only inside a modal dialog (D-12, MDN) -->
       <input
         #field
         [id]="inputId()"
@@ -27,8 +28,10 @@ import { LABEL_HIDE_PASSWORD, LABEL_SHOW_PASSWORD } from '../ui.messages';
         [attr.aria-invalid]="invalid() ? 'true' : null"
         [attr.aria-describedby]="describedBy()"
         [attr.autocomplete]="autocomplete()"
+        [attr.autofocus]="autofocus() ? '' : null"
         [formControl]="control()"
       />
+      <!-- eslint-enable @angular-eslint/template/no-autofocus -->
       <button
         type="button"
         class="btn btn-icon position-absolute top-50 end-0 translate-middle-y border-0"
@@ -48,6 +51,8 @@ export class PasswordField {
   readonly autocomplete = input.required<'current-password' | 'new-password'>();
   readonly invalid = input(false);
   readonly describedBy = input<string | null>(null);
+  /** Initial focus inside a modal <dialog> (showModal focuses the element with `autofocus`, D-12 of feature 006). */
+  readonly autofocus = input(false);
   readonly visible = signal(false);
   protected readonly toggleLabel = computed(() =>
     this.visible() ? LABEL_HIDE_PASSWORD : LABEL_SHOW_PASSWORD,

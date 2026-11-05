@@ -34,8 +34,10 @@
           <label class="form-label" for="f-category">{{ t.LABEL_CATEGORY }}</label>
           <select id="f-category" class="form-select" (change)="goCategory($event)">
             <option value="" [selected]="query()?.categoryId === null">{{ t.LABEL_ALL }}</option>
-            @for (c of sortedCategories(); track c.id) {
-              <option [value]="c.id" [selected]="c.id === query()?.categoryId">{{ c.name }}</option>
+            @for (option of categoryOptions(); track option.item.id) {
+              <option [value]="option.item.id" [selected]="option.item.id === query()?.categoryId">
+                {{ option.label }}
+              </option>
             }
           </select>
         </div>

@@ -8,7 +8,7 @@ import { SessionStore } from './session-store';
 
 const ACCESS_PAGES = new Set(['login', 'cadastro']);
 
-/** End of the session: expired (RN-09), logged out in another tab, and logout (RN-12). */
+/** End of the session: expired (RN-09), logged out in another tab, logout (RN-12) and account deleted (006). */
 @Injectable({ providedIn: 'root' })
 export class SessionEnd {
   private readonly store = inject(SessionStore);
@@ -46,6 +46,17 @@ export class SessionEnd {
     if (refreshToken) {
       this.authApi.logout(refreshToken).subscribe({ error: () => undefined });
     }
+  }
+
+  /**
+   * RN-10 of feature 006 (ADR-16): the account is gone, so are its tokens. Clears, goes to the login with the notice,
+   * no return route and no POST /auth/logout. The other tabs leave through the storage event (SessionSync).
+   */
+  accountDeleted(): void {
+    this.store.clear();
+    this.currentUser.clear();
+    const state: LoginNoticeState = { notice: 'account-deleted' };
+    void this.router.navigate(['/login'], { state, replaceUrl: true });
   }
 
   private isOnAccessPage(): boolean {

@@ -11,7 +11,7 @@ import { LABEL_USE_DARK_THEME, LABEL_USE_LIGHT_THEME } from '../../shared/ui/ui.
     type="button"
     [class]="buttonClass()"
     [attr.aria-label]="label()"
-    (click)="theme.toggle()"
+    (click)="theme.set(theme.theme() === 'dark' ? 'light' : 'dark')"
   >
     <ws-icon [name]="theme.theme() === 'dark' ? 'sun' : 'moon'" />
   </button>`,

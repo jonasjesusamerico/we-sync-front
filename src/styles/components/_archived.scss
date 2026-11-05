@@ -1,0 +1,20 @@
+// Archived own categories / payment methods (prototype we-sync.css, CONF-04): collapsed list below the active
+// ones. The summary is a 44 px target (CA-29, D-03 of feature 006) by padding, keeping the default display
+// (list-item, with the disclosure marker of the prototype); `display: flex` here hides the marker and breaks the
+// Playwright hit test (see docs/design-system.md).
+.ws-archived > summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ws-muted);
+  width: fit-content;
+  min-height: 44px;
+  padding-block: 0.625rem;
+}
+.ws-archived > summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ws-primary) 55%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.ws-archived .ws-cat {
+  opacity: 0.6;
+}

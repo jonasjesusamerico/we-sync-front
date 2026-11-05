@@ -35,6 +35,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/purchases/purchases.routes').then((m) => m.PURCHASES_ROUTES),
       },
+      {
+        path: 'configuracoes',
+        loadChildren: () =>
+          import('./features/settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: 'inicio' },

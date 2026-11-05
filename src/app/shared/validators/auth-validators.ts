@@ -47,3 +47,14 @@ export const newPasswordValidator: ValidatorFn = (control): ValidationErrors | n
 /** Login password (RF-10): only required, not trimmed. */
 export const requiredPasswordValidator: ValidatorFn = (control): ValidationErrors | null =>
   text(control) === '' ? { required: true } : null;
+
+/** RN-04 (feature 006): on a FormGroup with `current` and `next`; both non-empty and equal → { samePassword: true }. */
+export const passwordsDiffer: ValidatorFn = (group): ValidationErrors | null => {
+  const current = group.get('current');
+  const next = group.get('next');
+  if (!current || !next) {
+    return null;
+  }
+  const a = text(current);
+  return a !== '' && a === text(next) ? { samePassword: true } : null;
+};

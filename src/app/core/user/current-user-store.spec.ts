@@ -1,7 +1,12 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ERROR_INTERNAL, USER_RESPONSE_EXAMPLE } from '../../../testing/api-examples';
+import {
+  ERROR_INTERNAL,
+  USER_RESPONSE_DARK_EXAMPLE,
+  USER_RESPONSE_EXAMPLE,
+} from '../../../testing/api-examples';
 import { API, httpTestingProviders } from '../../../testing/http';
+import { THEME_KEY, ThemeService } from '../theme/theme';
 import { CurrentUserStore } from './current-user-store';
 
 describe('CurrentUserStore', () => {
@@ -14,7 +19,12 @@ describe('CurrentUserStore', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    http.verify();
+    vi.restoreAllMocks();
+    localStorage.clear();
+    document.documentElement.removeAttribute('data-bs-theme');
+  });
 
   it('usuário pronto', async () => {
     expect(store.status()).toBe('idle');
@@ -55,5 +65,42 @@ describe('CurrentUserStore', () => {
     await done;
     expect(store.status()).toBe('idle');
     expect(store.user()).toBeNull();
+  });
+
+  it('load adota o tema da conta', async () => {
+    const adopt = vi.spyOn(TestBed.inject(ThemeService), 'adoptAccountTheme');
+    const done = store.load();
+    http.expectOne(`${API}/users/me`).flush(USER_RESPONSE_DARK_EXAMPLE);
+    await done;
+    expect(adopt).toHaveBeenCalledWith('DARK');
+    expect(document.documentElement.getAttribute('data-bs-theme')).toBe('dark');
+  });
+
+  it('load sem tema', async () => {
+    document.documentElement.setAttribute('data-bs-theme', 'light');
+    const theme = TestBed.inject(ThemeService);
+    const adopt = vi.spyOn(theme, 'adoptAccountTheme');
+    const done = store.load();
+    http.expectOne(`${API}/users/me`).flush(USER_RESPONSE_EXAMPLE);
+    await done;
+    expect(adopt).not.toHaveBeenCalled();
+    expect(theme.theme()).toBe('light');
+    expect(localStorage.getItem(THEME_KEY)).toBeNull();
+    http.expectNone(`${API}/users/me/preferences`);
+  });
+
+  it('setUser', async () => {
+    const adopt = vi.spyOn(TestBed.inject(ThemeService), 'adoptAccountTheme');
+    const done = store.load();
+    const req = http.expectOne(`${API}/users/me`);
+    const renamed = { ...USER_RESPONSE_DARK_EXAMPLE, name: 'Jonas Silva' };
+    store.setUser(renamed);
+    expect(store.user()).toEqual(renamed);
+    expect(store.status()).toBe('ready');
+    req.flush({ ...USER_RESPONSE_EXAMPLE, name: 'Velho' });
+    await done;
+    expect(store.user()).toEqual(renamed);
+    expect(store.status()).toBe('ready');
+    expect(adopt).not.toHaveBeenCalled();
   });
 });

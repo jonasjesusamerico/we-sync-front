@@ -41,30 +41,28 @@
     (keydown)="onMenuKeydown($event)"
   >
     <li role="none">
-      <button
+      <a
         #item
-        type="button"
         class="dropdown-item"
         role="menuitem"
         tabindex="-1"
-        wsSoon
-        [wsSoonLabel]="texts.LABEL_MY_PROFILE"
+        [routerLink]="PROFILE_PATH"
+        (click)="close()"
       >
         <ws-icon name="user" />{{ texts.LABEL_MY_PROFILE }}
-      </button>
+      </a>
     </li>
     <li role="none">
-      <button
+      <a
         #item
-        type="button"
         class="dropdown-item"
         role="menuitem"
         tabindex="-1"
-        wsSoon
-        [wsSoonLabel]="texts.LABEL_SETTINGS"
+        [routerLink]="SETTINGS_PATH"
+        (click)="close()"
       >
         <ws-icon name="sliders" />{{ texts.LABEL_SETTINGS }}
-      </button>
+      </a>
     </li>
     <li role="none">
       <button

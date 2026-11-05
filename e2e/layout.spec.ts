@@ -26,8 +26,13 @@ test('CA-26', async ({ page, api }) => {
   const home = sidebar.getByRole('link', { name: 'Início' });
   await expect(home).toHaveAttribute('aria-current', 'page');
   await expect(sidebar.getByRole('link', { name: 'Compras' })).toHaveAttribute('href', '/compras');
+  // Feature 006: Configurações navigates; Nossa casa, Metas e relatórios and Investimentos stay "em breve".
   await expect(sidebar.locator('button.ws-nav-link .ws-badge-soon')).toHaveText(
-    Array(4).fill(t.SOON_TAG),
+    Array(3).fill(t.SOON_TAG),
+  );
+  await expect(sidebar.getByRole('link', { name: 'Configurações' })).toHaveAttribute(
+    'href',
+    '/configuracoes',
   );
   await expect(
     sidebar.locator('.ws-sidebar-card').getByRole('link', { name: 'Nova compra' }),
@@ -70,8 +75,9 @@ test('CA-29', async ({ page, api }) => {
 
   await tryAll('#ws-sidebar button.is-soon');
   await tryAll('#ws-topbar > .ws-topbar-actions > button.is-soon');
+  // Feature 006: "Meu perfil" and "Configurações" of the account menu navigate (settings-account.spec.ts).
   await openUserMenu(page);
-  await tryAll('.ws-user-menu [role=menuitem].is-soon', true);
+  await expect(page.locator('.ws-user-menu [role=menuitem].is-soon')).toHaveCount(0);
   await page.keyboard.press('Escape');
 
   await page.setViewportSize({ width: 375, height: 740 });
@@ -98,23 +104,25 @@ test('CA-30', async ({ page, api }) => {
   await expect(menu).toHaveClass(/show/);
   await expect(menu).toContainText('Ana Souza');
   await expect(menu).toContainText('ana@exemplo.com');
-  await expect(page.getByRole('menuitem', { name: 'Meu perfil, em breve' })).toHaveAttribute(
-    'aria-disabled',
-    'true',
+  // Feature 006: the two items are links to Conta (RF-02).
+  await expect(page.getByRole('menuitem', { name: t.LABEL_MY_PROFILE })).toHaveAttribute(
+    'href',
+    '/configuracoes/conta',
   );
-  await expect(page.getByRole('menuitem', { name: 'Configurações, em breve' })).toHaveAttribute(
-    'aria-disabled',
-    'true',
+  await expect(page.getByRole('menuitem', { name: t.LABEL_SETTINGS })).toHaveAttribute(
+    'href',
+    '/configuracoes',
   );
+  await expect(page.locator('.ws-user-menu [aria-disabled="true"]')).toHaveCount(0);
   await expect(page.getByRole('menuitem', { name: t.LABEL_LOGOUT })).toBeVisible();
-  await expect(page.getByRole('menuitem', { name: 'Meu perfil, em breve' })).toBeFocused();
+  await expect(page.getByRole('menuitem', { name: t.LABEL_MY_PROFILE })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(menu).not.toHaveClass(/show/);
   await expect(button).toBeFocused();
 
   await button.press('ArrowDown');
   await expect(menu).toHaveClass(/show/);
-  await expect(page.getByRole('menuitem', { name: 'Meu perfil, em breve' })).toBeFocused();
+  await expect(page.getByRole('menuitem', { name: t.LABEL_MY_PROFILE })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(button).toBeFocused();
   await button.press('Enter');
@@ -169,7 +177,8 @@ test('CA-01 e CA-48: Compras e Nova compra navegam; o resto continua em breve', 
   await sidebar.getByRole('link', { name: 'Início' }).click();
   await sidebar.locator('.ws-sidebar-card').getByRole('link', { name: 'Nova compra' }).click();
   await expect(page).toHaveURL('/compras/nova');
-  for (const name of ['Nossa casa', 'Metas e relatórios', 'Investimentos', 'Configurações']) {
+  // Feature 006: Configurações is a link now (settings-account.spec.ts).
+  for (const name of ['Nossa casa', 'Metas e relatórios', 'Investimentos']) {
     await expect(sidebar.getByRole('button', { name: new RegExp(name) })).toHaveAttribute(
       'aria-disabled',
       'true',

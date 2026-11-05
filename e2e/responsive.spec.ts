@@ -30,7 +30,10 @@ test('CA-27', async ({ page, api }) => {
     els.slice(1).map((e) => e.getAttribute('aria-label')),
   );
   await expect(items.nth(1)).toHaveText('Compras');
-  expect(labels).toEqual([null, 'Nova compra', 'Casa, em breve', 'Ajustes, em breve']);
+  // Feature 006: "Ajustes" is a link to Configurações (no aria-label, the visible text names it).
+  expect(labels).toEqual([null, 'Nova compra', 'Casa, em breve', null]);
+  await expect(items.nth(4)).toHaveText('Ajustes');
+  await expect(items.nth(4)).toHaveAttribute('href', '/configuracoes');
   await expect(nav.locator('[aria-current]')).toHaveCount(1);
   await expectNoHorizontalScroll(page);
 });

@@ -1,6 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { USER_RESPONSE_EXAMPLE } from '../../../../testing/api-examples';
 import { text } from '../../../../testing/dom';
 import { API, httpTestingProviders } from '../../../../testing/http';
@@ -10,6 +11,9 @@ import { ICON_PATHS } from '../../../shared/ui/icon/icons';
 import { MSG_USER_UNAVAILABLE } from '../shell.messages';
 import { UserMenu } from './user-menu';
 
+@Component({ template: '' })
+class Blank {}
+
 describe('UserMenu', () => {
   let logout: ReturnType<typeof vi.fn>;
 
@@ -18,7 +22,15 @@ describe('UserMenu', () => {
     TestBed.configureTestingModule({
       providers: [
         ...httpTestingProviders(),
-        provideRouter([]),
+        provideRouter([
+          {
+            path: 'configuracoes',
+            children: [
+              { path: '', pathMatch: 'full', redirectTo: 'conta' },
+              { path: 'conta', component: Blank },
+            ],
+          },
+        ]),
         { provide: SessionEnd, useValue: { logout } },
       ],
     });
@@ -34,7 +46,7 @@ describe('UserMenu', () => {
     const fixture = TestBed.createComponent(UserMenu);
     await fixture.whenStable();
     const root = fixture.nativeElement as HTMLElement;
-    const items = () => Array.from(root.querySelectorAll<HTMLButtonElement>('[role=menuitem]'));
+    const items = () => Array.from(root.querySelectorAll<HTMLElement>('[role=menuitem]'));
     const button = root.querySelector<HTMLButtonElement>('#ws-user-btn')!;
     const key = async (target: HTMLElement, k: string) => {
       target.dispatchEvent(
@@ -70,8 +82,34 @@ describe('UserMenu', () => {
     expect(text(menu.querySelector('.fw-bold'))).toBe('Ana Souza');
     expect(text(menu.querySelector('.small'))).toBe('ana@exemplo.com');
     expect(items().map(text)).toEqual(['Meu perfil', 'Configurações', 'Sair']);
-    expect(items().map((i) => i.getAttribute('aria-disabled'))).toEqual(['true', 'true', null]);
+    expect(items().map((i) => i.getAttribute('aria-disabled'))).toEqual([null, null, null]);
+    expect(items().map((i) => [i.tagName, i.getAttribute('href')])).toEqual([
+      ['A', '/configuracoes/conta'],
+      ['A', '/configuracoes'],
+      ['BUTTON', null],
+    ]);
     expect(document.activeElement).toBe(items()[0]);
+  });
+
+  it('menu do usuário abre Conta', async () => {
+    const { fixture, items, button, key, menu } = await render('Ana Souza');
+    const router = TestBed.inject(Router);
+    button.click();
+    await fixture.whenStable();
+    items()[0].click();
+    await fixture.whenStable();
+    expect(router.url).toBe('/configuracoes/conta');
+    expect(menu.classList).not.toContain('show');
+
+    await router.navigateByUrl('/');
+    await key(button, 'ArrowDown');
+    await key(items()[0], 'ArrowDown');
+    expect(document.activeElement).toBe(items()[1]);
+    // Enter on a link: the browser turns it into a click (the e2e presses the real key).
+    items()[1].click();
+    await fixture.whenStable();
+    expect(router.url).toBe('/configuracoes/conta');
+    expect(menu.classList).not.toContain('show');
   });
 
   it('teclado do menu', async () => {

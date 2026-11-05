@@ -99,6 +99,9 @@ export class LoginPage {
     if (notice?.kind === 'session-expired') {
       return { kind: 'info', text: texts.MSG_SESSION_EXPIRED };
     }
+    if (notice?.kind === 'account-deleted') {
+      return { kind: 'info', text: texts.MSG_ACCOUNT_DELETED };
+    }
     if (notice?.kind === 'account-created') {
       return { kind: 'success', text: texts.MSG_ACCOUNT_CREATED };
     }

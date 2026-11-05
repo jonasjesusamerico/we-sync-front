@@ -1,4 +1,5 @@
 import { HttpTestingController } from '@angular/common/http/testing';
+import { Location } from '@angular/common';
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, withComponentInputBinding } from '@angular/router';
@@ -264,6 +265,14 @@ describe('LoginPage', () => {
     expect(view.alert()!.classList).toContain('alert-success');
     expect(view.email.value).toBe('ana@exemplo.com');
     expect(document.activeElement).toBe(view.password);
+  });
+
+  it('login mostra o aviso de conta excluída', async () => {
+    const view = await open('/login', { notice: 'account-deleted' });
+    expect(text(view.alert())).toBe(t.MSG_ACCOUNT_DELETED);
+    expect(view.alert()!.getAttribute('role')).toBe('status');
+    expect(view.alert()!.classList).toContain('alert-primary');
+    expect(TestBed.inject(Location).getState()).not.toHaveProperty('notice');
   });
 
   it('aviso some no envio', async () => {

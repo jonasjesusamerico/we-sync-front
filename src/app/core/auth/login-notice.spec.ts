@@ -9,6 +9,10 @@ describe('readLoginNotice', () => {
     });
   });
 
+  it('reads the account-deleted notice (feature 006)', () => {
+    expect(readLoginNotice({ notice: 'account-deleted' })).toEqual({ kind: 'account-deleted' });
+  });
+
   it.each([
     null,
     undefined,

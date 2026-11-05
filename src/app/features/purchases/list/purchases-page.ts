@@ -42,15 +42,12 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { MonthSwitcher } from '../../../shared/ui/month-switcher/month-switcher';
 import { Paginator } from '../../../shared/ui/paginator/paginator';
 import { StatusPill, StatusPillKind } from '../../../shared/ui/status-pill/status-pill';
-import { CatalogApi } from '../data/catalog-api';
-import type {
-  Category,
-  PaginatedPurchases,
-  Purchase,
-  PurchaseStatus,
-} from '../data/purchase.models';
+import { CatalogApi } from '../../../core/catalog/catalog-api';
+import type { Category } from '../../../core/catalog/catalog.models';
+import { filterOptions } from '../../../core/catalog/catalog-options';
+import { catalogStyle, type CatalogStyle } from '../../../core/catalog/catalog-style';
+import type { PaginatedPurchases, Purchase, PurchaseStatus } from '../data/purchase.models';
 import { PurchasesApi } from '../data/purchases-api';
-import { categoryStyle, CatalogStyle, sortCategories } from '../catalog-style';
 import { NEW_PURCHASE_PATH, editPath, originState } from '../purchase-links';
 import {
   type PurchaseListQuery,
@@ -165,9 +162,10 @@ export class PurchasesPage {
     const page = this.page();
     return page ? t.purchasesSummary(page.total, formatBrl(apiToCents(page.total_amount))) : '';
   });
-  protected readonly sortedCategories = computed(() => {
+  /** Globals, active own items and, at the end, the archived ones with "(arquivada)" (RN-16). */
+  protected readonly categoryOptions = computed(() => {
     const categories = this.categories();
-    return categories.status === 'ready' ? sortCategories(categories.value) : [];
+    return categories.status === 'ready' ? filterOptions(categories.value, 'category') : [];
   });
   protected readonly emptyText = computed(() => t.emptyMonth(monthLongLabel(this.month())));
   /** The links to the form carry this screen as their origin (ADR-05). */
@@ -275,7 +273,7 @@ export class PurchasesPage {
   }
 
   protected style(p: Purchase): CatalogStyle {
-    return categoryStyle(p.category);
+    return catalogStyle(p.category);
   }
 
   protected kind(p: Purchase): StatusPillKind {

@@ -326,7 +326,7 @@ describe('PurchasesPage', () => {
     expect(empty.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.search);
   });
 
-  it('ordem do filtro de categoria', async () => {
+  it('filtro com arquivadas', async () => {
     await open('/compras?ano=2026&mes=11&categoria=31');
     const options = Array.from(root().querySelectorAll<HTMLOptionElement>('#f-category option'));
     expect(options.map(text)).toEqual([
@@ -339,8 +339,33 @@ describe('PurchasesPage', () => {
       'Lazer',
       'Bar',
       'Pets',
+      'Academia (arquivada)',
     ]);
     expect(root().querySelector<HTMLSelectElement>('#f-category')!.value).toBe('31');
+  });
+
+  it('bolha da API', async () => {
+    const animais: Purchase = {
+      ...PURCHASE_EXAMPLE,
+      category: { id: 31, name: 'Animais', is_global: false, icon: 'HOUSE', color: 'HOME' },
+    };
+    await open('/compras?ano=2026&mes=11', page([animais]));
+    for (const bubble of [
+      rows()[0].querySelector<HTMLElement>('ws-category-bubble')!,
+      cards()[0].querySelector<HTMLElement>('ws-category-bubble')!,
+    ]) {
+      expect(bubble.style.getPropertyValue('--cat')).toBe('var(--ws-cat-home)');
+      expect(bubble.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.house);
+    }
+  });
+
+  it('filtro por arquivada', async () => {
+    const req = await open('/compras?ano=2026&mes=11&categoria=32');
+    expect(req.request.params.get('category_id')).toBe('32');
+    expect(router.url).toBe('/compras?ano=2026&mes=11&categoria=32');
+    const select = root().querySelector<HTMLSelectElement>('#f-category')!;
+    expect(select.value).toBe('32');
+    expect(text(select.selectedOptions[0])).toBe('Academia (arquivada)');
   });
 
   it('escolher categoria', async () => {

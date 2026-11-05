@@ -31,6 +31,8 @@ describe('Shell', () => {
               { path: 'compras', component: Blank },
               { path: 'compras/nova', component: Blank },
               { path: 'compras/:id', component: Blank },
+              { path: 'configuracoes/conta', component: Blank },
+              { path: 'configuracoes/categorias', component: Blank },
             ],
           },
         ]),
@@ -70,7 +72,8 @@ describe('Shell', () => {
       Array.from(aside.querySelectorAll('nav')).map((n) => n.getAttribute('aria-label')),
     ).toEqual(['Menu', 'Planejamento', 'Administração']);
     const links = Array.from(aside.querySelectorAll('a.ws-nav-link'));
-    expect(links.map(text)).toEqual(['Início', 'Compras']);
+    expect(links.map(text)).toEqual(['Início', 'Compras', 'Configurações']);
+    expect(links[2].getAttribute('href')).toBe('/configuracoes');
     expect(links[0].getAttribute('aria-current')).toBe('page');
     expect(links[1].getAttribute('href')).toBe('/compras');
     expect(links[1].getAttribute('aria-current')).toBeNull();
@@ -79,7 +82,6 @@ describe('Shell', () => {
       'Nossa casa em breve',
       'Metas e relatórios em breve',
       'Investimentos em breve',
-      'Configurações em breve',
     ]);
     soon.forEach((b) => expect(b.getAttribute('aria-disabled')).toBe('true'));
     const card = aside.querySelector('.ws-sidebar-card')!;
@@ -96,13 +98,15 @@ describe('Shell', () => {
     const labels = Array.from(bar.querySelectorAll('button')).map((b) =>
       b.getAttribute('aria-label'),
     );
-    expect(labels).toEqual([
-      'Usar tema escuro',
-      'Notificações, em breve',
-      null,
-      'Meu perfil, em breve',
-      'Configurações, em breve',
-      null,
+    expect(labels).toEqual(['Usar tema escuro', 'Notificações, em breve', null, null]);
+    expect(
+      Array.from(bar.querySelectorAll<HTMLAnchorElement>('.dropdown-menu a')).map((a) => [
+        text(a),
+        a.getAttribute('href'),
+      ]),
+    ).toEqual([
+      ['Meu perfil', '/configuracoes/conta'],
+      ['Configurações', '/configuracoes'],
     ]);
     const topbar = newPurchaseLinks().topbar;
     expect(text(topbar)).toBe('Nova compra');
@@ -117,17 +121,16 @@ describe('Shell', () => {
     const nav = root.querySelector('nav#ws-bottomnav')!;
     expect(nav.getAttribute('aria-label')).toBe(t.LABEL_BOTTOM_NAV);
     const items = Array.from(nav.children) as HTMLElement[];
-    expect(items.map((el) => el.tagName)).toEqual(['A', 'A', 'A', 'BUTTON', 'BUTTON']);
+    expect(items.map((el) => el.tagName)).toEqual(['A', 'A', 'A', 'BUTTON', 'A']);
     expect(items.slice(0, 2).map(text)).toEqual(['Início', 'Compras']);
     expect(items[0].getAttribute('aria-current')).toBe('page');
     expect(items[1].getAttribute('href')).toBe('/compras');
     expect(items[2].classList).toContain('ws-fab');
     expect(items[2].getAttribute('aria-label')).toBe('Nova compra');
     expect(items[2].getAttribute('href')).toBe('/compras/nova');
-    expect(items.slice(3).map((el) => el.getAttribute('aria-label'))).toEqual([
-      'Casa, em breve',
-      'Ajustes, em breve',
-    ]);
+    expect(items[3].getAttribute('aria-label')).toBe('Casa, em breve');
+    expect(text(items[4])).toBe('Ajustes');
+    expect(items[4].getAttribute('href')).toBe('/configuracoes');
   });
 
   it('Compras navega (lateral e inferior)', async () => {
@@ -205,12 +208,8 @@ describe('Shell', () => {
       'Nossa casa em breve',
       'Metas e relatórios em breve',
       'Investimentos em breve',
-      'Configurações em breve',
       'Notificações, em breve',
-      'Meu perfil, em breve',
-      'Configurações, em breve',
       'Casa, em breve',
-      'Ajustes, em breve',
     ]);
     for (const button of soon) {
       button.click();
@@ -218,5 +217,19 @@ describe('Shell', () => {
     await harness.fixture.whenStable();
     expect(router.url).toBe('/inicio');
     expect(root.querySelector('.dropdown-menu.show')).toBeNull();
+  });
+
+  it('menu lateral e inferior em Configurações', async () => {
+    const { root } = await render('/configuracoes/categorias');
+    const settings = Array.from(root.querySelectorAll<HTMLAnchorElement>('#ws-sidebar a')).find(
+      (a) => text(a) === 'Configurações',
+    )!;
+    const short = Array.from(root.querySelectorAll<HTMLAnchorElement>('#ws-bottomnav a')).find(
+      (a) => text(a) === 'Ajustes',
+    )!;
+    expect(settings.getAttribute('aria-current')).toBe('page');
+    expect(short.getAttribute('aria-current')).toBe('page');
+    expect(text(settings)).not.toContain('em breve');
+    expect(short.getAttribute('aria-label')).toBeNull();
   });
 });

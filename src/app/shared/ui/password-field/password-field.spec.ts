@@ -12,12 +12,14 @@ import { PasswordField } from './password-field';
     autocomplete="current-password"
     [invalid]="invalid()"
     [describedBy]="describedBy()"
+    [autofocus]="autofocus()"
   />`,
 })
 class Host {
   readonly control = new FormControl('segredo', { nonNullable: true });
   readonly invalid = signal(false);
   readonly describedBy = signal<string | null>(null);
+  readonly autofocus = signal(false);
   readonly field = viewChild.required(PasswordField);
 }
 
@@ -73,5 +75,13 @@ describe('PasswordField', () => {
     const { fixture, input } = await render();
     fixture.componentInstance.field().focus();
     expect(document.activeElement).toBe(input);
+  });
+
+  it('autofocus no input (D-12 da 006)', async () => {
+    const { fixture, input } = await render();
+    expect(input.hasAttribute('autofocus')).toBe(false);
+    fixture.componentInstance.autofocus.set(true);
+    await fixture.whenStable();
+    expect(input.hasAttribute('autofocus')).toBe(true);
   });
 });

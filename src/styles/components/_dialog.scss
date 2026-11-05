@@ -28,3 +28,11 @@ dialog.ws-dialog {
 dialog.ws-dialog::backdrop {
   background: var(--ws-backdrop);
 }
+// Form dialog of the default Bootstrap size (#edit-modal of configuracoes.html, feature 006).
+dialog.ws-dialog.is-default {
+  width: min(500px, 100% - 2rem);
+}
+// Instead of the inline style of the prototype's #edit-modal body.
+dialog.ws-dialog .modal-body.d-grid {
+  grid-template-columns: minmax(0, 1fr);
+}

@@ -2,6 +2,9 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { parseIsoDate } from '../date/plain-date';
 import { codePoints } from './text-measure';
 
+/** RN-12 of feature 006: names of categories and payment methods, 1 to 40 code points after trimming. */
+export const CATALOG_NAME_MAX = 40;
+
 const text = (control: AbstractControl): string =>
   typeof control.value === 'string' ? control.value : '';
 

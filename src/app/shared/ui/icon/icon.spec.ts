@@ -68,3 +68,23 @@ describe('ICON_PATHS (feature 005)', () => {
     expect(ICON_PATHS[name]).toBe(path);
   });
 });
+
+describe('ICON_PATHS (feature 006)', () => {
+  // Paths copied from ICONS in prototype/assets/app.js.
+  it.each([
+    ['wallet', 'M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l12-3v3M16 13.5h.01'],
+    ['card', 'M3 6h18v12H3zM3 10h18M7 15h3'],
+    [
+      'gift',
+      'M4 11h16v10H4zM3 7h18v4H3zM12 7v14M12 7c-1.5-3-5-3-5-1s3 1 5 1zM12 7c1.5-3 5-3 5-1s-3 1-5 1z',
+    ],
+    [
+      'sparkle',
+      'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
+    ],
+    ['archive', 'M3 4h18v4H3zM5 8v12h14V8M10 12h4'],
+    ['lockSmall', 'M7 11h10v9H7zM9 11V8a3 3 0 0 1 6 0v3'],
+  ] as const)('ícone novo %s', (name, path) => {
+    expect(ICON_PATHS[name]).toBe(path);
+  });
+});

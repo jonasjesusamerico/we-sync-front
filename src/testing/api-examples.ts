@@ -5,12 +5,16 @@ import type {
   RegisterResponse,
   TokenResponse,
 } from '../app/core/auth/session.models';
+import type {
+  CatalogColorOut,
+  CatalogIcon,
+  Category,
+  PaymentMethod,
+} from '../app/core/catalog/catalog.models';
 import type { UserResponse } from '../app/core/user/user.models';
 import type {
-  Category,
   MonthSummary,
   PaginatedPurchases,
-  PaymentMethod,
   Purchase,
   PurchaseRequest,
 } from '../app/features/purchases/data/purchase.models';
@@ -39,6 +43,7 @@ export const USER_RESPONSE_EXAMPLE: UserResponse = {
   id: 42,
   name: 'Ana Souza',
   email: 'ana@exemplo.com',
+  theme: null,
 };
 
 export const ERROR_BAD_REQUEST: ApiError = { code: 'BAD_REQUEST', message: 'invalid request body' };
@@ -77,7 +82,7 @@ export const PURCHASE_EXAMPLE: Purchase = {
   user_id: 7,
   purchase_date: '2026-11-05',
   description: 'Padária São João',
-  category: { id: 1, name: 'Alimentação', is_global: true },
+  category: { id: 1, name: 'Alimentação', is_global: true, icon: 'FOOD', color: 'FOOD' },
   payment_method: { id: 4, name: 'Pix', is_global: true },
   amount: '1234.56',
   status: 'PAID',
@@ -101,7 +106,7 @@ export const PURCHASE_LIST_EXAMPLE: PaginatedPurchases = {
       user_id: 7,
       purchase_date: '2026-09-30',
       description: 'Uber',
-      category: { id: 2, name: 'Transporte', is_global: true },
+      category: { id: 2, name: 'Transporte', is_global: true, icon: 'CAR', color: 'TRANSPORT' },
       payment_method: { id: 4, name: 'Pix', is_global: true },
       amount: '23.9',
       status: 'PENDING',
@@ -170,45 +175,6 @@ export const SUMMARY_NO_BASE_EXAMPLE: MonthSummary = {
   },
 };
 
-const globalItem = (id: number, name: string): Category => ({
-  id,
-  name,
-  is_global: true,
-  created_at: SEED_TIME,
-  updated_at: SEED_TIME,
-});
-
-const ownItem = (id: number, name: string): Category => ({
-  id,
-  user_id: 7,
-  name,
-  is_global: false,
-  created_at: '2026-10-01T12:00:00Z',
-  updated_at: '2026-10-01T12:00:00Z',
-});
-
-/** API order: globals first, then by lower(name). Ids of the global ones as in the prototype's app.js. */
-export const CATEGORIES_EXAMPLE: Category[] = [
-  globalItem(1, 'Alimentação'),
-  globalItem(5, 'Educação'),
-  globalItem(6, 'Lazer'),
-  globalItem(3, 'Moradia'),
-  globalItem(4, 'Saúde'),
-  globalItem(2, 'Transporte'),
-  ownItem(30, 'Bar'),
-  ownItem(31, 'Pets'),
-];
-
-/** API order (globals by lower(name)); Pix = 4, as in the prototype's app.js. */
-export const PAYMENT_METHODS_EXAMPLE: PaymentMethod[] = [
-  globalItem(6, 'Boleto'),
-  globalItem(2, 'Cartão de crédito'),
-  globalItem(3, 'Cartão de débito'),
-  globalItem(1, 'Dinheiro'),
-  globalItem(4, 'Pix'),
-  globalItem(5, 'Transferência bancária'),
-];
-
 export const ERROR_PURCHASE_NOT_FOUND: ApiError = {
   code: 'NOT_FOUND',
   message: 'purchase not found',
@@ -225,4 +191,133 @@ export const ERROR_PAYMENT_METHOD_NOT_FOUND: ApiError = {
 export const ERROR_Q_TOO_LONG: ApiError = {
   code: 'VALIDATION_ERROR',
   message: 'q must be at most 255 characters',
+};
+
+// Examples of 2-contrato.md (feature 006).
+
+export const USER_RESPONSE_DARK_EXAMPLE: UserResponse = {
+  id: 7,
+  name: 'Jonas Silva',
+  email: 'jonas@exemplo.com',
+  theme: 'DARK',
+};
+
+/** A pair different from TOKEN_RESPONSE_EXAMPLE (PUT /users/me/password). */
+export const TOKEN_RESPONSE_NEW_EXAMPLE: TokenResponse = {
+  access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.<payload-novo>.<assinatura-nova>',
+  refresh_token: 'Tm92YS1jaGF2ZS1hbGVhdG9yaWEtYmFzZTY0dXJsLTMy',
+  token_type: 'Bearer',
+};
+
+const OWN_TIME = '2026-10-01T12:00:00Z';
+
+const globalCategory = (
+  id: number,
+  name: string,
+  icon: CatalogIcon,
+  color: CatalogColorOut,
+): Category => ({
+  id,
+  name,
+  is_global: true,
+  icon,
+  color,
+  archived_at: null,
+  created_at: SEED_TIME,
+  updated_at: SEED_TIME,
+});
+
+const ownCategory = (
+  id: number,
+  name: string,
+  icon: CatalogIcon,
+  color: CatalogColorOut,
+  archived_at: string | null = null,
+): Category => ({
+  id,
+  user_id: 7,
+  name,
+  is_global: false,
+  icon,
+  color,
+  archived_at,
+  created_at: OWN_TIME,
+  updated_at: OWN_TIME,
+});
+
+/**
+ * API order: globals first, then by lower(name); archived included. Ids of the global ones as in the prototype's
+ * app.js; icon and color of the global ones as in the migration. `Bar` was created before feature 006 (neutral).
+ */
+export const CATEGORIES_EXAMPLE: Category[] = [
+  globalCategory(1, 'Alimentação', 'FOOD', 'FOOD'),
+  globalCategory(5, 'Educação', 'BOOK', 'EDUCATION'),
+  globalCategory(6, 'Lazer', 'SMILE', 'LEISURE'),
+  globalCategory(3, 'Moradia', 'HOUSE', 'HOME'),
+  globalCategory(4, 'Saúde', 'HEART', 'HEALTH'),
+  globalCategory(2, 'Transporte', 'CAR', 'TRANSPORT'),
+  ownCategory(32, 'Academia', 'HEART', 'HEALTH', '2026-10-20T10:00:00Z'),
+  ownCategory(30, 'Bar', 'TAG', 'NEUTRAL'),
+  ownCategory(31, 'Pets', 'HEART', 'LEISURE'),
+];
+
+const globalPayment = (id: number, name: string): PaymentMethod => ({
+  id,
+  name,
+  is_global: true,
+  archived_at: null,
+  created_at: SEED_TIME,
+  updated_at: SEED_TIME,
+});
+
+const ownPayment = (
+  id: number,
+  name: string,
+  archived_at: string | null = null,
+): PaymentMethod => ({
+  id,
+  user_id: 7,
+  name,
+  is_global: false,
+  archived_at,
+  created_at: OWN_TIME,
+  updated_at: OWN_TIME,
+});
+
+/** API order (globals by lower(name)); Pix = 4, as in the prototype's app.js. */
+export const PAYMENT_METHODS_EXAMPLE: PaymentMethod[] = [
+  globalPayment(6, 'Boleto'),
+  globalPayment(2, 'Cartão de crédito'),
+  globalPayment(3, 'Cartão de débito'),
+  globalPayment(1, 'Dinheiro'),
+  globalPayment(4, 'Pix'),
+  globalPayment(5, 'Transferência bancária'),
+  ownPayment(41, 'Cartão antigo', '2026-10-20T10:00:00Z'),
+  ownPayment(40, 'Vale-refeição'),
+];
+
+export const ERROR_INVALID_PASSWORD: ApiError = {
+  code: 'INVALID_PASSWORD',
+  message: 'invalid password',
+};
+export const ERROR_DEFAULT_NAME_CONFLICT: ApiError = {
+  code: 'DEFAULT_NAME_CONFLICT',
+  message: 'name already used by a default category',
+};
+export const ERROR_NAME_CONFLICT: ApiError = {
+  code: 'NAME_CONFLICT',
+  message: 'name already used by another category',
+};
+export const ERROR_ARCHIVED_NAME_CONFLICT: ApiError = {
+  code: 'ARCHIVED_NAME_CONFLICT',
+  message: 'name already used by an archived category',
+};
+/** 404 of PUT /categories/{id} and of …/archive. */
+export const ERROR_CATALOG_NOT_FOUND: ApiError = {
+  code: 'NOT_FOUND',
+  message: 'category not found',
+};
+export const ERROR_FORBIDDEN: ApiError = {
+  code: 'FORBIDDEN',
+  message: 'default categories cannot be changed',
 };

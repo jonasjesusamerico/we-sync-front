@@ -55,3 +55,4 @@ export const MSG_INVALID_CREDENTIALS = 'E-mail ou senha incorretos.';
 export const MSG_EMAIL_TAKEN = 'Este e-mail já está cadastrado.';
 export const MSG_SESSION_EXPIRED = 'Sua sessão expirou. Entre novamente.';
 export const MSG_ACCOUNT_CREATED = 'Conta criada. Entre com sua senha.';
+export const MSG_ACCOUNT_DELETED = 'Sua conta foi excluída.';

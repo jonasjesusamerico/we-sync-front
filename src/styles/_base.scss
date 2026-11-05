@@ -17,6 +17,10 @@ body {
   min-width: 0;
 }
 
+.text-danger-ws {
+  color: var(--ws-danger) !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

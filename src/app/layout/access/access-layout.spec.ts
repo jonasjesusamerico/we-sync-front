@@ -1,6 +1,7 @@
-import { Component, provideZonelessChangeDetection } from '@angular/core';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { httpTestingProviders } from '../../../testing/http';
 import { AccessLayout } from './access-layout';
 
 @Component({
@@ -15,7 +16,7 @@ class Host {}
 describe('AccessLayout', () => {
   it('projects the panel and the form', async () => {
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), provideRouter([])],
+      providers: [...httpTestingProviders(), provideRouter([])],
     });
     const fixture = TestBed.createComponent(Host);
     await fixture.whenStable();

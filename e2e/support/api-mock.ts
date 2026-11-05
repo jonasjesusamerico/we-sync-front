@@ -1,4 +1,4 @@
-// Fake API with state for the e2e tests, following 2-contrato.md of feature 004.
+// Fake API with state for the e2e tests, following 2-contrato.md of features 004, 005 and 006.
 // Registered with route() on the BrowserContext, so the tabs of a context share it.
 import type { BrowserContext, Route } from '@playwright/test';
 
@@ -7,7 +7,11 @@ export interface MockUser {
   name: string;
   email: string;
   password: string;
+  /** Feature 006: theme saved in the account; null or absent = never chosen. */
+  theme?: MockTheme | null;
 }
+
+export type MockTheme = 'LIGHT' | 'DARK';
 
 export interface MockRequest {
   body: unknown;
@@ -39,9 +43,9 @@ export interface ApiMock {
   attach(context: BrowserContext): Promise<void>;
 
   // Feature 005: purchases, categories and payment methods, per user (the owner comes from the token).
-  /** The user's own category (id from 30 on). */
-  addCategory(email: string, name: string): number;
-  addPaymentMethod(email: string, name: string): number;
+  /** The user's own category (id from 30 on); without icon and color it is TAG/NEUTRAL (created before 006). */
+  addCategory(email: string, name: string, opts?: CategoryOptions): number;
+  addPaymentMethod(email: string, name: string, opts?: { archived?: boolean }): number;
   /** Removes it, as another tab would. */
   removeCategory(id: number): void;
   removePaymentMethod(id: number): void;
@@ -50,6 +54,21 @@ export interface ApiMock {
   removePurchase(id: number): void;
   /** Purchases kept for the user (to check what the front saved). */
   purchasesOf(email: string): MockPurchase[];
+
+  // Feature 006: account, theme and archived items.
+  /** Archives an own category, as another tab would. */
+  archiveCategory(id: number): void;
+  /** The stored user (undefined after the account is deleted). */
+  userOf(email: string): MockUser | undefined;
+  setTheme(email: string, theme: MockTheme | null): void;
+  /** Own categories and payment methods of the user, archived included. */
+  catalogOf(email: string): { categories: MockCatalogItem[]; paymentMethods: MockCatalogItem[] };
+}
+
+export interface CategoryOptions {
+  icon?: string;
+  color?: string;
+  archived?: boolean;
 }
 
 export type FailResponse = number | 'abort' | { status: number; code: string };
@@ -71,15 +90,31 @@ export interface MockPurchase extends NewMockPurchase {
   owner: string;
 }
 
-interface CatalogItem {
+export interface MockCatalogItem {
   id: number;
   name: string;
   /** null = global. */
   owner: string | null;
+  /** Categories only (feature 006). */
+  icon?: string;
+  color?: string;
+  /** RFC 3339 or null; always null on the global ones. */
+  archivedAt: string | null;
 }
+type CatalogItem = MockCatalogItem;
 
-/** Global items of the API seed, with the ids of the prototype's app.js. */
-const GLOBAL_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Educação', 'Lazer'];
+/** Global items of the API seed, with the ids of the prototype's app.js and the icon/color of the migration. */
+const GLOBAL_CATEGORIES: readonly [string, string, string][] = [
+  ['Alimentação', 'FOOD', 'FOOD'],
+  ['Transporte', 'CAR', 'TRANSPORT'],
+  ['Moradia', 'HOUSE', 'HOME'],
+  ['Saúde', 'HEART', 'HEALTH'],
+  ['Educação', 'BOOK', 'EDUCATION'],
+  ['Lazer', 'SMILE', 'LEISURE'],
+];
+const ICONS = ['TAG', 'HEART', 'SMILE', 'BOOK', 'CAR', 'HOUSE', 'FOOD', 'CARD', 'GIFT', 'SPARKLE'];
+const COLORS = ['FOOD', 'TRANSPORT', 'HOME', 'HEALTH', 'EDUCATION', 'LEISURE'];
+const ARCHIVED_AT = '2026-10-20T10:00:00Z';
 const GLOBAL_PAYMENT_METHODS = [
   'Dinheiro',
   'Cartão de crédito',
@@ -103,6 +138,9 @@ const fold = (text: string) =>
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
+/** Names compared without case, accents and the spaces at the ends (contract, "Nome igual"). */
+const sameName = (a: string, b: string) => fold(a.trim()) === fold(b.trim());
+const utf8Bytes = (text: string) => new TextEncoder().encode(text).length;
 
 const daysInMonth = (year: number, month: number) =>
   new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -120,6 +158,7 @@ export const ANA: MockUser = {
 const CODES: Record<number, string> = {
   400: 'BAD_REQUEST',
   401: 'UNAUTHORIZED',
+  403: 'FORBIDDEN',
   404: 'NOT_FOUND',
   409: 'CONFLICT',
   422: 'VALIDATION_ERROR',
@@ -138,15 +177,19 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
   const log = new Map<string, MockRequest[]>();
   let nextId = 100;
   let counter = 0;
-  const categories: CatalogItem[] = GLOBAL_CATEGORIES.map((name, i) => ({
+  const categories: CatalogItem[] = GLOBAL_CATEGORIES.map(([name, icon, color], i) => ({
     id: i + 1,
     name,
     owner: null,
+    icon,
+    color,
+    archivedAt: null,
   }));
   const paymentMethods: CatalogItem[] = GLOBAL_PAYMENT_METHODS.map((name, i) => ({
     id: i + 1,
     name,
     owner: null,
+    archivedAt: null,
   }));
   let nextCatalogId = 30;
   const purchases: MockPurchase[] = [];
@@ -158,6 +201,17 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
     access.set(pair.access_token, email);
     refresh.set(pair.refresh_token, email);
     return pair;
+  }
+
+  /** Every access and refresh token of the user stops working (password change, account deletion). */
+  function revokeAll(email: string) {
+    for (const map of [access, refresh]) {
+      for (const [token, owner] of [...map]) {
+        if (owner === email) {
+          map.delete(token);
+        }
+      }
+    }
   }
 
   const json = (route: Route, status: number, body?: unknown) =>
@@ -191,7 +245,9 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       query: Object.fromEntries(url.searchParams),
     };
     // Paths with an id share one key, as the tests do not know the ids in advance.
-    const key = /^\/purchases\/\d+$/.test(path) ? '/purchases/:id' : path;
+    const key = /^\/purchases\/\d+$/.test(path)
+      ? '/purchases/:id'
+      : path.replace(/^\/(categories|payment-methods)\/[^/]+/, '/$1/:id');
     log.set(key, [...(log.get(key) ?? []), entry]);
 
     const wait = delays.get(key);
@@ -214,8 +270,16 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       return;
     }
 
-    if (key === '/categories' || key === '/payment-methods' || key.startsWith('/purchases')) {
+    if (/^\/(categories|payment-methods)(\/|$)/.test(key)) {
+      await handleCatalog(route, key, path, entry);
+      return;
+    }
+    if (key.startsWith('/purchases')) {
       await handlePurchases(route, key, path, url, entry);
+      return;
+    }
+    if (path === '/users/me' || path.startsWith('/users/me/')) {
+      await handleAccount(route, path, entry);
       return;
     }
 
@@ -253,15 +317,6 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       case 'POST /auth/logout':
         refresh.delete(data['refresh_token'] ?? '');
         return json(route, 204);
-      case 'GET /users/me': {
-        const header = entry.headers['authorization'] ?? '';
-        const email = header.startsWith('Bearer ') ? access.get(header.slice(7)) : undefined;
-        const user = email ? users.get(email) : undefined;
-        if (!user) {
-          return error(route, 401, 'invalid authentication token');
-        }
-        return json(route, 200, { id: user.id, name: user.name, email: user.email });
-      }
       default:
         return error(route, 404, 'not found');
     }
@@ -291,13 +346,22 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
     ...(item.owner === null ? {} : { user_id: user.id }),
     name: item.name,
     is_global: item.owner === null,
+    ...(item.icon === undefined ? {} : { icon: item.icon, color: item.color }),
+    archived_at: item.archivedAt,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-01T00:00:00Z',
   });
 
   const ref = (list: CatalogItem[], id: number) => {
     const item = list.find((i) => i.id === id);
-    return { id, name: item?.name ?? '?', is_global: item?.owner === null };
+    return {
+      id,
+      name: item?.name ?? '?',
+      is_global: item?.owner === null,
+      ...(list === categories
+        ? { icon: item?.icon ?? 'TAG', color: item?.color ?? 'NEUTRAL' }
+        : {}),
+    };
   };
 
   const purchaseJson = (p: MockPurchase, user: MockUser) => ({
@@ -389,20 +453,6 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
     const id = key === '/purchases/:id' ? Number(path.split('/')[2]) : 0;
     const mine = (pid: number) => purchases.find((p) => p.id === pid && p.owner === owner);
 
-    if (method === 'GET' && key === '/categories') {
-      return json(
-        route,
-        200,
-        visible(categories, owner).map((c) => catalogJson(c, user)),
-      );
-    }
-    if (method === 'GET' && key === '/payment-methods') {
-      return json(
-        route,
-        200,
-        visible(paymentMethods, owner).map((m) => catalogJson(m, user)),
-      );
-    }
     if (method === 'GET' && key === '/purchases/summary') {
       const year = Number(q.get('year'));
       const month = Number(q.get('month'));
@@ -467,8 +517,19 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       const data = (entry.body ?? {}) as Record<string, unknown>;
       const categoryId = Number(data['category_id']);
       const paymentMethodId = Number(data['payment_method_id']);
+      // Feature 006: an archived own item only on a PUT that keeps the one the purchase already has.
+      const current = method === 'PUT' ? mine(id) : undefined;
       const accessible = (list: CatalogItem[], cid: number) =>
-        list.some((i) => i.id === cid && (i.owner === null || i.owner === owner));
+        list.some(
+          (i) =>
+            i.id === cid &&
+            (i.owner === null ||
+              (i.owner === owner &&
+                (i.archivedAt === null ||
+                  (list === categories
+                    ? current?.categoryId === cid
+                    : current?.paymentMethodId === cid)))),
+        );
       // Contract order: category, payment method, then the purchase (PUT only).
       if (!accessible(categories, categoryId)) {
         return json(route, 404, { code: 'CATEGORY_NOT_FOUND', message: 'category not found' });
@@ -503,6 +564,223 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
     return error(route, 404, 'not found');
   }
 
+  // ---------------------------------------------------------------------------
+  // Feature 006 (2-contrato.md): account and catalog.
+  // ---------------------------------------------------------------------------
+
+  const userJson = (user: MockUser) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    theme: user.theme ?? null,
+  });
+
+  async function handleAccount(route: Route, path: string, entry: MockRequest): Promise<void> {
+    const user = ownerOf(entry);
+    if (!user) {
+      return error(route, 401, 'invalid authentication token');
+    }
+    const data = (entry.body ?? {}) as Record<string, unknown>;
+    const field = (name: string) => (typeof data[name] === 'string' ? (data[name] as string) : '');
+    switch (`${entry.method} ${path}`) {
+      case 'GET /users/me':
+        return json(route, 200, userJson(user));
+      case 'PUT /users/me/profile': {
+        const name = field('name').trim();
+        const length = Array.from(name).length;
+        if (length < 2 || length > 60) {
+          return error(route, 422, 'name must be between 2 and 60 characters');
+        }
+        user.name = name;
+        return json(route, 200, userJson(user));
+      }
+      case 'PUT /users/me/preferences': {
+        const theme = field('theme');
+        if (theme !== 'LIGHT' && theme !== 'DARK') {
+          return error(route, 422, 'theme must be LIGHT or DARK');
+        }
+        user.theme = theme;
+        return json(route, 200, userJson(user));
+      }
+      case 'PUT /users/me/password': {
+        const current = field('current_password');
+        const next = field('new_password');
+        if (current === '') {
+          return error(route, 422, 'current_password is required');
+        }
+        if (utf8Bytes(next) < 8 || utf8Bytes(next) > 72) {
+          return error(route, 422, 'new_password must be between 8 and 72 bytes');
+        }
+        if (next === current) {
+          return error(route, 422, 'new_password must be different from current_password');
+        }
+        if (current !== user.password) {
+          return json(route, 403, { code: 'INVALID_PASSWORD', message: 'invalid password' });
+        }
+        user.password = next;
+        // Every previous session ends, this one included; the caller goes on with a new pair (ADR-02).
+        revokeAll(user.email);
+        return json(route, 200, { ...issue(user.email), token_type: 'Bearer' });
+      }
+      case 'DELETE /users/me': {
+        const password = field('password');
+        if (password === '') {
+          return error(route, 422, 'password is required');
+        }
+        if (password !== user.password) {
+          return json(route, 403, { code: 'INVALID_PASSWORD', message: 'invalid password' });
+        }
+        const email = user.email;
+        users.delete(email);
+        revokeAll(email);
+        for (const list of [purchases, categories, paymentMethods] as {
+          owner: string | null;
+        }[][]) {
+          for (let i = list.length - 1; i >= 0; i--) {
+            if (list[i].owner === email) {
+              list.splice(i, 1);
+            }
+          }
+        }
+        return json(route, 204);
+      }
+      default:
+        return error(route, 404, 'not found');
+    }
+  }
+
+  async function handleCatalog(
+    route: Route,
+    key: string,
+    path: string,
+    entry: MockRequest,
+  ): Promise<void> {
+    const user = ownerOf(entry);
+    if (!user) {
+      return error(route, 401, 'invalid authentication token');
+    }
+    const owner = user.email;
+    const isCategory = key.startsWith('/categories');
+    const list = isCategory ? categories : paymentMethods;
+    const noun = isCategory ? 'category' : 'payment method';
+    const method = entry.method;
+
+    if (key === '/categories' || key === '/payment-methods') {
+      if (method === 'GET') {
+        return json(
+          route,
+          200,
+          visible(list, owner).map((item) => catalogJson(item, user)),
+        );
+      }
+      if (method !== 'POST') {
+        return route.fulfill({ status: 405, body: '' });
+      }
+    }
+    const id = key === '/categories' || key === '/payment-methods' ? 0 : Number(path.split('/')[2]);
+    if (method === 'DELETE' && key.endsWith('/:id')) {
+      // DELETE /{id} was removed (contract): the router answers 405 without the envelope.
+      return route.fulfill({ status: 405, body: '' });
+    }
+    if (id !== 0 && !(Number.isInteger(id) && id > 0)) {
+      return error(route, 400, 'id must be a positive integer');
+    }
+
+    // Body and validation (POST and PUT /{id}).
+    const data = (entry.body ?? {}) as Record<string, unknown>;
+    const name = typeof data['name'] === 'string' ? data['name'].trim() : '';
+    const icon = typeof data['icon'] === 'string' ? data['icon'] : '';
+    const color = typeof data['color'] === 'string' ? data['color'] : '';
+    const validate = () => {
+      if (name === '') return 'name is required';
+      if (Array.from(name).length > 40) return 'name must be at most 40 characters';
+      if (!isCategory) return null;
+      if (icon === '') return 'icon is required';
+      if (!ICONS.includes(icon))
+        return `icon "${icon}" is not valid; allowed values: ${ICONS.join(', ')}`;
+      if (color === '') return 'color is required';
+      if (!COLORS.includes(color))
+        return `color "${color}" is not valid; allowed values: ${COLORS.join(', ')}`;
+      return null;
+    };
+    const conflict = (code: string, what: string) =>
+      json(route, 409, { code, message: `name already used by ${what}` });
+
+    if (method === 'POST' && id === 0) {
+      const invalid = validate();
+      if (invalid) {
+        return error(route, 422, invalid);
+      }
+      const same = list.filter((item) => sameName(item.name, name));
+      if (same.some((item) => item.owner === null)) {
+        return conflict('DEFAULT_NAME_CONFLICT', `a default ${noun}`);
+      }
+      const own = same.filter((item) => item.owner === owner);
+      if (own.some((item) => item.archivedAt === null)) {
+        return conflict('NAME_CONFLICT', `another ${noun}`);
+      }
+      const archived = own.find((item) => item.archivedAt !== null);
+      if (archived) {
+        // Reactivates: the stored name stays; icon and color are the new ones.
+        archived.archivedAt = null;
+        if (isCategory) {
+          Object.assign(archived, { icon, color });
+        }
+        return json(route, 200, catalogJson(archived, user));
+      }
+      const created: CatalogItem = {
+        id: nextCatalogId++,
+        name,
+        owner,
+        ...(isCategory ? { icon, color } : {}),
+        archivedAt: null,
+      };
+      list.push(created);
+      return json(route, 201, catalogJson(created, user));
+    }
+
+    const item = list.find((i) => i.id === id && (i.owner === null || i.owner === owner));
+    const notFound = () => error(route, 404, `${noun} not found`);
+    const forbidden = () => error(route, 403, `default ${noun}s cannot be changed`);
+
+    if (method === 'PUT' && key.endsWith('/:id')) {
+      const invalid = validate();
+      if (invalid) {
+        return error(route, 422, invalid);
+      }
+      if (!item) return notFound();
+      if (item.owner === null) return forbidden();
+      const same = list.filter((i) => i.id !== item.id && sameName(i.name, name));
+      if (same.some((i) => i.owner === null)) {
+        return conflict('DEFAULT_NAME_CONFLICT', `a default ${noun}`);
+      }
+      const own = same.filter((i) => i.owner === owner);
+      if (own.some((i) => i.archivedAt === null)) {
+        return conflict('NAME_CONFLICT', `another ${noun}`);
+      }
+      if (own.length > 0) {
+        return conflict('ARCHIVED_NAME_CONFLICT', `an archived ${noun}`);
+      }
+      item.name = name;
+      if (isCategory) {
+        Object.assign(item, { icon, color });
+      }
+      return json(route, 200, catalogJson(item, user));
+    }
+
+    if (key.endsWith('/:id/archive') && (method === 'PUT' || method === 'DELETE')) {
+      if (!item) return notFound();
+      if (item.owner === null) return forbidden();
+      if (method === 'PUT') {
+        item.archivedAt ??= new Date().toISOString();
+      } else {
+        item.archivedAt = null;
+      }
+      return json(route, 204);
+    }
+    return route.fulfill({ status: 405, body: '' });
+  }
+
   const api: ApiMock = {
     addUser: (user) => users.set(normalize(user.email), { ...user, email: normalize(user.email) }),
     issueSession: (email) => issue(normalize(email)),
@@ -513,14 +791,26 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
     calls: (path) => log.get(path)?.length ?? 0,
     requests: (path) => log.get(path) ?? [],
     attach: (other) => other.route('**/api/v1/**', handle),
-    addCategory: (email, name) => {
+    addCategory: (email, name, opts = {}) => {
       const id = nextCatalogId++;
-      categories.push({ id, name, owner: normalize(email) });
+      categories.push({
+        id,
+        name,
+        owner: normalize(email),
+        icon: opts.icon ?? 'TAG',
+        color: opts.color ?? 'NEUTRAL',
+        archivedAt: opts.archived ? ARCHIVED_AT : null,
+      });
       return id;
     },
-    addPaymentMethod: (email, name) => {
+    addPaymentMethod: (email, name, opts = {}) => {
       const id = nextCatalogId++;
-      paymentMethods.push({ id, name, owner: normalize(email) });
+      paymentMethods.push({
+        id,
+        name,
+        owner: normalize(email),
+        archivedAt: opts.archived ? ARCHIVED_AT : null,
+      });
       return id;
     },
     removeCategory: (id) => {
@@ -541,6 +831,19 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       if (index >= 0) purchases.splice(index, 1);
     },
     purchasesOf: (email) => purchases.filter((p) => p.owner === normalize(email)),
+    archiveCategory: (id) => {
+      const item = categories.find((c) => c.id === id);
+      if (item && item.archivedAt === null) item.archivedAt = ARCHIVED_AT;
+    },
+    userOf: (email) => users.get(normalize(email)),
+    setTheme: (email, theme) => {
+      const user = users.get(normalize(email));
+      if (user) user.theme = theme;
+    },
+    catalogOf: (email) => ({
+      categories: categories.filter((c) => c.owner === normalize(email)),
+      paymentMethods: paymentMethods.filter((m) => m.owner === normalize(email)),
+    }),
   };
   await api.attach(context);
   return api;

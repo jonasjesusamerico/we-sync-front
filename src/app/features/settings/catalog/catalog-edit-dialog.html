@@ -1,0 +1,97 @@
+<ws-form-dialog labelledBy="edit-title" [busy]="submitting()" (dismiss)="cancel()">
+  <form class="modal-content" novalidate [formGroup]="form" (ngSubmit)="submit()">
+    <div class="modal-header">
+      <h2 class="modal-title fs-5" id="edit-title">{{ texts().editTitle }}</h2>
+      <button
+        type="button"
+        class="btn btn-ghost btn-icon"
+        [attr.aria-label]="t.LABEL_CLOSE"
+        [disabled]="submitting()"
+        (click)="cancel()"
+      >
+        <ws-icon name="x" />
+      </button>
+    </div>
+    <div class="modal-body d-grid gap-3">
+      @if (error(); as message) {
+        <ws-form-alert kind="error">{{ message }}</ws-form-alert>
+      }
+      <div>
+        <label class="form-label" for="edit-name">{{ t.LABEL_NAME }}</label>
+        <!-- eslint-disable @angular-eslint/template/no-autofocus -- initial focus of a modal dialog (MDN) -->
+        <input
+          #nameInput
+          id="edit-name"
+          class="form-control"
+          autocomplete="off"
+          autofocus
+          [wsCodePointLimit]="NAME_MAX"
+          formControlName="name"
+          [class.is-invalid]="nameError()"
+          [attr.aria-invalid]="nameError() ? 'true' : null"
+          [attr.aria-describedby]="nameError() ? 'edit-name-error' : null"
+        />
+        <!-- eslint-enable @angular-eslint/template/no-autofocus -->
+        @if (nameError(); as message) {
+          <div id="edit-name-error" class="invalid-feedback d-block">{{ message }}</div>
+        }
+      </div>
+      @if (kind() === 'category') {
+        <fieldset>
+          <legend class="form-label fs-6">{{ t.LABEL_ICON }}</legend>
+          <div class="ws-chips">
+            @for (icon of ICON_CHOICES; track icon) {
+              <div class="ws-chip">
+                <input
+                  type="radio"
+                  name="icon"
+                  formControlName="icon"
+                  [value]="icon"
+                  [id]="'ei-' + icon"
+                />
+                <label [for]="'ei-' + icon"
+                  ><ws-icon [name]="iconName(icon)" /><span class="visually-hidden">{{
+                    iconLabel(icon)
+                  }}</span></label
+                >
+              </div>
+            }
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend class="form-label fs-6">{{ t.LABEL_COLOR }}</legend>
+          <div class="ws-swatches">
+            @for (color of COLOR_CHOICES; track color) {
+              <input
+                type="radio"
+                name="color"
+                formControlName="color"
+                [value]="color"
+                [id]="'ec-' + color"
+              />
+              <label [for]="'ec-' + color" [style.--sw]="colorValue(color)"
+                ><span class="visually-hidden">{{ colorLabel(color) }}</span></label
+              >
+            }
+          </div>
+        </fieldset>
+      }
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" [disabled]="submitting()" (click)="cancel()">
+        {{ t.CANCEL }}
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="submitting()"
+        [attr.aria-busy]="submitting()"
+      >
+        @if (submitting()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        {{ t.SAVE }}
+      </button>
+    </div>
+  </form>
+</ws-form-dialog>

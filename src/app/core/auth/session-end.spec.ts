@@ -92,6 +92,25 @@ describe('SessionEnd', () => {
     expect(router.url).toBe('/login');
   });
 
+  it('accountDeleted', async () => {
+    seedSession('A1', 'R1');
+    const user = TestBed.inject(CurrentUserStore);
+    const loading = user.load();
+    http.expectOne(`${API}/users/me`).flush(USER_RESPONSE_EXAMPLE);
+    await loading;
+    const harness = await RouterTestingHarness.create('/outra');
+
+    TestBed.inject(SessionEnd).accountDeleted();
+    await harness.fixture.whenStable();
+    expect(storedSession()).toBeNull();
+    expect(user.status()).toBe('idle');
+    expect(router.url).toBe('/login');
+    const navigation = router.lastSuccessfulNavigation();
+    expect(navigation?.extras.state).toEqual({ notice: 'account-deleted' });
+    expect(navigation?.extras.replaceUrl).toBe(true);
+    http.expectNone(`${API}/auth/logout`);
+  });
+
   it('logout without a refresh token does not call the API', async () => {
     const harness = await RouterTestingHarness.create('/outra');
     TestBed.inject(SessionEnd).logout();

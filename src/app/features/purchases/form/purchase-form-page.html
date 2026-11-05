@@ -50,7 +50,7 @@
             <input
               id="description"
               class="form-control"
-              wsDescriptionInput
+              [wsCodePointLimit]="DESCRIPTION_MAX"
               formControlName="description"
               [placeholder]="t.DESCRIPTION_PLACEHOLDER"
               [class.is-invalid]="!!errors().description"
@@ -94,19 +94,20 @@
             }
             @default {
               <div class="ws-cat-grid" id="categories" [class.is-invalid]="!!errors().category">
-                @for (c of categories(); track c.id) {
-                  <div class="ws-chip" [style.--cat]="style(c).color">
+                @for (option of categoryOptions(); track option.item.id) {
+                  <div class="ws-chip" [style.--cat]="style(option.item).color">
                     <input
                       type="radio"
                       name="categoryId"
-                      [id]="'c-' + c.id"
-                      [value]="c.id"
+                      [id]="'c-' + option.item.id"
+                      [value]="option.item.id"
                       formControlName="categoryId"
                     />
-                    <label [for]="'c-' + c.id"
-                      ><ws-category-bubble [icon]="style(c).icon" [color]="style(c).color" />{{
-                        c.name
-                      }}</label
+                    <label [for]="'c-' + option.item.id"
+                      ><ws-category-bubble
+                        [icon]="style(option.item).icon"
+                        [color]="style(option.item).color"
+                      />{{ option.label }}</label
                     >
                   </div>
                 }
@@ -131,16 +132,16 @@
             }
             @default {
               <div class="ws-chips" id="payments">
-                @for (m of paymentMethods(); track m.id) {
+                @for (option of paymentOptions(); track option.item.id) {
                   <div class="ws-chip">
                     <input
                       type="radio"
                       name="paymentMethodId"
-                      [id]="'p-' + m.id"
-                      [value]="m.id"
+                      [id]="'p-' + option.item.id"
+                      [value]="option.item.id"
                       formControlName="paymentMethodId"
                     />
-                    <label [for]="'p-' + m.id">{{ m.name }}</label>
+                    <label [for]="'p-' + option.item.id">{{ option.label }}</label>
                   </div>
                 }
               </div>

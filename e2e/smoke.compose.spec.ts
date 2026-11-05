@@ -1,6 +1,7 @@
 // Smoke tests against the real stack (front on :3000, API on :8080). Run with `npm run e2e:compose`.
 // 004: CA-36 and CA-02. 005: purchases with the real `total_amount`, the accent-insensitive search (CA-12) and the
-// month summary (contract of feature 005).
+// month summary (contract of feature 005). 006: profile, own category archived and its effect on Nova compra,
+// account deletion and a new register with the same e-mail (CA-12).
 import { expect, test, type Page } from '@playwright/test';
 
 const HOME_URL = /\/inicio\?ano=\d{1,4}&mes=\d{1,2}$/;
@@ -17,8 +18,7 @@ function watchProblems(page: Page): string[] {
   return problems;
 }
 
-async function register(page: Page) {
-  const email = `smoke+${Date.now()}@exemplo.com`;
+async function register(page: Page, email = `smoke+${Date.now()}@exemplo.com`) {
   await page.goto('/cadastro');
   await page.locator('#name').fill('Ana Souza');
   await page.locator('#email').fill(email);
@@ -26,6 +26,7 @@ async function register(page: Page) {
   await page.getByRole('button', { name: 'Criar conta', exact: true }).click();
   await expect(page).toHaveURL(HOME_URL);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Ana Souza');
+  return email;
 }
 
 async function logout(page: Page) {
@@ -88,5 +89,48 @@ test('compra: criar, ver no Início e em Compras, buscar sem acento e excluir', 
   await expect(page.locator('.ws-empty')).toContainText('Nenhuma compra encontrada');
 
   await logout(page);
+  expectNotBlocked(problems);
+});
+
+test('conta e cadastros (006): nome, categoria arquivada, excluir e cadastrar de novo', async ({
+  page,
+}) => {
+  const problems = watchProblems(page);
+  const email = await register(page);
+
+  await page.goto('/configuracoes/conta');
+  await page.locator('#acc-name').fill('Ana Lima');
+  await page.getByRole('button', { name: 'Salvar perfil' }).click();
+  await expect(page.locator('.ws-toast')).toContainText('Perfil atualizado');
+  await expect(page.locator('#ws-user-btn .ws-avatar')).toHaveText('AL');
+
+  const name = `Smoke ${Date.now() % 100000}`;
+  await page.goto('/configuracoes/categorias');
+  await page.locator('#cat-name').fill(name);
+  await page.locator('label[for=ci-HEART]').click();
+  await page.getByRole('button', { name: 'Adicionar categoria' }).click();
+  await expect(page.locator('.ws-toast')).toContainText('Categoria adicionada');
+  await page.goto('/compras/nova');
+  await expect(page.locator('#categories')).toContainText(name);
+
+  await page.goto('/configuracoes/categorias');
+  await page.getByRole('button', { name: `Arquivar ${name}` }).click();
+  await page.locator('dialog[open]').getByRole('button', { name: 'Arquivar', exact: true }).click();
+  await expect(page.locator('.ws-toast')).toContainText('Categoria arquivada');
+  await page.goto('/compras/nova');
+  await expect(page.locator('#categories input').first()).toBeAttached();
+  await expect(page.locator('#categories')).not.toContainText(name);
+
+  await page.goto('/configuracoes/conta');
+  await page.getByRole('button', { name: 'Excluir minha conta' }).click();
+  await page.locator('#delete-pass').fill('Senha123!');
+  await page.locator('dialog[open]').getByRole('button', { name: 'Excluir conta' }).click();
+  await expect(page).toHaveURL('/login');
+  await expect(page.locator('.alert')).toHaveText('Sua conta foi excluída.');
+
+  await register(page, email);
+  await page.goto('/configuracoes/categorias');
+  await expect(page.locator('li.ws-tx').first()).toBeVisible();
+  await expect(page.locator('.ws-tag.is-primary')).toHaveCount(0);
   expectNotBlocked(problems);
 });

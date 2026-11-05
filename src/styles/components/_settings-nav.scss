@@ -1,0 +1,54 @@
+// Settings: section navigation, one address per section (horizontal scroll on phones, vertical on desktop)
+// (prototype we-sync.css "Settings: section navigation"). Items are links and, for the "em breve" sections,
+// buttons with wsSoon (feature 006, ADR-12).
+.ws-settings-nav {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.4rem;
+  background: var(--ws-surface);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius);
+  box-shadow: var(--ws-shadow);
+  scrollbar-width: none;
+}
+.ws-settings-nav a,
+.ws-settings-nav button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  padding: 0.55rem 0.85rem;
+  border: 0;
+  border-radius: var(--ws-radius-sm);
+  background: transparent;
+  color: var(--ws-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
+  text-decoration: none;
+}
+.ws-settings-nav button {
+  font: inherit;
+  font-weight: 600;
+  width: 100%;
+}
+.ws-settings-nav a:hover,
+.ws-settings-nav button:hover {
+  background: var(--ws-surface-2);
+  color: var(--ws-text);
+}
+.ws-settings-nav a[aria-current='page'] {
+  background: var(--ws-primary-soft);
+  color: var(--ws-primary);
+}
+.ws-settings-nav .ws-badge-soon {
+  margin-left: auto;
+}
+@media (min-width: 992px) {
+  .ws-settings-nav {
+    flex-direction: column;
+    position: sticky;
+    top: 88px;
+  }
+}

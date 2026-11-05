@@ -49,24 +49,14 @@ import {
   minCents,
   requiredTrimmed,
 } from '../../../shared/validators/purchase-validators';
-import { CatalogApi } from '../data/catalog-api';
-import type {
-  Category,
-  PaymentMethod,
-  Purchase,
-  PurchaseRequest,
-  PurchaseStatus,
-} from '../data/purchase.models';
+import { CatalogApi } from '../../../core/catalog/catalog-api';
+import type { Category, PaymentMethod } from '../../../core/catalog/catalog.models';
+import type { Purchase, PurchaseRequest, PurchaseStatus } from '../data/purchase.models';
 import { PurchasesApi } from '../data/purchases-api';
-import {
-  CatalogStyle,
-  categoryStyle,
-  findPix,
-  NEUTRAL_STYLE,
-  sortCategories,
-  sortPaymentMethods,
-} from '../catalog-style';
-import { DESCRIPTION_MAX, DescriptionInputDirective } from '../purchase-description';
+import { editPurchaseOptions, newPurchaseOptions } from '../../../core/catalog/catalog-options';
+import { type CatalogStyle, catalogStyle, findPix } from '../../../core/catalog/catalog-style';
+import { CodePointLimitDirective } from '../../../shared/text/code-point-limit';
+import { DESCRIPTION_MAX } from '../purchase-description';
 import { destinationOf, initialDate, readPurchaseOrigin, savedToast } from '../purchase-links';
 import * as t from '../purchases.messages';
 
@@ -99,7 +89,7 @@ const isStatus = (error: unknown, status: number): boolean =>
     CategoryBubble,
     FormAlert,
     MoneyInputDirective,
-    DescriptionInputDirective,
+    CodePointLimitDirective,
   ],
   templateUrl: './purchase-form-page.html',
   styleUrl: './purchase-form-page.scss',
@@ -124,6 +114,7 @@ export class PurchaseFormPage implements HasUnsavedChanges {
   private readonly reloadPurchase$ = new Subject<void>();
 
   protected readonly t = t;
+  protected readonly DESCRIPTION_MAX = DESCRIPTION_MAX;
 
   /** Read once (ADR-05): the navigation in progress, or history.state after a reload. */
   readonly origin = readPurchaseOrigin(
@@ -173,6 +164,22 @@ export class PurchaseFormPage implements HasUnsavedChanges {
     const options = this.options();
     return options.status === 'ready' ? options.value.paymentMethods : [];
   });
+  /**
+   * Options of the fields (ADR-13, RN-16): globals in order and active own items; when editing, the purchase's own
+   * item, if archived, at the end with "(arquivada)". It stays while the page is open.
+   */
+  protected readonly categoryOptions = computed(() => {
+    const purchase = this.purchase();
+    return this.mode() === 'edit' && purchase?.status === 'ready'
+      ? editPurchaseOptions(this.categories(), 'category', purchase.value.category.id)
+      : newPurchaseOptions(this.categories(), 'category');
+  });
+  protected readonly paymentOptions = computed(() => {
+    const purchase = this.purchase();
+    return this.mode() === 'edit' && purchase?.status === 'ready'
+      ? editPurchaseOptions(this.paymentMethods(), 'payment', purchase.value.payment_method.id)
+      : newPurchaseOptions(this.paymentMethods(), 'payment');
+  });
   protected readonly optionsError = computed(() => {
     const options = this.options();
     return options.status === 'error' ? options.message : '';
@@ -216,7 +223,7 @@ export class PurchaseFormPage implements HasUnsavedChanges {
     const v = this.value();
     const category = this.categories().find((c) => c.id === v.categoryId);
     const payment = this.paymentMethods().find((m) => m.id === v.paymentMethodId);
-    const style: CatalogStyle = category ? categoryStyle(category) : NEUTRAL_STYLE;
+    const style: CatalogStyle = catalogStyle(category ?? { icon: 'TAG', color: 'NEUTRAL' });
     return {
       style,
       description: v.description.trim() || t.NO_DESCRIPTION,
@@ -232,7 +239,8 @@ export class PurchaseFormPage implements HasUnsavedChanges {
   );
 
   constructor() {
-    // Options of the category and payment method fields, ordered as in the prototype (ADR-06).
+    // Options of the category and payment method fields, as the API sends them (archived included); the order and
+    // the filter are in categoryOptions and paymentOptions (ADR-13).
     this.reloadOptions$
       .pipe(
         startWith(undefined),
@@ -243,10 +251,7 @@ export class PurchaseFormPage implements HasUnsavedChanges {
           }).pipe(
             map(({ categories, paymentMethods }): Loadable<Options> => ({
               status: 'ready',
-              value: {
-                categories: sortCategories(categories),
-                paymentMethods: sortPaymentMethods(paymentMethods),
-              },
+              value: { categories, paymentMethods },
             })),
             catchError((error: unknown) => of(errorState(error))),
             startWith(LOADING),
@@ -326,7 +331,7 @@ export class PurchaseFormPage implements HasUnsavedChanges {
   }
 
   protected style(c: Category): CatalogStyle {
-    return categoryStyle(c);
+    return catalogStyle(c);
   }
 
   protected retryOptions(): void {

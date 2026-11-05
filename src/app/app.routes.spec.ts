@@ -23,7 +23,10 @@ describe('routes (rotas)', () => {
     expect(routes[3].children?.map((c) => [c.path, c.title])).toEqual([
       ['inicio', 'Início · we-sync'],
       ['compras', undefined],
+      ['configuracoes', undefined],
     ]);
+    expect(routes[3].children![2].loadChildren).toBeTypeOf('function');
+    expect(routes[3].children![2].canDeactivate).toBeUndefined();
     expect(routes[3].children![1].loadChildren).toBeTypeOf('function');
     expect(routes[4]).toMatchObject({ redirectTo: 'inicio' });
     for (const route of [routes[1], routes[2], routes[3], routes[3].children![0]]) {
