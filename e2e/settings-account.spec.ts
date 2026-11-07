@@ -45,6 +45,8 @@ test.describe('CA-01: os quatro caminhos abrem Conta', () => {
   test('"Configurações" do menu da conta, pelo teclado', async ({ page, api }) => {
     await openHome(page, api);
     await page.getByRole('button', { name: t.LABEL_ACCOUNT_MENU }).press('ArrowDown');
+    // The first item gets focus after the menu renders; pressing earlier would hit the button again.
+    await expect(page.getByRole('menuitem', { name: t.LABEL_MY_PROFILE })).toBeFocused();
     await page.keyboard.press('ArrowDown');
     await expect(page.getByRole('menuitem', { name: t.LABEL_SETTINGS })).toBeFocused();
     await page.keyboard.press('Enter');
