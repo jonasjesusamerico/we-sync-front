@@ -1,0 +1,67 @@
+image: node:24-alpine
+
+default:
+  interruptible: true
+
+stages:
+  - lint
+  - test
+  - build
+
+variables:
+  npm_config_cache: $CI_PROJECT_DIR/.npm
+  npm_config_update_notifier: 'false'
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - .npm/
+
+# Runs on pushes to master and on merge requests
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+before_script:
+  - npm ci --prefer-offline --no-audit --no-fund
+
+lint:
+  stage: lint
+  script:
+    - npm run lint
+
+format:
+  stage: lint
+  script:
+    - npm run format:check
+
+unit-test:
+  stage: test
+  script:
+    - npm test
+
+# Playwright against the simulated API (ng serve started by playwright.config.ts).
+# The image tag must match the @playwright/test version in package.json.
+e2e:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.64.1-noble
+  script:
+    - npm run e2e
+  artifacts:
+    when: on_failure
+    paths:
+      - playwright-report/
+      - test-results/
+    expire_in: 1 week
+
+build:
+  stage: build
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/we-sync-front/browser/
+    expire_in: 1 week
