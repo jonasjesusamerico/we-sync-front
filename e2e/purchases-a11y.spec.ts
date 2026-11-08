@@ -10,6 +10,8 @@ const dialog = (page: Page) => page.locator('dialog.ws-dialog');
 for (const theme of ['light', 'dark'] as const) {
   for (const width of [360, 1280]) {
     test(`CA-47 axe ${theme} ${width}px`, async ({ page, context, api, makeAxeBuilder }) => {
+      // Several full-page axe scans in one test: ~27 s on an idle machine, over 30 s on the shared CI runner.
+      test.slow();
       api.addUser(ANA);
       await seedTheme(context, theme);
       await page.setViewportSize({ width, height: 800 });

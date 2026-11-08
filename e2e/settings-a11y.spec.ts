@@ -8,6 +8,8 @@ const s = t.settings;
 for (const theme of ['light', 'dark'] as const) {
   for (const width of [360, 1280]) {
     test(`CA-29 axe ${theme} ${width}px`, async ({ page, context, api, makeAxeBuilder }) => {
+      // Several full-page axe scans in one test: ~27 s on an idle machine, over 30 s on the shared CI runner.
+      test.slow();
       api.addUser(JONAS);
       seedCatalog(api, JONAS.email);
       await seedTheme(context, theme);
