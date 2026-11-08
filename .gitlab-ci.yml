@@ -1,3 +1,9 @@
+# Flow:
+#   MR (into homolog or master)  → lint, format, unit tests, e2e (simulated API), build
+#   merge into homolog           → + image :<commit>/:homolog → deploy homolog (we-sync-infra) → smoke e2e on homolog
+#   merge into master            → + semantic-release vX.Y.Z → :homolog becomes :vX.Y.Z/:production
+#                                  → deploy production (manual button)
+
 image: node:24-alpine
 
 default:
@@ -7,10 +13,16 @@ stages:
   - lint
   - test
   - build
+  - release
+  - publish
+  - deploy
+  - verify
 
 variables:
   npm_config_cache: $CI_PROJECT_DIR/.npm
   npm_config_update_notifier: 'false'
+  FRONT_IMAGE: $CI_REGISTRY_IMAGE
+  HOMOLOG_URL: http://192.168.68.56:8100
 
 cache:
   key:
@@ -19,14 +31,18 @@ cache:
   paths:
     - .npm/
 
-# Runs on pushes to master and on merge requests
 workflow:
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "homolog"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 before_script:
   - npm ci --prefer-offline --no-audit --no-fund
+
+# ---------------------------------------------------------------------------
+# Validation (every pipeline)
+# ---------------------------------------------------------------------------
 
 lint:
   stage: lint
@@ -65,3 +81,118 @@ build:
     paths:
       - dist/we-sync-front/browser/
     expire_in: 1 week
+
+# ---------------------------------------------------------------------------
+# Docker jobs: they use the server's Docker (socket shared by the runner)
+# ---------------------------------------------------------------------------
+
+.docker:
+  image: docker:cli
+  cache: []
+  variables:
+    # Docker 29 adds attestation manifests that the GitLab registry rejects ("blob unknown to registry").
+    BUILDX_NO_DEFAULT_ATTESTATIONS: '1'
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" -u "$CI_REGISTRY_USER" --password-stdin
+
+# ---------------------------------------------------------------------------
+# homolog
+# ---------------------------------------------------------------------------
+
+image-homolog:
+  extends: .docker
+  stage: publish
+  rules:
+    - if: $CI_COMMIT_BRANCH == "homolog"
+  script:
+    # Relative API URL: the environment gateway serves front and API on the same origin.
+    - docker build --provenance=false --build-arg API_BASE_URL=/api/v1 --label "org.opencontainers.image.revision=$CI_COMMIT_SHA" -t "$FRONT_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$FRONT_IMAGE:homolog" .
+    - docker push "$FRONT_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$FRONT_IMAGE:homolog"
+
+deploy-homolog:
+  stage: deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == "homolog"
+  variables:
+    DEPLOY_ENV: homolog
+  trigger:
+    project: saas/we-sync-infra
+    branch: main
+    strategy: depend
+
+# Smoke tests (e2e/*.compose.spec.ts) against the real homolog: front, API and database together.
+e2e-homolog:
+  stage: verify
+  image: mcr.microsoft.com/playwright:v1.64.1-noble
+  needs: [deploy-homolog]
+  rules:
+    - if: $CI_COMMIT_BRANCH == "homolog"
+  variables:
+    BASE_URL: $HOMOLOG_URL
+  script:
+    - npm run e2e:compose
+  artifacts:
+    when: on_failure
+    paths:
+      - test-results/
+    expire_in: 1 week
+
+# ---------------------------------------------------------------------------
+# master: version, promotion and production
+# ---------------------------------------------------------------------------
+
+# Creates the vX.Y.Z tag and the GitLab release from the commit messages since the last tag.
+# Needs the GITLAB_TOKEN variable (project access token, scopes api + write_repository).
+release:
+  stage: release
+  cache: []
+  interruptible: false
+  variables:
+    GIT_DEPTH: '0'
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - apk add --no-cache git
+  script:
+    - touch release.env
+    - npx --yes -p semantic-release -p @semantic-release/gitlab -p @semantic-release/exec semantic-release
+    - cat release.env
+  artifacts:
+    reports:
+      dotenv: release.env
+
+# Promotes the image validated in homolog: same image, new tags.
+promote:
+  extends: .docker
+  stage: publish
+  interruptible: false
+  needs: [release]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - |
+      if [ -z "$VERSION" ]; then
+        echo "No feat/fix/perf commit since the last version: nothing to release."
+        exit 0
+      fi
+      docker pull "$FRONT_IMAGE:homolog"
+      docker tag "$FRONT_IMAGE:homolog" "$FRONT_IMAGE:v$VERSION"
+      docker tag "$FRONT_IMAGE:homolog" "$FRONT_IMAGE:production"
+      docker push "$FRONT_IMAGE:v$VERSION"
+      docker push "$FRONT_IMAGE:production"
+      echo "Released v$VERSION"
+
+deploy-production:
+  stage: deploy
+  needs: [promote]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+  variables:
+    DEPLOY_ENV: production
+  trigger:
+    project: saas/we-sync-infra
+    branch: main
+    strategy: depend
