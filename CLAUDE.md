@@ -28,6 +28,19 @@ npm run e2e:compose         # contra a stack real (docker compose no we-sync-api
 npm run e2e:capture         # capturas do app e do protótipo lado a lado, em test-results/capture/ (telas)
 ```
 
+O contexto Docker padrão do PC aponta para o servidor: rode `npm run e2e:compose` com `DOCKER_CONTEXT=default`.
+O CI (`.gitlab-ci.yml`, GitLab) repete essas verificações (lint, formato, testes com cobertura mínima, e2e, build) e
+reprova o MR em qualquer falha.
+
+## Branches e entrega
+
+`feature/WS-NNNN` → MR (squash) → `develop` (ambiente dev) → `release/X.Y.Z` (homolog, QA) → MR → `master` (tag
+`vX.Y.Z`, produção). Correção urgente: `hotfix/X.Y.Z` a partir da última tag; bug do QA: `fix/<issue>-<resumo>` a
+partir da `release/X.Y.Z`, com MR para ela. Detalhes em `../we-sync-infra/docs/03-ci-cd.md`; regras dos agentes
+(branch criada pelo `dev-frontend`, commit só depois da aprovação, ordem dos MRs entre API e front) em
+`../we-sync-requirements/.claude/fluxo.md`, seção "Git, branches e entrega". Nunca trabalhe direto na `develop`,
+`master`, `release/*` ou `hotfix/*`. Commits em Conventional Commits, em inglês.
+
 ## Convenções de Angular (ADR-01 da feature 004)
 
 - **Standalone** em tudo. Nada de NgModules.
