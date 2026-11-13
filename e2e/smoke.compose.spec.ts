@@ -1,7 +1,8 @@
 // Smoke tests against the real stack (front on :3000, API on :8080). Run with `npm run e2e:compose`.
 // 004: CA-36 and CA-02. 005: purchases with the real `total_amount`, the accent-insensitive search (CA-12) and the
 // month summary (contract of feature 005). 006: profile, own category archived and its effect on Nova compra,
-// account deletion and a new register with the same e-mail (CA-12).
+// account deletion and a new register with the same e-mail (CA-12). 007: the month blocks from GET /purchases/overview
+// (CA-18) and a second user who sees only the card (CA-20 on the front).
 import { expect, test, type Page } from '@playwright/test';
 
 const HOME_URL = /\/inicio\?ano=\d{1,4}&mes=\d{1,2}$/;
@@ -65,6 +66,18 @@ test('compra: criar, ver no Início e em Compras, buscar sem acento e excluir', 
   await expect(page.locator('.ws-toast')).toContainText('Compra salva com sucesso');
   await expect(page.locator('#kpi-total')).toHaveText('R$ 1.234,56');
   await expect(page.locator('.ws-hero-chip')).toBeVisible();
+  // 007 (CA-18): the blocks come from GET /purchases/overview (the form saves as Paga by default).
+  await expect(page.locator('#kpi-paid')).toHaveText('R$ 1.234,56');
+  await expect(page.locator('#kpi-count')).toHaveText('1');
+  await expect(page.locator('#daily-bars .ws-bar:not(.is-empty)')).toHaveCount(1);
+
+  // 007 (CA-20 on the front): another user, same month, sees only the card.
+  const context = await page.context().browser()!.newContext();
+  const other = await context.newPage();
+  await register(other);
+  await expect(other.locator('#kpi-total')).toHaveText('R$ 0,00');
+  await expect(other.locator('#kpi-cards')).toHaveCount(0);
+  await context.close();
 
   // Compras: the summary comes from total_amount.
   await page.locator('#ws-sidebar').getByRole('link', { name: 'Compras' }).click();

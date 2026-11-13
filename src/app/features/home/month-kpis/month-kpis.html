@@ -1,0 +1,42 @@
+<div class="row g-3 h-100">
+  <div class="col-6">
+    <div class="ws-card ws-kpi">
+      <span class="ws-kpi-icon is-success"><ws-icon name="check" /></span>
+      <div class="min-w-0">
+        <div class="ws-kpi-label">{{ KPI_PAID }}</div>
+        <div class="ws-kpi-value ws-tabular" id="kpi-paid">{{ paid() }}</div>
+        <div class="ws-kpi-foot" id="kpi-paid-n">{{ paidCount() }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6">
+    <div class="ws-card ws-kpi">
+      <span class="ws-kpi-icon is-warning"><ws-icon name="clock" /></span>
+      <div class="min-w-0">
+        <div class="ws-kpi-label">{{ KPI_PENDING }}</div>
+        <div class="ws-kpi-value ws-tabular" id="kpi-pending">{{ pending() }}</div>
+        <div class="ws-kpi-foot" id="kpi-pending-n">{{ pendingCount() }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6">
+    <div class="ws-card ws-kpi">
+      <span class="ws-kpi-icon"><ws-icon name="receipt" /></span>
+      <div class="min-w-0">
+        <div class="ws-kpi-label">{{ KPI_COUNT }}</div>
+        <div class="ws-kpi-value ws-tabular" id="kpi-count">{{ overview().active_count }}</div>
+        <div class="ws-kpi-foot">{{ KPI_COUNT_FOOT }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6">
+    <div class="ws-card ws-kpi">
+      <span class="ws-kpi-icon"><ws-icon name="calendar" /></span>
+      <div class="min-w-0">
+        <div class="ws-kpi-label">{{ KPI_AVERAGE }}</div>
+        <div class="ws-kpi-value ws-tabular" id="kpi-avg">{{ average() }}</div>
+        <div class="ws-kpi-foot" id="kpi-avg-foot">{{ averageDays() }}</div>
+      </div>
+    </div>
+  </div>
+</div>

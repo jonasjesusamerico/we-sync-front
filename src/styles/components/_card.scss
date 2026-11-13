@@ -22,3 +22,9 @@
   font-size: 0.85rem;
   color: var(--ws-muted);
 }
+.ws-card-head .btn-sm:not(.btn-icon) {
+  // 44 px touch target (02, Acessibilidade) for "Ver todas" (D-04 of the 007 SDD, RP-12).
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}

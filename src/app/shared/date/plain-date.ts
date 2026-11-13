@@ -111,6 +111,11 @@ export function monthOf(d: PlainDate | string): YearMonth {
   return { year: date.year, month: date.month };
 }
 
+/** RN-01: true when `month` comes after `current` (ADR-04 of feature 007). */
+export function isFutureMonth(month: YearMonth, current: YearMonth): boolean {
+  return month.year * 12 + month.month > current.year * 12 + current.month;
+}
+
 export function firstDay(ym: YearMonth): PlainDate {
   return { year: ym.year, month: ym.month, day: 1 };
 }

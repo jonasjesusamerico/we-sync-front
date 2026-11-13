@@ -1,0 +1,25 @@
+<section class="ws-card h-100" aria-labelledby="pay-title">
+  <div class="ws-card-head">
+    <h2 id="pay-title">{{ PAYMENT_TITLE }}</h2>
+  </div>
+  <div id="pay-meters">
+    @for (row of overview().payment_methods; track row.payment_method.id) {
+      <div class="ws-meter">
+        <div class="ws-meter-row">
+          <span>{{ row.payment_method.name }}</span
+          ><strong>{{ brl(row.amount) }}</strong>
+        </div>
+        <div
+          class="progress"
+          role="progressbar"
+          [attr.aria-label]="row.payment_method.name"
+          [attr.aria-valuenow]="row.percent"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <div class="progress-bar" [style.width.%]="row.percent"></div>
+        </div>
+      </div>
+    }
+  </div>
+</section>

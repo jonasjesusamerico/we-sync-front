@@ -13,6 +13,7 @@ import type {
 } from '../app/core/catalog/catalog.models';
 import type { UserResponse } from '../app/core/user/user.models';
 import type {
+  MonthOverview,
   MonthSummary,
   PaginatedPurchases,
   Purchase,
@@ -130,6 +131,7 @@ export const SUMMARY_UNTIL_DAY_EXAMPLE: MonthSummary = {
   comparison: {
     period: 'UNTIL_DAY',
     until_day: 10,
+    previous_until_day: 10,
     previous_year: 2026,
     previous_month: 10,
     current_amount: '100',
@@ -148,6 +150,7 @@ export const SUMMARY_FULL_MONTH_EXAMPLE: MonthSummary = {
   comparison: {
     period: 'FULL_MONTH',
     until_day: null,
+    previous_until_day: null,
     previous_year: 2026,
     previous_month: 8,
     current_amount: '1100',
@@ -166,6 +169,7 @@ export const SUMMARY_NO_BASE_EXAMPLE: MonthSummary = {
   comparison: {
     period: 'FULL_MONTH',
     until_day: null,
+    previous_until_day: null,
     previous_year: 2026,
     previous_month: 8,
     current_amount: '0',
@@ -173,6 +177,171 @@ export const SUMMARY_NO_BASE_EXAMPLE: MonthSummary = {
     result: 'NO_BASE',
     percent: null,
   },
+};
+
+// Examples of 2-contrato.md (feature 007).
+
+/** CA-13: today 31/10/2026; R$ 950,00 in October until today, R$ 1.000,00 in the whole of September. */
+export const SUMMARY_SHORTER_MONTH_EXAMPLE: MonthSummary = {
+  year: 2026,
+  month: 10,
+  purchase_count: 12,
+  spent: '950',
+  comparison: {
+    period: 'UNTIL_DAY',
+    until_day: 31,
+    previous_until_day: 30,
+    previous_year: 2026,
+    previous_month: 9,
+    current_amount: '950',
+    previous_amount: '1000',
+    result: 'LESS',
+    percent: 5,
+  },
+};
+
+const MORADIA = { id: 3, name: 'Moradia', is_global: true, icon: 'HOUSE', color: 'HOME' } as const;
+const ALIMENTACAO = {
+  id: 1,
+  name: 'Alimentação',
+  is_global: true,
+  icon: 'FOOD',
+  color: 'FOOD',
+} as const;
+const TRANSPORTE = {
+  id: 2,
+  name: 'Transporte',
+  is_global: true,
+  icon: 'CAR',
+  color: 'TRANSPORT',
+} as const;
+const LAZER = { id: 6, name: 'Lazer', is_global: true, icon: 'SMILE', color: 'LEISURE' } as const;
+const BOLETO = { id: 6, name: 'Boleto', is_global: true };
+const PIX = { id: 4, name: 'Pix', is_global: true };
+const CREDITO = { id: 2, name: 'Cartão de crédito', is_global: true };
+
+const OVERVIEW_AMOUNTS: Readonly<Record<number, string>> = { 2: '100', 5: '100', 25: '1000' };
+
+/** CA-01 to CA-06: today 10/11/2026, purchases 101 to 105 of the contract (`daily` with the 30 days). */
+export const OVERVIEW_EXAMPLE: MonthOverview = {
+  year: 2026,
+  month: 11,
+  days_in_month: 30,
+  is_current_month: true,
+  paid: { amount: '200', count: 3 },
+  pending: { amount: '1000', count: 1 },
+  active_count: 4,
+  spent: '1200',
+  daily_average: { amount: '20', days: 10 },
+  peak_day: 25,
+  daily: Array.from({ length: 30 }, (_, i) => ({
+    day: i + 1,
+    amount: OVERVIEW_AMOUNTS[i + 1] ?? '0',
+    forecast: i + 1 > 10,
+  })),
+  categories: [
+    { category: MORADIA, amount: '1000', percent: 83 },
+    { category: ALIMENTACAO, amount: '160', percent: 13 },
+    { category: TRANSPORTE, amount: '40', percent: 3 },
+  ],
+  payment_methods: [
+    { payment_method: BOLETO, amount: '1000', percent: 83 },
+    { payment_method: PIX, amount: '160', percent: 13 },
+    { payment_method: CREDITO, amount: '40', percent: 3 },
+  ],
+  latest: [
+    {
+      id: 105,
+      user_id: 7,
+      purchase_date: '2026-11-25',
+      description: 'Aluguel',
+      category: MORADIA,
+      payment_method: BOLETO,
+      amount: '1000',
+      status: 'PENDING',
+      created_at: '2026-11-10T09:00:00Z',
+      updated_at: '2026-11-10T09:00:00Z',
+    },
+    {
+      id: 104,
+      user_id: 7,
+      purchase_date: '2026-11-08',
+      description: 'Cinema',
+      category: LAZER,
+      payment_method: CREDITO,
+      amount: '30',
+      status: 'CANCELED',
+      created_at: '2026-11-08T20:00:00Z',
+      updated_at: '2026-11-09T08:00:00Z',
+    },
+    {
+      id: 103,
+      user_id: 7,
+      purchase_date: '2026-11-05',
+      description: 'Padaria',
+      category: ALIMENTACAO,
+      payment_method: PIX,
+      amount: '60',
+      status: 'PAID',
+      created_at: '2026-11-05T18:00:00Z',
+      updated_at: '2026-11-05T18:00:00Z',
+    },
+    {
+      id: 102,
+      user_id: 7,
+      purchase_date: '2026-11-05',
+      description: 'Uber',
+      category: TRANSPORTE,
+      payment_method: CREDITO,
+      amount: '40',
+      status: 'PAID',
+      created_at: '2026-11-05T08:00:00Z',
+      updated_at: '2026-11-05T08:00:00Z',
+    },
+    {
+      id: 101,
+      user_id: 7,
+      purchase_date: '2026-11-02',
+      description: 'Mercado',
+      category: ALIMENTACAO,
+      payment_method: PIX,
+      amount: '100',
+      status: 'PAID',
+      created_at: '2026-11-02T12:00:00Z',
+      updated_at: '2026-11-02T12:00:00Z',
+    },
+  ],
+};
+
+/** CA-11/CA-12: December 2026 seen on 10/11/2026, with one canceled purchase. */
+export const OVERVIEW_EMPTY_EXAMPLE: MonthOverview = {
+  year: 2026,
+  month: 12,
+  days_in_month: 31,
+  is_current_month: false,
+  paid: { amount: '0', count: 0 },
+  pending: { amount: '0', count: 0 },
+  active_count: 0,
+  spent: '0',
+  daily_average: { amount: '0', days: 31 },
+  peak_day: null,
+  daily: Array.from({ length: 31 }, (_, i) => ({ day: i + 1, amount: '0', forecast: false })),
+  categories: [],
+  payment_methods: [],
+  latest: [
+    {
+      id: 120,
+      user_id: 7,
+      purchase_date: '2026-12-03',
+      description: 'Presente',
+      category: LAZER,
+      payment_method: PIX,
+      amount: '70',
+      status: 'CANCELED',
+      created_at: '2026-11-10T09:00:00Z',
+      updated_at: '2026-11-10T09:30:00Z',
+    },
+  ],
 };
 
 export const ERROR_PURCHASE_NOT_FOUND: ApiError = {

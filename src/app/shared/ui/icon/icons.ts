@@ -28,6 +28,7 @@ export const ICON_PATHS = {
   alert: 'M12 3l10 18H2zM12 10v5M12 18h.01',
   check: 'M5 12.5l4.5 4.5L19 7',
   clock: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2',
+  calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
   car: 'M5 16v-5l2-5h10l2 5v5M3 16h18v3H3zM7.5 13h.01M16.5 13h.01',
   house: 'M4 21V9l8-6 8 6v12zM10 21v-6h4v6',
   heart: 'M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z',

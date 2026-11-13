@@ -7,7 +7,13 @@ import { TODAY } from '../../../core/navigation/today';
 import { type Loadable, LOADING } from '../../../shared/loadable';
 import { apiToCents, formatBrl } from '../../../shared/money/money';
 import { monthQueryParams } from '../../../shared/date/month-query';
-import { type YearMonth, monthName, toIsoDate } from '../../../shared/date/plain-date';
+import {
+  type YearMonth,
+  isFutureMonth,
+  monthName,
+  monthOf,
+  toIsoDate,
+} from '../../../shared/date/plain-date';
 import { AreaStatus } from '../../../shared/ui/area-status/area-status';
 import { Icon } from '../../../shared/ui/icon/icon';
 import type { MonthSummary } from '../../purchases/data/purchase.models';
@@ -17,7 +23,8 @@ import { LABEL_NEW_PURCHASE, LABEL_SEE_PURCHASES, noPurchasesIn, spentIn } from 
 import { spendingSeal } from '../spending-seal';
 
 /**
- * Spending card of the home page (.ws-hero of dashboard.html; RF-06, RF-07, RN-01 to RN-03). Its failure stays
+ * Spending card of the home page (.ws-hero of dashboard.html; RF-06, RF-07, RN-01 to RN-03 of 005;
+ * RN-03 and RN-04 of 007). Its failure stays
  * inside the card (RN-26).
  */
 @Component({
@@ -53,9 +60,12 @@ export class SpendingCard {
     const value = this.value();
     return value ? formatBrl(apiToCents(value.spent)) : '';
   });
+  /** No seal in a month after today's (RN-03 of 007, ADR-04): there is nothing to compare yet. */
   protected readonly seal = computed(() => {
     const value = this.value();
-    return value ? spendingSeal(value.comparison) : null;
+    return value && !isFutureMonth(this.month(), monthOf(this.today()))
+      ? spendingSeal(value.comparison)
+      : null;
   });
   protected readonly emptyText = computed(() => noPurchasesIn(monthName(this.month().month)));
   protected readonly purchasesQuery = computed(() => monthQueryParams(this.month()));

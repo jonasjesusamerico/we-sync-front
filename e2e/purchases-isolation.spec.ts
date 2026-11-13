@@ -63,7 +63,15 @@ test('CA-45: outro usuário na mesma aba não vê nada do anterior', async ({ pa
   await expect(page.locator('.ws-empty')).toContainText('Nenhuma compra em novembro de 2026.');
 
   api.delay('/purchases/summary', 1000);
+  // Feature 007: the month blocks load on their own, delayed too.
+  api.delay('/purchases/overview', 1000);
   await page.goto('/inicio?ano=2026&mes=11');
-  await expectNothingOfAna(page, async () => (await page.locator('#kpi-total').count()) > 0);
+  await expectNothingOfAna(
+    page,
+    async () =>
+      (await page.locator('#kpi-total').count()) > 0 &&
+      (await page.locator('#kpi-cards [role="status"]').count()) === 0,
+  );
   await expect(page.locator('#kpi-total')).toHaveText('R$ 0,00');
+  await expect(page.locator('#kpi-cards')).toHaveCount(0);
 });
