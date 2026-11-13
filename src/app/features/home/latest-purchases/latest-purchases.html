@@ -1,0 +1,27 @@
+<section class="ws-card h-100" aria-labelledby="last-title">
+  <div class="ws-card-head">
+    <h2 id="last-title">{{ LATEST_TITLE }}</h2>
+    <a
+      class="btn btn-soft btn-sm"
+      id="last-all"
+      [routerLink]="PURCHASES_PATH"
+      [queryParams]="query()"
+      >{{ LATEST_SEE_ALL }}</a
+    >
+  </div>
+  <ul class="ws-tx-list" id="last-list">
+    @for (p of overview().latest; track p.id) {
+      <li class="ws-tx" [class.is-canceled]="p.status === 'CANCELED'">
+        <ws-category-bubble [icon]="style(p).icon" [color]="style(p).color" />
+        <div class="ws-tx-main">
+          <div class="ws-tx-title" [attr.title]="p.description">{{ p.description }}</div>
+          <div class="ws-tx-meta">{{ meta(p) }}</div>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-1">
+          <span class="ws-tx-amount">{{ brl(p.amount) }}</span>
+          <ws-status-pill [kind]="kind(p)" [label]="STATUS_LABELS[p.status]" />
+        </div>
+      </li>
+    }
+  </ul>
+</section>

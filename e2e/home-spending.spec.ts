@@ -78,7 +78,10 @@ test('CA-06: em 31/03, fevereiro inteiro', async ({ page, api }) => {
   add(api, '2027-02-27', 60000);
   await page.goto('/inicio');
   await expect(page).toHaveURL('/inicio?ano=2027&mes=3');
-  await expect(seal(page)).toHaveText('50% a menos que fevereiro até o dia 31');
+  // Feature 007 (RN-04, D-10): February is shorter, so the seal says up to which day each month was summed.
+  await expect(seal(page)).toHaveText(
+    '50% a menos que fevereiro (até o dia 31; fevereiro até o dia 28)',
+  );
   expect(api.requests('/purchases/summary').at(-1)!.query['today']).toBe('2027-03-31');
 });
 

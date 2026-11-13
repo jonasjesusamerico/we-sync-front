@@ -46,7 +46,8 @@ import { CatalogApi } from '../../../core/catalog/catalog-api';
 import type { Category } from '../../../core/catalog/catalog.models';
 import { filterOptions } from '../../../core/catalog/catalog-options';
 import { catalogStyle, type CatalogStyle } from '../../../core/catalog/catalog-style';
-import type { PaginatedPurchases, Purchase, PurchaseStatus } from '../data/purchase.models';
+import type { PaginatedPurchases, Purchase } from '../data/purchase.models';
+import { statusPillKind } from '../data/purchase-status';
 import { PurchasesApi } from '../data/purchases-api';
 import { NEW_PURCHASE_PATH, editPath, originState } from '../purchase-links';
 import {
@@ -65,12 +66,6 @@ import {
 } from '../purchase-list-query';
 import * as t from '../purchases.messages';
 import { ToastService } from '../../../shared/ui/toast/toast';
-
-const KIND: Readonly<Record<PurchaseStatus, StatusPillKind>> = {
-  PAID: 'paid',
-  PENDING: 'pending',
-  CANCELED: 'canceled',
-};
 
 /** Filter chips, in the prototype order. */
 const STATUS_OPTIONS: readonly { slug: StatusSlug | null; label: string }[] = [
@@ -277,7 +272,7 @@ export class PurchasesPage {
   }
 
   protected kind(p: Purchase): StatusPillKind {
-    return KIND[p.status];
+    return statusPillKind(p.status);
   }
 
   protected brl(amount: string): string {

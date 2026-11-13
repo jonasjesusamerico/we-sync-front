@@ -1,4 +1,5 @@
 import {
+  isFutureMonth,
   MONTH_NAMES,
   addMonths,
   firstDay,
@@ -66,6 +67,16 @@ describe('plain-date', () => {
     [{ year: 2026, month: 11 }, -14, { year: 2025, month: 9 }],
   ])('addMonths(%o, %i)', (ym, n, expected) => {
     expect(addMonths(ym, n)).toEqual(expected);
+  });
+
+  it.each([
+    [{ year: 2026, month: 12 }, { year: 2026, month: 11 }, true],
+    [{ year: 2027, month: 1 }, { year: 2026, month: 12 }, true],
+    [{ year: 2026, month: 11 }, { year: 2026, month: 11 }, false],
+    [{ year: 2026, month: 10 }, { year: 2026, month: 11 }, false],
+    [{ year: 9999, month: 12 }, { year: 1, month: 1 }, true],
+  ])('isFutureMonth(%o, %o) → %s', (month, current, expected) => {
+    expect(isFutureMonth(month, current)).toBe(expected);
   });
 
   it('sameMonth, monthOf e firstDay', () => {

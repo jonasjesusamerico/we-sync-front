@@ -1,0 +1,52 @@
+// Bar chart of the daily spend (prototype we-sync.css "Bar chart (daily spend)"), colors as tokens. The striped
+// forecast bar is from ADR-08 of feature 007. The prototype's #daily-bars / section:has(> #daily-bars) rule is not
+// copied: the component uses d-flex flex-column on the section and flex-grow-1 on .ws-bars (D-06 of the 007 SDD).
+.ws-bars {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: 4px;
+  height: 200px;
+  padding-top: 0.5rem;
+  border-bottom: 1px dashed var(--ws-border);
+}
+.ws-bar {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.ws-bar span {
+  display: block;
+  width: 100%;
+  min-height: 3px;
+  border-radius: 6px 6px 3px 3px;
+  background: color-mix(in srgb, var(--ws-primary) 28%, var(--ws-surface));
+  transition: background-color 0.15s ease;
+}
+.ws-bar:hover span,
+.ws-bar.is-peak span {
+  background: var(--ws-primary);
+}
+.ws-bar.is-empty span {
+  background: var(--ws-border);
+}
+.ws-bar.is-forecast span {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ws-primary) 28%, var(--ws-surface)) 0 4px,
+    transparent 4px 7px
+  );
+}
+.ws-bar.is-forecast:hover span,
+.ws-bar.is-forecast.is-peak span {
+  background: repeating-linear-gradient(135deg, var(--ws-primary) 0 4px, transparent 4px 7px);
+}
+.ws-bars-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--ws-muted);
+  margin-top: 0.4rem;
+}

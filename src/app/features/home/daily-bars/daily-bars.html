@@ -1,0 +1,34 @@
+<section class="ws-card h-100 d-flex flex-column" aria-labelledby="daily-title">
+  <div class="ws-card-head">
+    <div>
+      <h2 id="daily-title">{{ DAILY_TITLE }}</h2>
+      <div class="ws-card-sub">{{ DAILY_SUBTITLE }}</div>
+    </div>
+    @if (overview().peak_day; as day) {
+      <span class="ws-status is-paid" id="daily-peak">{{ peakDay(day) }}</span>
+    }
+  </div>
+  <div class="ws-bars flex-grow-1" id="daily-bars" role="img" [attr.aria-label]="chartLabel()">
+    @for (bar of bars(); track bar.day) {
+      <div
+        class="ws-bar"
+        [class.is-peak]="bar.peak"
+        [class.is-forecast]="bar.forecast"
+        [class.is-empty]="bar.empty"
+        [attr.title]="bar.label"
+      >
+        <span [style.height.%]="bar.height"></span>
+      </div>
+    }
+  </div>
+  <ul class="visually-hidden" id="daily-values">
+    @for (bar of filled(); track bar.day) {
+      <li>{{ bar.label }}</li>
+    }
+  </ul>
+  <div class="ws-bars-axis" aria-hidden="true">
+    @for (tick of ticks(); track $index) {
+      <span>{{ tick }}</span>
+    }
+  </div>
+</section>

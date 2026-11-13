@@ -1,5 +1,5 @@
 // Texts of the purchases screens (feature 005). No Angular imports: the e2e re-exports this file.
-import type { PurchaseStatus } from './data/purchase.models';
+export { STATUS_LABELS } from './data/purchase-status';
 
 export const TITLE_PURCHASES = 'Compras · we-sync';
 export const TITLE_NEW_PURCHASE = 'Nova compra · we-sync';
@@ -18,12 +18,6 @@ export const LABEL_CATEGORY = 'Categoria';
 export const LABEL_ALL = 'Todas';
 export const LABEL_STATUS = 'Situação';
 export const LABEL_CLEAR_FILTERS = 'Limpar filtros';
-
-export const STATUS_LABELS: Readonly<Record<PurchaseStatus, string>> = {
-  PAID: 'Paga',
-  PENDING: 'Pendente',
-  CANCELED: 'Cancelada',
-};
 
 export const LABEL_LIST = 'Lista de compras';
 export const COLUMN_DESCRIPTION = 'Descrição';

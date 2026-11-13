@@ -1,0 +1,45 @@
+<div class="ws-page-head">
+  <div>
+    <h1>{{ title() }}</h1>
+    <p>{{ HOME_SUBTITLE }}</p>
+  </div>
+  @if (month(); as m) {
+    <ws-month-switcher [month]="m" [current]="currentMonth" (monthChange)="goMonth($event)" />
+  }
+</div>
+@if (month(); as m) {
+  <div class="row g-3 mb-3">
+    <div class="col-12" id="hero-col" [class.col-xl-5]="!heroOnly()">
+      <ws-spending-card [month]="m" />
+    </div>
+    @switch (overview().status) {
+      @case ('loading') {
+        <div class="col-12 col-xl-7" id="kpi-cards">
+          <section class="ws-card h-100"><ws-area-status status="loading" /></section>
+        </div>
+      }
+      @case ('error') {
+        <div class="col-12 col-xl-7" id="kpi-cards">
+          <section class="ws-card h-100">
+            <ws-area-status status="error" [message]="errorMessage()" (retry)="retry()" />
+          </section>
+        </div>
+      }
+      @default {
+        @if (blocks(); as o) {
+          <div class="col-12 col-xl-7" id="kpi-cards"><ws-month-kpis [overview]="o" /></div>
+        }
+      }
+    }
+  </div>
+  @if (blocks(); as o) {
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-lg-8"><ws-daily-bars [overview]="o" /></div>
+      <div class="col-12 col-lg-4"><ws-category-donut [overview]="o" /></div>
+    </div>
+    <div class="row g-3">
+      <div class="col-12 col-lg-8"><ws-latest-purchases [overview]="o" /></div>
+      <div class="col-12 col-lg-4"><ws-payment-meters [overview]="o" /></div>
+    </div>
+  }
+}

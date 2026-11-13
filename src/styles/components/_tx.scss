@@ -31,6 +31,8 @@
 .ws-tx-meta {
   font-size: 0.8rem;
   color: var(--ws-muted);
+  // A 40-character name without spaces breaks the line instead of overflowing at 360 px (D-19 of the 007 SDD).
+  overflow-wrap: anywhere;
 }
 .ws-tx-amount {
   text-align: right;

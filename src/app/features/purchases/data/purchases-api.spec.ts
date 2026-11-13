@@ -3,6 +3,8 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 import {
+  ERROR_INTERNAL,
+  OVERVIEW_EXAMPLE,
   PURCHASE_EXAMPLE,
   PURCHASE_LIST_EXAMPLE,
   PURCHASE_REQUEST_EXAMPLE,
@@ -72,6 +74,46 @@ describe('PurchasesApi', () => {
     expect(req.request.method).toBe('GET');
     req.flush(SUMMARY_UNTIL_DAY_EXAMPLE);
     expect(await result).toEqual(SUMMARY_UNTIL_DAY_EXAMPLE);
+  });
+
+  it('overview com os parâmetros', async () => {
+    const result = firstValueFrom(api.overview(2026, 11, '2026-11-10'));
+    const req = http.expectOne(`${API}/purchases/overview?year=2026&month=11&today=2026-11-10`);
+    expect(req.request.method).toBe('GET');
+    req.flush(OVERVIEW_EXAMPLE);
+    expect(await result).toEqual(OVERVIEW_EXAMPLE);
+  });
+
+  it.each([
+    ['{ items: [] }', { items: [] }],
+    ['corpo vazio', null],
+    ['sem latest', { ...OVERVIEW_EXAMPLE, latest: undefined }],
+    ['spent número', { ...OVERVIEW_EXAMPLE, spent: 1200 }],
+  ])('overview com resposta inesperada (%s) → erro com status 500', async (_name, body) => {
+    const result = firstValueFrom(api.overview(2026, 11, '2026-11-10'));
+    http.expectOne((r) => r.url === `${API}/purchases/overview`).flush(body);
+    const error: unknown = await result.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(HttpErrorResponse);
+    expect((error as HttpErrorResponse).status).toBe(500);
+  });
+
+  it('overview: erro 500 passa', async () => {
+    const result = firstValueFrom(api.overview(2026, 11, '2026-11-10'));
+    http
+      .expectOne((r) => r.url === `${API}/purchases/overview`)
+      .flush(ERROR_INTERNAL, { status: 500, statusText: 'Internal Server Error' });
+    const error: unknown = await result.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(HttpErrorResponse);
+    expect((error as HttpErrorResponse).status).toBe(500);
+    expect((error as HttpErrorResponse).error).toEqual(ERROR_INTERNAL);
+  });
+
+  it('overview: sem conexão (status 0) passa', async () => {
+    const result = firstValueFrom(api.overview(2026, 11, '2026-11-10'));
+    http.expectOne((r) => r.url === `${API}/purchases/overview`).error(new ProgressEvent('error'));
+    const error: unknown = await result.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(HttpErrorResponse);
+    expect((error as HttpErrorResponse).status).toBe(0);
   });
 
   it('get', async () => {

@@ -171,8 +171,10 @@ src/
       theme-toggle/              # botão de tema (usa o ThemeService de core/)
     features/
       auth/                      # login/, register/, auth.messages.ts
-      home/                      # Início, spending-card/ (cartão do gasto), spending-seal, home.messages.ts
-      purchases/                 # data/ (modelos, PurchasesApi), list/ (Compras), form/ (nova e edição),
+      home/                      # Início (home-page), spending-card/ (cartão do gasto), spending-seal, blocos do
+                                 # mês (007, só apresentação): month-kpis/, daily-bars/, category-donut/,
+                                 # latest-purchases/, payment-meters/; home-charts.ts (geometria), home.messages.ts
+      purchases/                 # data/ (modelos, PurchasesApi, purchase-status), list/ (Compras), form/ (nova e edição),
                                  # purchases.routes, purchase-list-query, purchase-links (o único que a casca e o
                                  # Início importam), purchase-description, purchases.messages
       settings/                  # Configurações (006): settings.routes, settings-page (menu de seções),
@@ -180,7 +182,8 @@ src/
                                  # de edição), settings.messages
   testing/                       # só de teste (api-examples, FakeLockManager, contraste, helpers)
 e2e/
-  support/                       # api-mock (API simulada com estado: compras, catálogo com arquivadas, conta),
+  support/                       # api-mock (API simulada com estado: compras, resumo e overview do mês, catálogo
+                                 # com arquivadas, conta), home (dados dos CAs da 007),
                                  # fixtures (HOME_URL), session, texts, layout, a11y, purchases (dados do app.js,
                                  # fixedToday), settings (JONAS, seedCatalog, openSettings)
   *.spec.ts                      # API simulada

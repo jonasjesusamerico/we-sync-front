@@ -1,0 +1,72 @@
+// Donut and legend (prototype we-sync.css "Donut"), colors as tokens. The slices come from the component's
+// conic-gradient binding. Long names: ellipsis in the center, line break in the legend (D-05 of the 007 SDD).
+.ws-donut {
+  position: relative;
+  width: 168px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  flex: none;
+}
+.ws-donut::after {
+  content: '';
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  background: var(--ws-surface);
+}
+.ws-donut-center {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+.ws-donut-center strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  // 124 px hole minus 8 px on each side (RP-09).
+  display: block;
+  max-width: 108px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-donut-center small {
+  color: var(--ws-muted);
+  font-size: 0.75rem;
+}
+.ws-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.7rem;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.ws-legend li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+.ws-legend li > span:nth-child(2) {
+  overflow-wrap: anywhere;
+}
+.ws-legend .ws-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.ws-legend .ws-legend-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ws-legend .ws-legend-pct {
+  color: var(--ws-muted);
+  font-weight: 500;
+  font-size: 0.8rem;
+  margin-left: 0.3rem;
+}

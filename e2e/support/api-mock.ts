@@ -1,4 +1,4 @@
-// Fake API with state for the e2e tests, following 2-contrato.md of features 004, 005 and 006.
+// Fake API with state for the e2e tests, following 2-contrato.md of features 004, 005, 006 and 007.
 // Registered with route() on the BrowserContext, so the tabs of a context share it.
 import type { BrowserContext, Route } from '@playwright/test';
 
@@ -30,8 +30,11 @@ export interface ApiMock {
   expireAccessTokens(): void;
   /** Every current refresh token starts to get 401. */
   revokeRefreshTokens(): void;
-  /** Delay of every next response of the path (paths with an id use the key '/purchases/:id'). */
-  delay(path: string, ms: number): void;
+  /**
+   * Delay of every next response of the path (paths with an id use the key '/purchases/:id'). With `query`, only the
+   * requests whose parameters contain those pairs (feature 007, D-12: answers out of order).
+   */
+  delay(path: string, ms: number, query?: Record<string, string>): void;
   /**
    * Status with the contract envelope (`{ status, code }` for a specific code), or
    * route.abort('connectionrefused'); `times` responses (default 1).
@@ -172,7 +175,7 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
   const users = new Map<string, MockUser>();
   const access = new Map<string, string>();
   const refresh = new Map<string, string>();
-  const delays = new Map<string, number>();
+  const delays = new Map<string, { ms: number; query?: Record<string, string> }[]>();
   const failures = new Map<string, { response: FailResponse; times: number }>();
   const log = new Map<string, MockRequest[]>();
   let nextId = 100;
@@ -250,9 +253,13 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       : path.replace(/^\/(categories|payment-methods)\/[^/]+/, '/$1/:id');
     log.set(key, [...(log.get(key) ?? []), entry]);
 
-    const wait = delays.get(key);
+    const wait = (delays.get(key) ?? []).find(
+      (rule) =>
+        rule.query === undefined ||
+        Object.entries(rule.query).every(([name, value]) => entry.query[name] === value),
+    );
     if (wait) {
-      await sleep(wait);
+      await sleep(wait.ms);
     }
     const failure = failures.get(key);
     if (failure && failure.times > 0) {
@@ -422,6 +429,9 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       comparison: {
         period: untilDay === null ? 'FULL_MONTH' : 'UNTIL_DAY',
         until_day: untilDay,
+        // Feature 007 (ADR-05): last day summed in the previous month.
+        previous_until_day:
+          untilDay === null || previousYear < 1 ? null : Math.min(untilDay, lastPrevious),
         previous_year: previousYear,
         previous_month: previousMonth,
         current_amount: centsToMoney(current),
@@ -429,6 +439,81 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
         result,
         percent,
       },
+    };
+  }
+
+  /** Feature 007 (2-contrato.md, GET /purchases/overview): every number as the contract describes it. */
+  function overview(user: MockUser, year: number, month: number, today: string) {
+    const owner = user.email;
+    const monthItems = purchases.filter((p) => p.owner === owner && inMonth(p, year, month));
+    const active = monthItems.filter((p) => p.status !== 'CANCELED');
+    const days = daysInMonth(year, month);
+    const [ty, tm, td] = today.split('-').map(Number);
+    const current = ty === year && tm === month;
+    const dayOf = (p: MockPurchase) => Number(p.date.slice(8));
+    const perDay = Array.from({ length: days }, (_, i) =>
+      sumCents(active.filter((p) => dayOf(p) === i + 1)),
+    );
+    const spent = sumCents(active);
+    const total = (status: MockStatus) => {
+      const list = monthItems.filter((p) => p.status === status);
+      return { amount: centsToMoney(sumCents(list)), count: list.length };
+    };
+    // Rounded to the cent, half up, in integers.
+    const divide = (sum: number, d: number) => Math.floor((2 * sum + d) / (2 * d));
+    const averageDays = current ? td : days;
+    const averageSum = current ? perDay.slice(0, td).reduce((a, b) => a + b, 0) : spent;
+    const max = Math.max(...perDay);
+    const percent = (cents: number) => Math.floor((200 * cents + spent) / (2 * spent));
+    /** Sum per item, order: sum desc, fold(name) asc, id. */
+    const shares = (list: CatalogItem[], idOf: (p: MockPurchase) => number) => {
+      const ids = [...new Set(active.map(idOf))];
+      return ids
+        .map((id) => ({
+          item: ref(list, id),
+          cents: sumCents(active.filter((p) => idOf(p) === id)),
+        }))
+        .sort(
+          (a, b) =>
+            b.cents - a.cents ||
+            (fold(a.item.name) < fold(b.item.name)
+              ? -1
+              : fold(a.item.name) > fold(b.item.name)
+                ? 1
+                : a.item.id - b.item.id),
+        );
+    };
+    return {
+      year,
+      month,
+      days_in_month: days,
+      is_current_month: current,
+      paid: total('PAID'),
+      pending: total('PENDING'),
+      active_count: active.length,
+      spent: centsToMoney(spent),
+      daily_average: { amount: centsToMoney(divide(averageSum, averageDays)), days: averageDays },
+      peak_day: spent === 0 ? null : perDay.indexOf(max) + 1,
+      daily: perDay.map((cents, i) => ({
+        day: i + 1,
+        amount: centsToMoney(cents),
+        forecast: current && i + 1 > td,
+      })),
+      categories: shares(categories, (p) => p.categoryId).map(({ item, cents }) => ({
+        category: item,
+        amount: centsToMoney(cents),
+        percent: percent(cents),
+      })),
+      payment_methods: shares(paymentMethods, (p) => p.paymentMethodId).map(({ item, cents }) => ({
+        payment_method: item,
+        amount: centsToMoney(cents),
+        percent: percent(cents),
+      })),
+      latest: monthItems
+        .slice()
+        .sort((a, b) => (a.date === b.date ? b.id - a.id : a.date < b.date ? 1 : -1))
+        .slice(0, 6)
+        .map((p) => purchaseJson(p, user)),
     };
   }
 
@@ -453,7 +538,7 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
     const id = key === '/purchases/:id' ? Number(path.split('/')[2]) : 0;
     const mine = (pid: number) => purchases.find((p) => p.id === pid && p.owner === owner);
 
-    if (method === 'GET' && key === '/purchases/summary') {
+    if (method === 'GET' && (key === '/purchases/summary' || key === '/purchases/overview')) {
       const year = Number(q.get('year'));
       const month = Number(q.get('month'));
       const today = q.get('today') ?? '';
@@ -466,7 +551,13 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(today)) {
         return error(route, 400, 'today must be a date in YYYY-MM-DD format');
       }
-      return json(route, 200, summary(owner, year, month, today));
+      return json(
+        route,
+        200,
+        key === '/purchases/summary'
+          ? summary(owner, year, month, today)
+          : overview(user, year, month, today),
+      );
     }
     if (method === 'GET' && key === '/purchases') {
       const search = fold((q.get('q') ?? '').trim());
@@ -786,7 +877,12 @@ export async function mockApi(context: BrowserContext): Promise<ApiMock> {
     issueSession: (email) => issue(normalize(email)),
     expireAccessTokens: () => access.clear(),
     revokeRefreshTokens: () => refresh.clear(),
-    delay: (path, ms) => delays.set(path, ms),
+    delay: (path, ms, query) => {
+      const rules = (delays.get(path) ?? []).filter((rule) =>
+        query === undefined ? rule.query !== undefined : true,
+      );
+      delays.set(path, query === undefined ? [...rules, { ms }] : [{ ms, query }, ...rules]);
+    },
     fail: (path, response, times = 1) => failures.set(path, { response, times }),
     calls: (path) => log.get(path)?.length ?? 0,
     requests: (path) => log.get(path) ?? [],

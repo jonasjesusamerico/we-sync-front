@@ -88,3 +88,10 @@ describe('ICON_PATHS (feature 006)', () => {
     expect(ICON_PATHS[name]).toBe(path);
   });
 });
+
+describe('ICON_PATHS (feature 007)', () => {
+  // Path copied from ICONS in prototype/assets/app.js.
+  it('ícone novo calendar', () => {
+    expect(ICON_PATHS.calendar).toBe('M4 6h16v14H4zM4 10h16M8 3v4M16 3v4');
+  });
+});
