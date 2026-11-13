@@ -1,4 +1,4 @@
-// Captures of each screen of features 005 and 006 and of the same screen of the prototype, at 1280 and 360 px,
+// Captures of each screen of features 005 to 007 and of the same screen of the prototype, at 1280 and 360 px,
 // light and dark, saved in test-results/capture/<tela>-<largura>-<tema>-{app,prototipo}.png (D-17). No pixel
 // assertion.
 import { resolve } from 'node:path';
@@ -49,6 +49,18 @@ const SCREENS: Screen[] = [
     name: 'inicio',
     app: '/inicio?ano=2026&mes=10',
     prototype: 'dashboard.html',
+    // Feature 007: the month blocks too.
+    ready: async (page) => {
+      await expect(page.locator('#kpi-total')).toBeVisible();
+      await expect(page.locator('#kpi-paid')).toBeVisible();
+      await expect(page.locator('#daily-bars .ws-bar').first()).toBeAttached();
+    },
+  },
+  {
+    // Feature 007: a future month without purchases (only the card, no seal).
+    name: 'inicio-vazio',
+    app: '/inicio?ano=2026&mes=11',
+    prototype: 'dashboard.html?mes=2026-11',
     ready: (page) => expect(page.locator('#kpi-total')).toBeVisible(),
   },
   {

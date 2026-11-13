@@ -1,0 +1,29 @@
+<section class="ws-card h-100" aria-labelledby="cat-title">
+  <div class="ws-card-head">
+    <h2 id="cat-title">{{ CATEGORY_TITLE }}</h2>
+  </div>
+  <div class="d-flex flex-wrap align-items-center justify-content-center gap-4">
+    <div
+      class="ws-donut"
+      id="cat-donut"
+      role="img"
+      [style.background]="background()"
+      [attr.aria-label]="label()"
+    >
+      <div class="ws-donut-center">
+        <strong id="cat-top" [attr.title]="top()">{{ top() }}</strong
+        ><small>{{ CATEGORY_TOP_CAPTION }}</small>
+      </div>
+    </div>
+    <ul class="ws-legend" id="cat-legend">
+      @for (row of rows(); track row.id) {
+        <li>
+          <span class="ws-dot" [style.background]="row.color"></span
+          ><span
+            >{{ row.name }}<span class="ws-legend-pct">{{ row.percent }}%</span></span
+          ><span class="ws-legend-value">{{ row.brl }}</span>
+        </li>
+      }
+    </ul>
+  </div>
+</section>

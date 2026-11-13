@@ -8,6 +8,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_BASE_URL } from '../../../core/http/api-base-url';
 import {
+  MonthOverview,
   MonthSummary,
   PaginatedPurchases,
   Purchase,
@@ -52,6 +53,34 @@ function isPaginatedPurchases(body: unknown): body is PaginatedPurchases {
   );
 }
 
+/** RN-12 ("unexpected response", D-08 of the 007 SDD): only the shape the page reads. */
+function isMonthOverview(body: unknown): body is MonthOverview {
+  if (typeof body !== 'object' || body === null) {
+    return false;
+  }
+  const o = body as Partial<Record<keyof MonthOverview, unknown>>;
+  const isObject = (v: unknown): boolean => typeof v === 'object' && v !== null;
+  return (
+    typeof o.active_count === 'number' &&
+    typeof o.days_in_month === 'number' &&
+    typeof o.spent === 'string' &&
+    isObject(o.paid) &&
+    isObject(o.pending) &&
+    isObject(o.daily_average) &&
+    Array.isArray(o.daily) &&
+    Array.isArray(o.categories) &&
+    Array.isArray(o.payment_methods) &&
+    Array.isArray(o.latest)
+  );
+}
+
+function monthParams(year: number, month: number, today: string): HttpParams {
+  return new HttpParams({ encoder: STRICT_PARAM_CODEC })
+    .set('year', String(year))
+    .set('month', String(month))
+    .set('today', today);
+}
+
 /** Purchases endpoints (contract of feature 005). Stateless: each page loads what it shows. */
 @Injectable({ providedIn: 'root' })
 export class PurchasesApi {
@@ -71,11 +100,21 @@ export class PurchasesApi {
   }
 
   summary(year: number, month: number, today: string): Observable<MonthSummary> {
-    const params = new HttpParams({ encoder: STRICT_PARAM_CODEC })
-      .set('year', String(year))
-      .set('month', String(month))
-      .set('today', today);
+    const params = monthParams(year, month, today);
     return this.http.get<MonthSummary>(`${this.base}/purchases/summary`, { params });
+  }
+
+  /** Blocks of the home month (feature 007). A body of another shape fails as a 500 (RN-12). */
+  overview(year: number, month: number, today: string): Observable<MonthOverview> {
+    const url = `${this.base}/purchases/overview`;
+    return this.http.get<unknown>(url, { params: monthParams(year, month, today) }).pipe(
+      map((body) => {
+        if (!isMonthOverview(body)) {
+          throw new HttpErrorResponse({ status: 500, url });
+        }
+        return body;
+      }),
+    );
   }
 
   /** `id` already checked by the page (^[1-9][0-9]{0,18}$). */

@@ -1,0 +1,30 @@
+// Horizontal meters (prototype we-sync.css "Horizontal meters"), colors as tokens. A long name breaks the line and
+// the value never does (D-05 of the 007 SDD, RP-13).
+.ws-meter + .ws-meter {
+  margin-top: 0.9rem;
+}
+.ws-meter-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  margin-bottom: 0.35rem;
+}
+.ws-meter-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ws-meter-row strong {
+  flex: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ws-meter .progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ws-surface-2);
+}
+.ws-meter .progress-bar {
+  border-radius: 999px;
+  background: var(--ws-primary);
+}

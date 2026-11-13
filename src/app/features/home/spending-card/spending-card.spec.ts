@@ -6,6 +6,7 @@ import {
   ERROR_INTERNAL,
   SUMMARY_FULL_MONTH_EXAMPLE,
   SUMMARY_NO_BASE_EXAMPLE,
+  SUMMARY_SHORTER_MONTH_EXAMPLE,
   SUMMARY_UNTIL_DAY_EXAMPLE,
 } from '../../../../testing/api-examples';
 import { text } from '../../../../testing/dom';
@@ -13,7 +14,7 @@ import { API, httpTestingProviders } from '../../../../testing/http';
 import { settle } from '../../../../testing/session';
 import { MSG_SERVER } from '../../../core/http/error-messages';
 import { TODAY } from '../../../core/navigation/today';
-import type { YearMonth } from '../../../shared/date/plain-date';
+import type { PlainDate, YearMonth } from '../../../shared/date/plain-date';
 import { ICON_PATHS } from '../../../shared/ui/icon/icons';
 import type { MonthSummary } from '../../purchases/data/purchase.models';
 import { SpendingCard } from './spending-card';
@@ -34,11 +35,14 @@ const SUMMARY = `${API}/purchases/summary`;
 describe('SpendingCard (cartão do gasto)', () => {
   let http: HttpTestingController;
 
-  async function render(month: YearMonth = { year: 2026, month: 11 }) {
+  async function render(
+    month: YearMonth = { year: 2026, month: 11 },
+    today: PlainDate = { year: 2026, month: 11, day: 10 },
+  ) {
     TestBed.configureTestingModule({
       providers: [
         ...httpTestingProviders(),
-        { provide: TODAY, useValue: () => ({ year: 2026, month: 11, day: 10 }) },
+        { provide: TODAY, useValue: () => today },
         provideRouter([
           { path: 'compras', component: Blank },
           { path: 'compras/nova', component: Blank },
@@ -153,5 +157,53 @@ describe('SpendingCard (cartão do gasto)', () => {
     await stable();
     await respond(SUMMARY_UNTIL_DAY_EXAMPLE);
     expect(text(root.querySelector('#kpi-total'))).toBe('R$ 150,00');
+  });
+
+  describe('feature 007', () => {
+    const DECEMBER = { year: 2026, month: 12 };
+
+    it('mês futuro sem selo (CA-10)', async () => {
+      const { root, respond } = await render(DECEMBER);
+      await respond({
+        ...SUMMARY_FULL_MONTH_EXAMPLE,
+        year: 2026,
+        month: 12,
+        purchase_count: 1,
+        spent: '70',
+        comparison: { ...SUMMARY_FULL_MONTH_EXAMPLE.comparison, result: 'LESS', percent: 50 },
+      });
+      expect(text(root.querySelector('#kpi-total'))).toBe('R$ 70,00');
+      expect(root.querySelector('.ws-hero-chip')).toBeNull();
+      const link = root.querySelector<HTMLAnchorElement>('.ws-hero-progress a')!;
+      expect(text(link)).toBe('Ver compras');
+      expect(link.getAttribute('href')).toBe('/compras?ano=2026&mes=12');
+    });
+
+    it('mês futuro vazio (CA-11)', async () => {
+      const { root, respond } = await render(DECEMBER);
+      await respond({ ...SUMMARY_NO_BASE_EXAMPLE, year: 2026, month: 12 });
+      expect(text(root.querySelector('#kpi-total'))).toBe('R$ 0,00');
+      const progress = root.querySelector('.ws-hero-progress')!;
+      expect(text(progress.querySelector('p'))).toBe('Nenhuma compra em dezembro.');
+      expect(text(progress.querySelector('a.btn'))).toBe('Nova compra');
+      expect(root.querySelector('.ws-hero-chip')).toBeNull();
+    });
+
+    it('mês mais curto (CA-13)', async () => {
+      const { root, respond } = await render(
+        { year: 2026, month: 10 },
+        { year: 2026, month: 10, day: 31 },
+      );
+      await respond(SUMMARY_SHORTER_MONTH_EXAMPLE);
+      const chip = root.querySelector('.ws-hero-chip')!;
+      expect(text(chip)).toBe('5% a menos que setembro (até o dia 31; setembro até o dia 30)');
+      expect(chip.querySelector('path')!.getAttribute('d')).toBe(ICON_PATHS.arrowDown);
+    });
+
+    it('mês passado continua com selo', async () => {
+      const { root, respond } = await render({ year: 2026, month: 9 });
+      await respond(SUMMARY_FULL_MONTH_EXAMPLE);
+      expect(text(root.querySelector('.ws-hero-chip'))).toBe('10% a mais que agosto');
+    });
   });
 });
